@@ -1,5 +1,3 @@
-Dưới đây là tài liệu chi tiết về quy trình và nghiệp vụ của hệ thống **Melodies Web System** được tổng hợp từ tài liệu bạn cung cấp, định dạng dưới dạng Markdown (`.md`).
-
 ---
 
 # TÀI LIỆU QUY TRÌNH - NGHIỆP VỤ HỆ THỐNG "MELODIES WEB SYSTEM"
