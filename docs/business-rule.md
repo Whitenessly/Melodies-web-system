@@ -114,3 +114,80 @@ Hệ thống phân quyền rõ ràng cho 3 đối tượng sử dụng chính:
 | **LIS-PRM01** | Xem chương trình khuyến mãi | Xem và đăng ký tham gia các hoạt động ưu đãi/khuyến mãi trên nền tảng. | Đã đăng nhập vai trò Listener |
 | **LIS-SHR01** | Chia sẻ nhạc | Chia sẻ liên kết của bài hát/album lên các nền tảng mạng xã hội khác. | Đã đăng nhập vai trò Listener |
 | **LIS-RPT01** | Xem báo cáo nghe nhạc | Xem thống kê/phân tích cá nhân về thói quen nghe nhạc (xu hướng, dòng nhạc nghe nhiều). | Đã đăng nhập vai trò Listener |
+
+---
+
+## VI. Đặc tả chi tiết các tính năng kỹ thuật bổ sung
+
+### 1. Phân hệ Trình phát nhạc (Music Player)
+Trình phát nhạc là tính năng cốt lõi dành cho người dùng (đặc biệt là Listener) để trải nghiệm âm nhạc trực tuyến trên hệ thống với các nghiệp vụ cụ thể sau:
+
+*   **Các điều khiển cơ bản (Play, Pause, Seek):**
+    *   **Play/Pause:** Cho phép người dùng phát hoặc tạm dừng bài hát đang chọn. Hệ thống cần lưu lại trạng thái phát hiện tại để tiếp tục khi người dùng nhấn phát lại.
+    *   **Seek (Tua nhạc):** Người dùng có thể kéo thanh tiến trình (progress bar) để di chuyển đến một mốc thời gian bất kỳ trong bài hát.
+*   **Quản lý Hàng đợi phát (Queue / Player Playlist):**
+    *   Hệ thống duy trì một danh sách các bài hát chuẩn bị phát (Hàng đợi). Người dùng có thể xem danh sách này, thêm bài hát mới vào hàng đợi hoặc thay đổi thứ tự ưu tiên của các bài hát.
+*   **Chế độ phát (Trộn bài & Lặp lại):**
+    *   **Trộn bài (Shuffle):** Hệ thống sẽ xáo trộn ngẫu nhiên thứ tự các bài hát trong hàng đợi phát hiện tại mà không làm thay đổi danh sách phát gốc của người dùng.
+    *   **Lặp lại (Repeat):** Hỗ trợ hai chế độ lặp: Lặp lại toàn bộ danh sách phát (Repeat All) hoặc Lặp lại duy nhất một bài hát đang phát (Repeat One).
+*   **Tự động chuyển bài (Autoplay):**
+    *   Khi bài hát hiện tại kết thúc (thời gian phát đạt 100%), trình phát nhạc tự động chuyển sang bài tiếp theo trong hàng đợi phát dựa trên chế độ phát đã thiết lập (bình thường hoặc trộn bài).
+
+---
+
+### 2. Quản lý nội dung (Thêm và xóa bài hát)
+Tính năng hỗ trợ quản lý vòng đời của các tệp tin âm thanh trên hệ thống:
+*   **Thêm bài hát:** Cho phép tải lên tệp tin âm thanh (định dạng phổ biến như .mp3, .wav) kèm theo siêu dữ liệu (metadata) bao gồm: Tiêu đề bài hát, ca sĩ trình bày, thuộc album nào, thể loại và ảnh đại diện (thumbnail).
+*   **Xóa bài hát:** 
+    *   Nghệ sĩ có quyền xóa bài hát do chính họ đăng tải.
+    *   Admin có quyền xóa bất kỳ bài hát nào vi phạm bản quyền hoặc tiêu chuẩn cộng đồng.
+    *   *Quy tắc hệ thống:* Khi một bài hát bị xóa, hệ thống sẽ tự động gỡ bài hát đó ra khỏi toàn bộ các danh sách phát (playlist) hiện có của người dùng và hàng đợi phát của trình phát nhạc.
+
+---
+
+### 3. Phân hệ Người dùng & Xác thực (User & Authentication)
+Đặc tả kỹ thuật cho việc đăng ký, đăng nhập và phân quyền hệ thống:
+
+*   **Đăng ký / Đăng nhập (Register / Login):** Người dùng thực hiện đăng ký tài khoản bằng email và mật khẩu. Hệ thống mã hóa mật khẩu trước khi lưu trữ vào cơ sở dữ liệu.
+*   **Cơ chế xác thực dựa trên Token (Token-based Authentication):**
+    *   Sử dụng **Laravel Sanctum** hoặc **JWT (JSON Web Token)** để quản lý phiên đăng nhập của người dùng dưới dạng API không trạng thái (stateless).
+    *   Khi đăng nhập thành công, hệ thống trả về một mã Token xác thực. Token này sẽ được đính kèm vào tiêu đề (Header) của các yêu cầu gửi từ phía máy khách (Client) lên máy chủ (Server) để xác minh danh tính.
+*   **Phân quyền vai trò (Role-based Access Control):**
+    *   **Admin:** Có quyền truy cập các API quản trị, cấu hình hệ thống, kiểm duyệt nội dung và quản lý người dùng.
+    *   **User (bao gồm cả Artist và Listener):** Có quyền sử dụng các tính năng cá nhân như nghe nhạc, tạo playlist, tìm kiếm. Riêng tài khoản được nâng cấp quyền tác giả (Artist) sẽ có thêm quyền gọi các API đăng tải và quản lý nhạc.
+
+---
+
+### 4. Quản lý Playlist cá nhân (Playlist Management)
+Tính năng cho phép người dùng cá nhân hóa trải nghiệm âm nhạc:
+
+*   **Tạo danh sách phát (Create Playlist):** Người dùng có thể tạo một hoặc nhiều playlist mới, đặt tên và tải lên ảnh bìa đại diện cho danh sách đó.
+*   **Thêm và xóa bài hát khỏi Playlist:**
+    *   **Thêm bài hát:** Trong khi nghe nhạc hoặc tìm kiếm, người dùng có thể chọn thêm bài hát bất kỳ vào một hoặc nhiều playlist đã tạo.
+    *   **Xóa bài hát:** Người dùng có thể truy cập vào playlist của mình và gỡ bỏ những bài hát không còn muốn nghe ra khỏi danh sách.
+*   **Chế độ riêng tư (Public / Private):**
+    *   **Public (Công khai):** Playlist hiển thị công khai, cho phép người dùng khác tìm kiếm, xem danh sách bài hát và nhấn nghe.
+    *   **Private (Riêng tư):** Playlist chỉ hiển thị duy nhất đối với người dùng tạo ra nó. Các tài khoản khác không thể tìm thấy hoặc truy cập dưới mọi hình thức.
+
+---
+
+### 5. Hệ thống Tìm kiếm (Search Engine)
+Tính năng hỗ trợ người dùng tiếp cận nhanh chóng với kho nội dung âm nhạc:
+
+*   Hệ thống tìm kiếm hỗ trợ lọc kết quả dựa trên các trường thông tin chính:
+    *   **Theo Bài hát:** Khớp từ khóa với tiêu đề bài hát (Song title).
+    *   **Theo Ca sĩ/Nghệ sĩ:** Khớp từ khóa với tên nghệ sĩ trình bày hoặc nhóm nhạc (Artist name).
+    *   **Theo Album:** Khớp từ khóa với tiêu đề album (Album title).
+*   *Quy tắc tìm kiếm:* Hệ thống xử lý tìm kiếm không phân biệt chữ hoa, chữ thường và hỗ trợ tìm kiếm gần đúng (fuzzy search) để trả về kết quả phù hợp nhất cho người dùng.
+
+---
+
+### 6. Hệ thống Theo dõi & Thống kê (Tracking System)
+Hệ thống ghi nhận và phân tích hành vi của người nghe để tối ưu hóa trải nghiệm và cung cấp dữ liệu cho nghệ sĩ/admin:
+
+*   **Theo dõi lượt nghe (Views / Play Count):**
+    *   *Quy tắc tính lượt nghe:* Một lượt nghe (view) chỉ được ghi nhận tăng thêm 1 khi bài hát được phát liên tục trong một khoảng thời gian tối thiểu theo quy định (ví dụ: phát tối thiểu 30 giây đầu tiên hoặc đạt 50% thời lượng bài hát) để tránh việc tăng lượt nghe ảo (spam views).
+*   **Danh sách phát gần đây (Recently Played):**
+    *   Hệ thống tự động lưu trữ lịch sử phát nhạc của từng người dùng cụ thể. Danh sách này lưu giữ các bài hát được phát gần nhất theo thứ tự thời gian giảm dần, giúp người dùng dễ dàng tìm và nghe lại các bài hát vừa thưởng thức.
+*   **Bảng xếp hạng bài hát nổi bật (Top Songs):**
+    *   Dựa trên tổng số lượt nghe (views) trong một khoảng thời gian nhất định (theo ngày, tuần hoặc tháng), hệ thống tự động tổng hợp dữ liệu và xuất ra danh sách các bài hát có lượng tương tác cao nhất để hiển thị tại trang chủ.
