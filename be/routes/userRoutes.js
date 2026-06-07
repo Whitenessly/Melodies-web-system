@@ -1,5 +1,5 @@
 import express from 'express';
-import { toggleLikeSong, toggleFollowArtist, getRecentlyPlayed, getArtistStats, getAllUsers, deleteUser } from '../controllers/userController.js';
+import { toggleLikeSong, toggleFollowArtist, getRecentlyPlayed, getArtistStats, getAllUsers, deleteUser, getArtistPublicProfile, getPublicArtists } from '../controllers/userController.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -10,6 +10,8 @@ router.post('/likes', toggleLikeSong);
 router.post('/follow', toggleFollowArtist);
 router.get('/history', getRecentlyPlayed);
 router.get('/artist/stats', getArtistStats);
+router.get('/artists', getPublicArtists);
+router.get('/artists/:id', getArtistPublicProfile);
 
 // Admin-only management endpoints
 router.get('/admin/users', authorize(['admin']), getAllUsers);

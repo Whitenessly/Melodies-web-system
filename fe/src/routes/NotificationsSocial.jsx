@@ -1,15 +1,244 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import React, { useState, useEffect } from 'react';
+import { api } from '../utils/api.js';
+import { useAuth } from '../context/AuthContext.jsx';
+import { usePlayer } from '../context/PlayerContext.jsx';
+import Sidebar from '../components/Sidebar.jsx';
+import Header from '../components/Header.jsx';
+import MusicPlayer from '../components/MusicPlayer.jsx';
 
 const NotificationsSocial = () => {
-  const navigate = useNavigate();
-  const [isPlaying, setIsPlaying] = useState(false);
+  const { user } = useAuth();
+  const { play } = usePlayer();
+  const [notifications, setNotifications] = useState([]);
+  const [songs, setSongs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch notifications and some songs (for mock friends playback activity)
+  const fetchData = async () => {
+    try {
+      const notifData = await api.get('/notifications');
+      setNotifications(notifData.notifications || []);
+      
+      const songsData = await api.get('/songs');
+      setSongs(songsData.songs || []);
+    } catch (err) {
+      console.error('Failed to load notifications or songs:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleMarkAllRead = async () => {
+    try {
+      await api.put('/notifications/read-all');
+      // Update state locally
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (err) {
+      console.error('Failed to mark all as read:', err);
+    }
+  };
+
+  const handleMarkRead = async (id, link) => {
+    try {
+      await api.put(`/notifications/${id}/read`);
+      // Update state locally
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
+    } catch (err) {
+      console.error('Failed to mark single notification as read:', err);
+    }
+  };
+
+  const formatTimeAgo = (dateString) => {
+    if (!dateString) return 'Hôm nay';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'Vừa xong';
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    return `${diffDays} ngày trước`;
+  };
+
+  // Mock friends data that uses actual songs in the system
+  const friends = [
+    {
+      name: 'Linh Chi',
+      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBSH9ZDASmNtIPxIjYPnt2cuXAlZnMRMerUErny28-nq0cLq4NK1EdY3UJkaMNi3bKqIITzONuQJ-sbodfHejL_6DsWRovSc35TDCm9XUJb4qkx35KLtPHogiC-EjUqi_7HbHCYHiektOTLECfgTIoFj1r3gmIsp0kQXKg-0c82bOZ-PT4NtnoOVy5iQPx3fSYASeDnQ2O89PjpyRV5pDv1B0Cy7sDQwTcR76c6TJSQEOancGErFASjrmTsGNvnsRWK3S4vcrzt2uA',
+      song: songs[0] || null,
+      defaultSongTitle: 'Midnight Pulse',
+      defaultSongArtist: 'Neon Velocity',
+      active: true,
+      time: 'Đang nghe'
+    },
+    {
+      name: 'Hoàng Nam',
+      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC737jAD5SvmDRkNwgrQhtuu0Cm1gEDlfSsOpJ5BtETXUuA7HnI9jVhEVUsGnM8RdIJCo3PEj842STf1yWRRWIfF9S2Dvn3vTHfAcEat7EjuZZUJBtsBsOb4GCR4FcBX1NR6vtVBq7PFFS7uGkXOlz_p7kunbCXxTKkcGQjhnW1mGFB964ORfSdv7xCA1u3Xcl8Nn6SCoQZxpPMCYmP32I5Ftmp6_HBBIHnpQetAH8g8QSSFVCbgJC-eKFiZgUR2gZY7YcbwGLSeqo',
+      song: songs[1] || null,
+      defaultSongTitle: 'Concrete Jungle',
+      defaultSongArtist: 'The Architects',
+      active: false,
+      time: '5 phút trước'
+    },
+    {
+      name: 'Minh Anh',
+      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAQzLxZ-ZZ55ym3kTm4b2liWbVIM1e2sjMUtr5aeCOHQ1brzZG5MvGMzE_I9C7vW725Eg8yhZYByWC4G_b8L4pVMHeOo2Sf-ay67-bu60DIhhR-ifvEdd_za5BBPkCeq8kOEDPT4Dz2-K28HPuWYhomrA1Blw6EbF6Eq19ImMrTX2nTujrBgaODv-pDWUvc2m5xdTBfb78cbIf-gjbERNaKLHj3Fs1AFt4WDeSAvTtIaz3Zfu4hbZHK39sAiSq6nFvx5f5gsD1uL9Q',
+      song: songs[2] || null,
+      defaultSongTitle: 'Vapor Wave',
+      defaultSongArtist: 'Digital Muse',
+      active: true,
+      time: 'Đang nghe'
+    },
+    {
+      name: 'Quốc Trung',
+      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBeh23yPc_KerILMaLuwW2zn2IrBzs0zXdgRF_AFBQt6_Y9pR89qRuBVgy6q8zFeqmnXSeyd98B1zwpQA0WBOp6UIi2zyb0E8pWqak4y712DViK_5AtYvoFM02kg1MpvJkV6_k4C2o5OnwGJMSA5Mi5loWVRIjerwhbMFxGmbwH9CsIooLw1Z7m-VFXYfzB5R2ioqqGTFUkDCUjMKI1ESk6RszZtvfi0sbk0HyJjTu15_qkdV6qhfTlRKeaGc3Zb3KY-4spjLoLPo4',
+      song: songs[3] || null,
+      defaultSongTitle: 'Thanh Xuân',
+      defaultSongArtist: 'Da LAB',
+      active: false,
+      time: '1 giờ trước'
+    }
+  ];
+
+  const handlePlayFriendSong = (friend) => {
+    if (friend.song) {
+      play(friend.song, songs);
+    }
+  };
 
   return (
     <>
-      <header className="flex justify-between items-center w-full px-gutter-desktop h-16 sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/10"><div className="flex items-center gap-base"><span className="font-headline-md text-headline-md font-bold text-primary">Melodies</span></div><div className="flex items-center gap-gutter-desktop"><div className="flex gap-4 items-center"><button className="scale-95 active:scale-90 transition-transform text-on-surface-variant hover:text-primary"><span className="material-symbols-outlined" data-icon="notifications">notifications</span></button><button className="scale-95 active:scale-90 transition-transform text-on-surface-variant hover:text-primary"><span className="material-symbols-outlined" data-icon="settings">settings</span></button></div><div className="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden border border-white/10"><img alt="User profile" className="w-full h-full object-cover" data-alt="A professional close-up portrait of a young man with a friendly expression, set against a blurred, cinematic studio background. The lighting is sophisticated, with soft blue and purple neon rim lights that match a high-tech music streaming interface. The image has a polished, high-fidelity look consistent with a premium creative platform's user profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsyVbOD4kOVmNvfnAugWMeT9bAYzlCHmuyVk-8YGPfT2-22FZLEiRuNrrQr_xrWPFFynCp2feJcIPCL4gySsg5Gk6bGf3mrH1wHYqaGQ8FQz1L5QiuS2ADykfcWSWRC0JfB8TAfDhTDmRr7NQyvt-VvMguD4oDic_hqEBykHmRX3WO0BaoIkLSRryNy2xyrGsg4xdHe2vngg6QJu-W-dz_7hC0NfiNj7LJLMGC9MNK_TyMMTnU2B1dDPkDfnCbSJIJdflZ5SHruhI" /></div></div></header><div className="flex min-h-[calc(100vh-160px)]"><nav className="fixed left-0 top-0 h-full flex flex-col z-40 bg-surface-container-low/50 backdrop-blur-xl border-r border-white/5 docked w-sidebar-width hidden md:flex"><div className="p-gutter-desktop flex items-center gap-3"><div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center"><span className="material-symbols-outlined text-on-primary" data-icon="library_music" style={{fontVariationSettings: '\'FILL\' 1'}}>library_music</span></div><div><h1 className="font-headline-md text-headline-md text-primary leading-none">Melodies</h1><p className="text-[10px] text-on-surface-variant tracking-widest uppercase">Sonic Ethereal</p></div></div><div className="mt-8 flex flex-col gap-2 px-4"><Link className="flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-white/5 hover:text-white transition-all" to="#"><span className="material-symbols-outlined" data-icon="home">home</span><span className="font-label-md text-label-md">Home</span></Link><Link className="flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-white/5 hover:text-white transition-all" to="#"><span className="material-symbols-outlined" data-icon="search">search</span><span className="font-label-md text-label-md">Search</span></Link><Link className="flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-white/5 hover:text-white transition-all" to="/library-playlists"><span className="material-symbols-outlined" data-icon="library_music">library_music</span><span className="font-label-md text-label-md">Library</span></Link><Link className="flex items-center gap-4 px-4 py-3 rounded-xl text-white border-l-4 border-primary bg-primary/10" to="/artist-dashboard"><span className="material-symbols-outlined" data-icon="insights">insights</span><span className="font-label-md text-label-md">Analytics</span></Link></div><div className="mt-auto p-4 flex flex-col gap-2"><button className="w-full py-3 bg-primary text-on-primary font-bold rounded-xl mb-4 hover:brightness-110 transition-all">
-                    Upload Music
-                </button><Link className="flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-white/5 hover:text-white transition-all" to="#"><span className="material-symbols-outlined" data-icon="person">person</span><span className="font-label-md text-label-md">Profile</span></Link><Link className="flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-white/5 hover:text-white transition-all" to="#"><span className="material-symbols-outlined" data-icon="logout">logout</span><span className="font-label-md text-label-md">Logout</span></Link></div></nav><main className="flex-1 md:ml-sidebar-width px-gutter-mobile md:px-margin-page py-margin-page pb-[120px]"><div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8"><div className="lg:col-span-8 space-y-8"><div className="flex items-center justify-between"><h2 className="font-headline-lg text-headline-lg text-on-surface">Thông báo</h2><button className="text-primary hover:underline font-label-md transition-all">Đánh dấu tất cả là đã đọc</button></div><div className="space-y-4"><div className="glass-card p-6 rounded-2xl flex gap-4 hover:bg-white/5 transition-all group cursor-pointer relative overflow-hidden"><div className="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div><div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0"><img alt="Artist Profile" className="w-full h-full object-cover" data-alt="A portrait of a contemporary indie musician with stylized lighting, featuring deep magenta and electric cyan hues. The artist is posed naturally in a modern, minimalist studio space with a clean aesthetic. The visual tone is energetic and professional, designed for a high-end music streaming platform's notification system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXFOrc4aIB3gvW3IdNVs2WXRYyizyQN3x-IzthuBcSKgyDzPoS3Aps2XT1o32GADJX9v-Mnii8CtszQ78mW3Rp-OOsyUhPD6TngvxQIYtOiCGgIxKGsotv_g_Fsx59ryHU011G4KdbtcdPJPc3kDvK4JWMriu6k3LR29ci1cBMVd6fUzBTRPCVgUo_WcH4J4Poa_NZoqSqG8mtZAQ7ODBIv3Hq0HCWX7UqBM3dOCIiYpyLuqUfv1abMb86h1C1T_bZO0YMSf6oIcA" /></div><div className="flex-1"><div className="flex justify-between items-start"><h4 className="font-headline-md text-body-lg text-on-surface mb-1">Album mới: "Midnight Echoes"</h4><span className="text-label-sm text-on-surface-variant">2 giờ trước</span></div><p className="text-on-surface-variant text-body-md mb-3">Sơn Tùng M-TP vừa phát hành album phòng thu mới nhất. Hãy là người đầu tiên trải nghiệm những giai điệu này.</p><div className="flex gap-2"><button className="px-4 py-2 bg-primary/20 text-primary rounded-lg text-label-sm hover:bg-primary/30 transition-all font-bold">Nghe ngay</button><button className="px-4 py-2 bg-surface-container-highest text-on-surface-variant rounded-lg text-label-sm hover:bg-white/10 transition-all">Lưu vào thư viện</button></div></div></div><div className="glass-card p-6 rounded-2xl flex gap-4 hover:bg-white/5 transition-all group cursor-pointer"><div className="w-14 h-14 rounded-full bg-secondary-container/20 flex items-center justify-center flex-shrink-0 text-secondary"><span className="material-symbols-outlined text-3xl" data-icon="auto_awesome" style={{fontVariationSettings: '\'FILL\' 1'}}>auto_awesome</span></div><div className="flex-1"><div className="flex justify-between items-start"><h4 className="font-headline-md text-body-lg text-on-surface mb-1">Danh sách phát dành riêng cho bạn</h4><span className="text-label-sm text-on-surface-variant">Hôm nay</span></div><p className="text-on-surface-variant text-body-md">Dựa trên thói quen nghe nhạc của bạn, chúng tôi đã tạo một bản mix đặc biệt cho cuối tuần này.</p></div></div><div className="glass-card p-6 rounded-2xl flex gap-4 opacity-70 hover:bg-white/5 transition-all group cursor-pointer"><div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 grayscale"><img alt="Artist Profile" className="w-full h-full object-cover" data-alt="A cinematic, high-contrast photograph of a concert stage with silhouettes of musicians against a glowing orange and purple sunset backdrop. The atmosphere is professional and energetic, capturing the essence of live music performance. The colors are vibrant yet grounded in the platform's dark mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBptOAHyWv-tPdRyvbgqH-Sr79z5FrSzN_493gGC8ZMq_xyos8l_4eFsO-vzbAi3kZCylooS5NQd4fLqUgQ3Eth9-2XllYV7r5TN9ORMqTItrlW7Lhzm9PFj3pmxv8Dy-QLUsJThDbDcTosztjE4U_XvF8CyGl292pHmsMc059tcWetkLC5PzLxSxSr5MrcwVq73bA-8fnAcGGe956SeooM2AYMK2Pv5IwjLTFQI57u2PoISTOoFXt49SifH7scGVQhbubkOcruFAg" /></div><div className="flex-1"><div className="flex justify-between items-start"><h4 className="font-headline-md text-body-lg text-on-surface mb-1">Sự kiện sắp tới: Live in Hanoi</h4><span className="text-label-sm text-on-surface-variant">Hôm qua</span></div><p className="text-on-surface-variant text-body-md">Đen Vâu sẽ tổ chức buổi biểu diễn trực tiếp vào tối thứ Bảy này. Đặt vé ngay hôm nay!</p></div></div><div className="glass-card p-6 rounded-2xl flex gap-4 opacity-70 hover:bg-white/5 transition-all group cursor-pointer"><div className="w-14 h-14 rounded-full bg-error-container/20 flex items-center justify-center flex-shrink-0 text-error"><span className="material-symbols-outlined text-3xl" data-icon="update" style={{fontVariationSettings: '\'FILL\' 1'}}>update</span></div><div className="flex-1"><div className="flex justify-between items-start"><h4 className="font-headline-md text-body-lg text-on-surface mb-1">Cập nhật ứng dụng</h4><span className="text-label-sm text-on-surface-variant">2 ngày trước</span></div><p className="text-on-surface-variant text-body-md">Phiên bản 2.4 đã sẵn sàng với tính năng chia sẻ lời bài hát mới và cải thiện hiệu suất âm thanh.</p></div></div></div></div><div className="lg:col-span-4 space-y-8"><div className="flex items-center justify-between"><h3 className="font-headline-md text-headline-md text-on-surface">Hoạt động bạn bè</h3><span className="material-symbols-outlined text-on-surface-variant" data-icon="group">group</span></div><div className="glass-card rounded-3xl overflow-hidden"><div className="p-6 space-y-6"><div className="flex items-center gap-4"><div className="relative"><div className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary active-glow"><img alt="Friend" className="w-full h-full object-cover" data-alt="A detailed portrait of a stylish woman with a creative professional look, illuminated by soft purple ambient light. She has a genuine, warm expression. The photograph has a shallow depth of field, putting the focus entirely on her face while the background remains a blur of modern urban lights, fitting the energetic and energetic brand personality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSH9ZDASmNtIPxIjYPnt2cuXAlZnMRMerUErny28-nq0cLq4NK1EdY3UJkaMNi3bKqIITzONuQJ-sbodfHejL_6DsWRovSc35TDCm9XUJb4qkx35KLtPHogiC-EjUqi_7HbHCYHiektOTLECfgTIoFj1r3gmIsp0kQXKg-0c82bOZ-PT4NtnoOVy5iQPx3fSYASeDnQ2O89PjpyRV5pDv1B0Cy7sDQwTcR76c6TJSQEOancGErFASjrmTsGNvnsRWK3S4vcrzt2uA" /></div><div className="absolute -bottom-1 -right-1 w-4 h-4 bg-secondary rounded-full border-2 border-background"></div></div><div className="flex-1 min-w-0"><p className="font-label-md text-white truncate">Linh Chi</p><p className="text-label-sm text-on-surface-variant truncate">Đang nghe: <span className="text-secondary italic">"Đừng Làm Trái Tim Anh Đau"</span></p></div><span className="material-symbols-outlined text-primary text-xl" data-icon="equalizer" style={{fontVariationSettings: '\'FILL\' 1'}}>equalizer</span></div><div className="flex items-center gap-4 opacity-80"><div className="relative"><div className="w-12 h-12 rounded-full overflow-hidden border border-white/10"><img alt="Friend" className="w-full h-full object-cover" data-alt="A portrait of a young man with a creative, modern hairstyle, captured in a moody recording studio environment. Soft cyan and violet key lighting highlights his features. The image conveys a professional yet energetic atmosphere, perfectly aligned with a high-fidelity music streaming service's aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC737jAD5SvmDRkNwgrQhtuu0Cm1gEDlfSsOpJ5BtETXUuA7HnI9jVhEVUsGnM8RdIJCo3PEj842STf1yWRRWIfF9S2Dvn3vTHfAcEat7EjuZZUJBtsBsOb4GCR4FcBX1NR6vtVBq7PFFS7uGkXOlz_p7kunbCXxTKkcGQjhnW1mGFB964ORfSdv7xCA1u3Xcl8Nn6SCoQZxpPMCYmP32I5Ftmp6_HBBIHnpQetAH8g8QSSFVCbgJC-eKFiZgUR2gZY7YcbwGLSeqo" /></div></div><div className="flex-1 min-w-0"><p className="font-label-md text-white truncate">Hoàng Nam</p><p className="text-label-sm text-on-surface-variant truncate">Đã nghe 5 phút trước</p></div></div><div className="flex items-center gap-4"><div className="relative"><div className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary active-glow"><img alt="Friend" className="w-full h-full object-cover" data-alt="A professional and vibrant portrait of a woman with a confident expression, set against a dark background with artistic, blurred light leaks in primary purple. The lighting is crisp and modern, emphasizing the high-fidelity and creative brand personality of the streaming platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQzLxZ-ZZ55ym3kTm4b2liWbVIM1e2sjMUtr5aeCOHQ1brzZG5MvGMzE_I9C7vW725Eg8yhZYByWC4G_b8L4pVMHeOo2Sf-ay67-bu60DIhhR-ifvEdd_za5BBPkCeq8kOEDPT4Dz2-K28HPuWYhomrA1Blw6EbF6Eq19ImMrTX2nTujrBgaODv-pDWUvc2m5xdTBfb78cbIf-gjbERNaKLHj3Fs1AFt4WDeSAvTtIaz3Zfu4hbZHK39sAiSq6nFvx5f5gsD1uL9Q" /></div><div className="absolute -bottom-1 -right-1 w-4 h-4 bg-secondary rounded-full border-2 border-background"></div></div><div className="flex-1 min-w-0"><p className="font-label-md text-white truncate">Minh Anh</p><p className="text-label-sm text-on-surface-variant truncate">Đang nghe: <span className="text-secondary italic">"Lối Nhỏ"</span></p></div><span className="material-symbols-outlined text-primary text-xl" data-icon="equalizer" style={{fontVariationSettings: '\'FILL\' 1'}}>equalizer</span></div><div className="flex items-center gap-4 opacity-80"><div className="relative"><div className="w-12 h-12 rounded-full overflow-hidden border border-white/10"><img alt="Friend" className="w-full h-full object-cover" data-alt="A stylish portrait of a young man with glasses, looking thoughtfully to the side. The lighting is subtle and atmospheric, using cool blue tones and a soft glow to create a premium, creative feel. The composition is clean and minimalist, following the glassmorphic design rules." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeh23yPc_KerILMaLuwW2zn2IrBzs0zXdgRF_AFBQt6_Y9pR89qRuBVgy6q8zFeqmnXSeyd98B1zwpQA0WBOp6UIi2zyb0E8pWqak4y712DViK_5AtYvoFM02kg1MpvJkV6_k4C2o5OnwGJMSA5Mi5loWVRIjerwhbMFxGmbwH9CsIooLw1Z7m-VFXYfzB5R2ioqqGTFUkDCUjMKI1ESk6RszZtvfi0sbk0HyJjTu15_qkdV6qhfTlRKeaGc3Zb3KY-4spjLoLPo4" /></div></div><div className="flex-1 min-w-0"><p className="font-label-md text-white truncate">Quốc Trung</p><p className="text-label-sm text-on-surface-variant truncate">Đã nghe 1 giờ trước</p></div></div></div><div className="p-6 bg-white/5 border-t border-white/5 text-center"><button className="text-on-surface-variant hover:text-white font-label-md transition-colors flex items-center justify-center gap-2 w-full"><span>Xem thêm bạn bè</span><span className="material-symbols-outlined text-sm" data-icon="expand_more">expand_more</span></button></div></div><div className="relative rounded-3xl overflow-hidden aspect-video group cursor-pointer"><img alt="Promo" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A wide-angle shot of a vibrant dance floor with glowing neon lines and a crowd of people in silhouette. The lighting is an intense mix of electric purple and neon cyan, creating a high-energy, energetic mood. The image has a cinematic quality with a slight motion blur to suggest movement and excitement." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5L3mNp6pEwZRCYn5pIeE5xzPy45dg52ax2oyG5jdZcaOA_zOp64h9LUpGHqpLrhz11xMcx3stNUw_sEKWw4q20Lfy5avevCFYOKWII_mKmoLz9eaD5wd5EiKY2u5s_KdXKbxodnODjzrKfKYXgNqoZVucCyKJf-mk_qgorJJVVGG7NSIJe87dYcMs1kZ4MP0X0rXGeuqXx8wj8t4Ytrk3VZS89Z9WeistiH-R1spB0JS6vUtiiO0GW0mg33WKr0fi4pdhX9KlsEQ" /><div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent"></div><div className="absolute bottom-6 left-6 right-6"><span className="inline-block px-2 py-1 bg-primary text-on-primary text-[10px] font-bold rounded uppercase mb-2">Đề xuất</span><h5 className="font-headline-md text-white leading-tight">Khám phá cộng đồng Melodies</h5><p className="text-label-sm text-on-surface-variant">Kết nối với những người cùng sở thích âm nhạc.</p></div></div></div></div></main><footer className="fixed bottom-0 left-0 w-full z-50 flex items-center px-gutter-desktop justify-between bg-surface-container-lowest/90 backdrop-blur-lg border-t border-white/10 h-player-height"><div className="flex items-center gap-4 w-1/3"><div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0"><img alt="Current playing" className="w-full h-full object-cover" data-alt="A close-up shot of an artistic album cover featuring abstract flowing shapes in electric purple and deep black. The design is sleek and minimalist, with a high-gloss finish that reflects modern studio lighting. The mood is creative and professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDA-ey6QnbIU7chfHklhO4JW6iQWOD3Y6gmrTQnXuknybtiOt9_sCfvhRMn1uJQQbM_LKBXGJBkdTvh0kFk4bZA4Pe_O7HNG9veacRSsyrKmhXW5UJ89--k80a-_VyBuX7bOAMglbOs0ij7vPa_OL3bObPBr4Ogum2_MtnlF5j_qE5HQUkwg2M9bdF_Jb4zF3-j4MZcC2ZvHAd9CnTDAtMucNuVEH-DRX3p4EsNAa_bqi-QYmjF_Ld9neuGZyX1YLiFdhYJJlW568Y" /></div><div className="hidden sm:block"><h6 className="font-label-md text-white">Midnight Echoes</h6><p className="text-label-sm text-on-surface-variant">Sơn Tùng M-TP</p></div><button className="text-on-surface-variant hover:text-primary transition-all"><span className="material-symbols-outlined" data-icon="favorite">favorite</span></button></div><div className="flex flex-col items-center gap-2 flex-1"><div className="flex items-center gap-6"><button className="text-on-surface-variant hover:text-white transition-all"><span className="material-symbols-outlined" data-icon="shuffle">shuffle</span></button><button className="text-on-surface-variant hover:text-white transition-all"><span className="material-symbols-outlined" data-icon="skip_previous" style={{fontVariationSettings: '\'FILL\' 1'}}>skip_previous</span></button><button className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-transform active:scale-95"><span className="material-symbols-outlined text-3xl" data-icon="play_arrow" style={{fontVariationSettings: '\'FILL\' 1'}}>play_arrow</span></button><button className="text-on-surface-variant hover:text-white transition-all"><span className="material-symbols-outlined" data-icon="skip_next" style={{fontVariationSettings: '\'FILL\' 1'}}>skip_next</span></button><button className="text-on-surface-variant hover:text-white transition-all"><span className="material-symbols-outlined" data-icon="repeat">repeat</span></button></div><div className="w-full max-w-md flex items-center gap-3"><span className="text-[10px] text-on-surface-variant font-mono">1:24</span><div className="flex-1 h-1 bg-white/10 rounded-full relative overflow-hidden group cursor-pointer"><div className="absolute left-0 top-0 bottom-0 bg-secondary w-1/3 group-hover:bg-primary transition-colors"></div></div><span className="text-[10px] text-on-surface-variant font-mono">3:45</span></div></div><div className="w-1/3 flex justify-end items-center gap-4"><button className="text-on-surface-variant hover:text-white transition-all hidden md:block"><span className="material-symbols-outlined" data-icon="lyrics">lyrics</span></button><button className="text-on-surface-variant hover:text-white transition-all hidden md:block"><span className="material-symbols-outlined" data-icon="queue_music">queue_music</span></button><div className="flex items-center gap-2 w-32"><span className="material-symbols-outlined text-on-surface-variant text-xl" data-icon="volume_up">volume_up</span><div className="flex-1 h-1 bg-white/10 rounded-full relative overflow-hidden"><div className="absolute left-0 top-0 bottom-0 bg-white w-2/3"></div></div></div></div></footer></div><nav className="md:hidden fixed bottom-0 left-0 w-full bg-surface-container-low/95 backdrop-blur-xl border-t border-white/5 px-4 h-16 flex items-center justify-around z-50"><Link className="flex flex-col items-center gap-1 text-on-surface-variant" to="#"><span className="material-symbols-outlined" data-icon="home">home</span><span className="text-[10px]">Trang chủ</span></Link><Link className="flex flex-col items-center gap-1 text-on-surface-variant" to="#"><span className="material-symbols-outlined" data-icon="search">search</span><span className="text-[10px]">Tìm kiếm</span></Link><Link className="flex flex-col items-center gap-1 text-primary" to="/notifications-social"><span className="material-symbols-outlined" data-icon="notifications" style={{fontVariationSettings: '\'FILL\' 1'}}>notifications</span><span className="text-[10px]">Thông báo</span></Link><Link className="flex flex-col items-center gap-1 text-on-surface-variant" to="/library-playlists"><span className="material-symbols-outlined" data-icon="library_music">library_music</span><span className="text-[10px]">Thư viện</span></Link></nav>
+      <Sidebar />
+      
+      <main className="md:ml-sidebar-width pb-[120px] min-h-screen bg-background text-on-background">
+        <Header placeholder="Tìm kiếm bài hát, thông báo..." />
+
+        <div className="max-w-7xl mx-auto px-gutter-desktop py-margin-page grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Notifications Column */}
+          <div className="lg:col-span-8 space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-headline-lg text-headline-lg text-white font-bold">Thông báo</h2>
+              {notifications.some(n => !n.read) && (
+                <button 
+                  onClick={handleMarkAllRead}
+                  className="text-primary hover:text-secondary font-label-md text-label-md transition-all cursor-pointer font-bold"
+                >
+                  Đánh dấu tất cả là đã đọc
+                </button>
+              )}
+            </div>
+
+            {loading ? (
+              <div className="flex items-center justify-center py-20 text-primary">
+                <span className="material-symbols-outlined text-3xl animate-spin mr-2">sync</span>
+                <span>Đang tải thông báo...</span>
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="glass-panel p-12 rounded-3xl text-center text-on-surface-variant">
+                <span className="material-symbols-outlined text-5xl mb-4 opacity-50">notifications_off</span>
+                <p className="font-body-lg text-body-lg">Bạn không có thông báo nào mới.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {notifications.map(notif => (
+                  <div 
+                    key={notif._id}
+                    onClick={() => handleMarkRead(notif._id, notif.link)}
+                    className={`glass-panel p-6 rounded-2xl flex gap-4 hover:bg-white/5 transition-all group cursor-pointer relative overflow-hidden ${
+                      !notif.read ? 'border-l-4 border-primary' : 'opacity-70'
+                    }`}
+                  >
+                    {/* Icon depending on type */}
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-primary/10 text-primary">
+                      <span className="material-symbols-outlined text-2xl">
+                        {notif.type === 'new_track' ? 'library_music' : notif.type === 'follow' ? 'person_add' : 'notifications'}
+                      </span>
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start gap-4">
+                        <h4 className="font-label-md text-label-md text-white font-bold truncate">
+                          {notif.title}
+                        </h4>
+                        <span className="text-[11px] text-on-surface-variant shrink-0 font-mono">
+                          {formatTimeAgo(notif.createdAt)}
+                        </span>
+                      </div>
+                      <p className="text-on-surface-variant text-body-md mt-1 leading-relaxed">
+                        {notif.message}
+                      </p>
+                      {!notif.read && (
+                        <span className="inline-block mt-3 text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded font-bold">
+                          Mới
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Social / Friends Column */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-headline-md text-headline-md text-white font-bold">Hoạt động bạn bè</h3>
+              <span className="material-symbols-outlined text-on-surface-variant">group</span>
+            </div>
+
+            <div className="glass-panel rounded-3xl overflow-hidden">
+              <div className="p-6 space-y-6">
+                {friends.map((friend, idx) => (
+                  <div 
+                    key={idx}
+                    onClick={() => friend.song && handlePlayFriendSong(friend)}
+                    className={`flex items-center gap-4 ${
+                      friend.song ? 'cursor-pointer hover:bg-white/5 p-2 -m-2 rounded-xl transition-all' : ''
+                    }`}
+                  >
+                    <div className="relative">
+                      <div className={`w-12 h-12 rounded-full overflow-hidden border-2 ${
+                        friend.active ? 'border-secondary active-glow' : 'border-white/10'
+                      }`}>
+                        <img alt={friend.name} className="w-full h-full object-cover" src={friend.avatar} />
+                      </div>
+                      {friend.active && (
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-secondary rounded-full border-2 border-background"></div>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <p className="font-label-md text-white truncate font-bold">{friend.name}</p>
+                      {friend.active ? (
+                        <p className="text-label-sm text-on-surface-variant truncate">
+                          Đang nghe: <span className="text-secondary italic">"{friend.song ? friend.song.title : friend.defaultSongTitle}"</span>
+                        </p>
+                      ) : (
+                        <p className="text-label-sm text-on-surface-variant truncate">
+                          Đã nghe: <span className="text-on-surface-variant/70 italic">"{friend.song ? friend.song.title : friend.defaultSongTitle}"</span> ({friend.time})
+                        </p>
+                      )}
+                    </div>
+
+                    {friend.active && (
+                      <span className="material-symbols-outlined text-primary text-xl animate-pulse">equalizer</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <MusicPlayer />
     </>
   );
 };

@@ -11,7 +11,8 @@ const songSchema = new mongoose.Schema({
   views: { type: Number, default: 0 },
   likes: { type: Number, default: 0 },
   lyrics: { type: String, default: '' },
-  visibility: { type: String, enum: ['public', 'private'], default: 'public' }
+  visibility: { type: String, enum: ['public', 'private'], default: 'public' },
+  moderationState: { type: String, enum: ['pending', 'approved', 'blocked'], default: 'approved' }
 }, { timestamps: true });
 
 const Song = mongoose.model('Song', songSchema);

@@ -1,16 +1,350 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import React, { useRef } from 'react';
+import { useNavigate } from 'react-router';
+import { usePlayer } from '../context/PlayerContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const FullscreenPlayer = () => {
   const navigate = useNavigate();
-  const [isPlaying, setIsPlaying] = useState(false);
+  const { 
+    currentSong, 
+    isPlaying, 
+    currentTime, 
+    duration, 
+    volume, 
+    shuffle, 
+    repeat, 
+    queue,
+    queueIndex,
+    togglePlay, 
+    next, 
+    prev, 
+    seek, 
+    changeVolume, 
+    toggleShuffle, 
+    toggleRepeat,
+    play
+  } = usePlayer();
+
+  const { user, toggleLikeSong } = useAuth();
+  const progressBarRef = useRef(null);
+
+  const formatTime = (secs) => {
+    if (isNaN(secs)) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  const handleProgressBarClick = (e) => {
+    if (!duration || !progressBarRef.current) return;
+    const rect = progressBarRef.current.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+    seek(percentage * duration);
+  };
+
+  const handleVolumeBarClick = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+    changeVolume(percentage);
+  };
+
+  const isLiked = user?.likedSongs && currentSong ? user.likedSongs.includes(currentSong._id) : false;
+
+  const handleLikeToggle = async (e) => {
+    e.stopPropagation();
+    if (!currentSong) return;
+    try {
+      await toggleLikeSong(currentSong._id);
+    } catch (err) {
+      console.error('Failed to toggle like:', err);
+    }
+  };
+
+  const getFullUrl = (url) => {
+    if (!url) return '';
+    return url.startsWith('http') ? url : `http://localhost:8080${url}`;
+  };
+
+  if (!currentSong) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-on-surface-variant gap-4 relative overflow-hidden">
+        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 blur-[150px] rounded-full"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-secondary/10 blur-[150px] rounded-full"></div>
+        </div>
+        <div className="relative z-10 flex flex-col items-center gap-4">
+          <span className="material-symbols-outlined text-6xl text-primary animate-bounce">music_note</span>
+          <h2 className="font-headline-lg text-headline-lg text-white font-bold">Chưa chọn bài hát nào</h2>
+          <p className="text-body-md text-on-surface-variant max-w-sm text-center">
+            Quay lại trang chủ và nhấp vào một bài hát bất kỳ để bắt đầu thưởng thức âm nhạc.
+          </p>
+          <button 
+            onClick={() => navigate('/home')}
+            className="mt-4 px-6 py-3 rounded-full bg-primary text-on-primary font-bold hover:scale-105 transition-transform cursor-pointer"
+          >
+            Quay về trang chủ
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const progressPercent = duration ? (currentTime / duration) * 100 : 0;
+  const thumbnailSrc = getFullUrl(currentSong.thumbnailUrl);
+
+  // Parse lyrics
+  const lyricsLines = currentSong.lyrics 
+    ? currentSong.lyrics.split('\n').filter(line => line.trim()) 
+    : [];
 
   return (
-    <>
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0"><div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 blur-[150px] rounded-full"></div><div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-secondary/10 blur-[150px] rounded-full"></div></div><header className="flex justify-between items-center w-full px-gutter-desktop h-16 sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/10"><div className="flex items-center gap-4"><button className="hover:bg-white/10 p-2 rounded-full transition-colors"><span className="material-symbols-outlined text-on-surface">arrow_back_ios_new</span></button><h1 className="font-headline-md text-headline-md font-bold text-primary">Melodies</h1></div><div className="flex items-center gap-6"><span className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer">notifications</span><span className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer">settings</span><img alt="Profile" className="w-8 h-8 rounded-full border border-primary/20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzaqORknwTnTO7Nx-kiWvGB5eM1xrBcHhZJoxNjv4oBcvD34BrDRFZlAXAeXLkfwbd4ICa4-0ikRgOZsparv9Z7LguTWHO-oYKZn_vtJ6SV9aK_P-uyE0mZ6oSNNOa9D8pWsK7klvdE8WGRYoR8QnqIh-4TKk2-t__AlztpUInef1taFIB3x6AkUVI1liuKBBF-uduSFJ5n8sLoTueqDhHarBwF40WOGLoxyma41DBXRJUFL9621_-kJXJKWTpB8XkhSNajYKSEbc" /></div></header><main className="relative z-10 grid grid-cols-12 h-[calc(100vh-160px)] overflow-hidden"><aside className="col-span-3 h-full border-r border-white/5 bg-surface-container-low/50 backdrop-blur-xl p-8 hidden md:flex flex-col gap-6"><div className="flex justify-between items-center"><h3 className="font-headline-md text-headline-md text-on-surface">Tiếp theo</h3><button className="text-primary font-label-md text-label-md hover:underline transition-all">Xóa tất cả</button></div><div className="flex flex-col gap-4 overflow-y-auto pr-2 lyrics-scroll"><div className="flex items-center gap-4 group cursor-pointer p-2 rounded-xl hover:bg-white/5 transition-all"><div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0"><img className="w-full h-full object-cover" data-alt="Modern abstract album cover with vibrant neon streaks and futuristic patterns, deep purple and cyan color palette, cinematic lighting, minimalist professional design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3IbPePH6sY9PuMnx2jhSfT-dbC8T7vHIxYM-U3gRBjKpDqHfpgHQF0Yb3I9SE3fqSpLIwO7JNqv1_icF4OcmQHyzNRk0Xwis_lC6iJ_SwzoR78k24s2tmJPK2gplIuIQ2PzJwgVm0wB-i-2uEVjpsKG7yAcFAp0XdSVzRn3Dpa7dGDMXxXOToH9OSFWoMwqZ26hcC0t4GYkRf6nHNciGlsgxDZNi-JMJ6VAUnXt8iX0Of0HD8-jzaJwSIDlTIg5V5qnor3wMOQ84" /><div className="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center"><span className="material-symbols-outlined text-white text-[20px]">play_arrow</span></div></div><div className="flex flex-col min-w-0"><span className="font-label-md text-label-md text-white truncate">Đêm Trăng Tròn</span><span className="font-label-sm text-label-sm text-on-surface-variant truncate">Sơn Tùng M-TP</span></div><span className="ml-auto font-label-sm text-label-sm text-on-surface-variant">3:45</span></div><div className="flex items-center gap-4 group cursor-pointer p-2 rounded-xl hover:bg-white/5 transition-all"><div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0"><img className="w-full h-full object-cover" data-alt="Atmospheric music album art featuring a lone figure under a street lamp in the rain, moody blue and orange lighting, high fidelity photographic style, urban aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWMW8HT1bQxEuF4b5cD0UKuTrnUqaooGoBC6CHOn4baCiaAy0GMCxAqMu6AkzMf0E2caqLE0stEWUyw3rEztoDuGazn1_tvz_c2iW6ETlZbOWGMwIkgsGpaGrhKLzJIRwv102wYAen0QkgT0tDqP9iu5I1CNgX9f6pMcxQ2J7M9ZlGs749yfdkX2xzE53n-IpyzcdenwCnbPz0W6Jyt0jgsm3XlpsypRM9zC23w67vKgQH3gG4Dcg1zJ3cxdswGOsG2zsn0W9pQGA" /></div><div className="flex flex-col min-w-0"><span className="font-label-md text-label-md text-white truncate">Gió Cuốn Đi</span><span className="font-label-sm text-label-sm text-on-surface-variant truncate">Hoàng Thùy Linh</span></div><span className="ml-auto font-label-sm text-label-sm text-on-surface-variant">4:12</span></div><div className="flex items-center gap-4 group cursor-pointer p-2 rounded-xl hover:bg-white/5 transition-all"><div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0"><img className="w-full h-full object-cover" data-alt="Creative vinyl record cover design with geometric golden shapes on a dark textured background, professional studio lighting, luxury aesthetic, energetic but clean." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2PvwyMI6qtCSXkM7EG35Y3K_PhMUzYNwkXTe8bAt251PgGumpw5IidAfyFbom38Se0p1q10-HHyv8pWMegPi4wBvdTXm5amujRw_HPSBONlHKE_Jxn2fW_WIHFCXm3So7GozHFZryOyHiCTJeP7Ys2PYa1DVAlijvlGBqjrJAZX4r4AHghBfYgtv74UP67hO7cvzEKHU-r2UVbDhfO0PYVhDZXbQddkdIXyUweUt8qEi-6LRNR_2dunoTsNkajcyHTOb3knph95s" /></div><div className="flex flex-col min-w-0"><span className="font-label-md text-label-md text-white truncate">Lạc Vào Hư Vô</span><span className="font-label-sm text-label-sm text-on-surface-variant truncate">Binz</span></div><span className="ml-auto font-label-sm text-label-sm text-on-surface-variant">2:58</span></div></div><div className="mt-auto pt-6 border-t border-white/5"><button className="w-full py-3 px-6 bg-primary text-on-primary font-label-md text-label-md rounded-full flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95"><span className="material-symbols-outlined">upload_file</span>
-                    Tải nhạc lên
-                </button></div></aside><section className="col-span-12 md:col-span-6 flex flex-col items-center justify-center p- gutter-desktop relative"><div className="w-full max-w-[480px] flex flex-col gap-12 items-center"><div className="relative w-full aspect-square group"><div className="absolute inset-0 bg-primary/20 blur-3xl opacity-50 group-hover:opacity-80 transition-opacity duration-700"></div><div className="relative z-10 w-full h-full rounded-2xl overflow-hidden shadow-2xl transition-transform duration-500 group-hover:scale-[1.02]"><img className="w-full h-full object-cover" data-alt="Premium high-fidelity album art featuring a central artistic portrait with ethereal lighting effects, vibrant gradients of electric purple and magenta, futuristic glassmorphic textures, cinematic and emotional mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCj1wRqcxoWgGABM80uRstMtKhhCBddaUE_RbkO_DBjR9pTV8XdTR0feMbU9O_jEQ6PVfPeSUmjgHGp3qaeT5FTawrdDe8eBGfEWCJEVba36NDwFaOkXOJ6PRd1fHBXkwaFx_waDjR6n1HYx5_w9oNWkInyNLXXyiweN4tW33NfwetA6cPg_cAdUrsrfT7UH1jfw7ouEok1brTP8aqfB7Kvk74lCClAuNteUKwGjMGI8wrPj0fn9C1kt5A6WSA1arvWnZOxrE_hmLQ" /></div></div><div className="w-full flex flex-col gap-8"><div className="text-center"><h2 className="font-headline-xl text-headline-xl text-white mb-2">Thanh Xuân</h2><p className="font-body-lg text-body-lg text-secondary">Da LAB</p></div><div className="flex flex-col gap-2"><div className="h-1.5 w-full bg-white/10 rounded-full cursor-pointer relative group overflow-hidden"><div className="absolute top-0 left-0 h-full w-[45%] bg-gradient-to-r from-primary to-secondary rounded-full shadow-[0_0_10px_rgba(221,183,255,0.8)]"></div><div className="absolute top-1/2 left-[45%] -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity border-4 border-primary"></div></div><div className="flex justify-between font-label-sm text-label-sm text-on-surface-variant"><span>1:42</span><span>3:50</span></div></div><div className="flex items-center justify-center gap-10"><button className="material-symbols-outlined text-on-surface-variant hover:text-white transition-all text-[28px]">shuffle</button><button className="material-symbols-outlined text-white hover:text-primary transition-all text-[40px] active:scale-90">skip_previous</button><button className="w-20 h-20 bg-white text-background rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all"><span className="material-symbols-outlined text-[48px]" style={{fontVariationSettings: '\'FILL\' 1'}}>play_arrow</span></button><button className="material-symbols-outlined text-white hover:text-primary transition-all text-[40px] active:scale-90">skip_next</button><button className="material-symbols-outlined text-on-surface-variant hover:text-white transition-all text-[28px]">repeat</button></div><div className="flex justify-center gap-8 items-center text-on-surface-variant"><span className="material-symbols-outlined hover:text-primary cursor-pointer transition-colors">favorite</span><span className="material-symbols-outlined hover:text-primary cursor-pointer transition-colors">share</span><span className="material-symbols-outlined hover:text-primary cursor-pointer transition-colors">playlist_add</span></div></div></div></section><aside className="col-span-3 h-full border-l border-white/5 bg-surface-container-low/30 backdrop-blur-xl p-8 hidden lg:flex flex-col gap-8"><h3 className="font-headline-md text-headline-md text-on-surface">Lời bài hát</h3><div className="flex flex-col gap-8 overflow-y-auto lyrics-scroll pr-4 pb-20 mask-fade"><p className="font-headline-md text-headline-md text-on-surface-variant opacity-40">Đưa tay đây nào</p><p className="font-headline-md text-headline-md text-on-surface-variant opacity-40">Mãi bên nhau bạn nhé</p><p className="font-headline-md text-headline-md active-lyric">Hôm nay trời đẹp, mình cùng đi chơi</p><p className="font-headline-md text-headline-md text-on-surface-variant">Quên hết muộn phiền, cuộc đời thảnh thơi</p><p className="font-headline-md text-headline-md text-on-surface-variant">Thanh xuân như một tách trà</p><p className="font-headline-md text-headline-md text-on-surface-variant">Nhâm nhi chút thôi, đã hết vèo thanh xuân</p><p className="font-headline-md text-headline-md text-on-surface-variant">Dòng đời trôi nhanh quá</p><p className="font-headline-md text-headline-md text-on-surface-variant">Chẳng ai đợi ai bao giờ</p><p className="font-headline-md text-headline-md text-on-surface-variant">Hãy cứ vui đi, khi ta còn có nhau</p><p className="font-headline-md text-headline-md text-on-surface-variant">Bao nhiêu năm tháng qua</p><p className="font-headline-md text-headline-md text-on-surface-variant">Ta đã cùng nhau già đi</p></div></aside></main><footer className="fixed bottom-0 left-0 w-full z-50 flex items-center px-gutter-desktop h-player-height bg-surface-container-lowest/90 backdrop-blur-lg border-t border-white/10 justify-between"><div className="flex items-center gap-4 w-1/4"><img alt="Now Playing" className="w-14 h-14 rounded-lg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCR_QxscB5i8SoYdY4fbkfvwPhxvwWPv1WzSCN_riw5If4iN2SO4GRcRRTOuFmTl9a-NdfGg78BWRDAi7BGNgrW8zLJIKKWqT_lY_g44clO7gQFHk8-DY6LZQUsFOeBZnH2ZNyBao1OW-q8l84YT7lFQunwpax3kgIgYaNnPfO8-G0XPUXNy6C7yNB2v00mM8VhfUBe4qb7E10HHR-G8FXBBTDZewPT2AxEto59CWMSB8oO88GFcVRwMRrmTLDff7fwy_93HMs7QiY" /><div className="flex flex-col"><span className="font-label-md text-label-md text-white">Thanh Xuân</span><span className="font-label-sm text-label-sm text-on-surface-variant">Da LAB</span></div></div><div className="hidden md:flex flex-col items-center gap-2 w-1/2"></div><div className="flex items-center gap-6 w-1/4 justify-end"><div className="flex items-center gap-3"><span className="material-symbols-outlined text-on-surface-variant">volume_up</span><div className="w-24 h-1 bg-white/10 rounded-full overflow-hidden"><div className="bg-secondary h-full w-2/3"></div></div></div><span className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer">lyrics</span><span className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer">queue_music</span></div></footer>
-    </>
+    <div className="min-h-screen bg-background text-on-background relative overflow-hidden flex flex-col">
+      {/* Glow background effects */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 blur-[150px] rounded-full"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-secondary/10 blur-[150px] rounded-full"></div>
+      </div>
+
+      {/* Header */}
+      <header className="relative z-10 flex justify-between items-center w-full px-gutter-desktop h-16 bg-background/40 backdrop-blur-md border-b border-white/5">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="hover:bg-white/10 p-2 rounded-full transition-colors flex items-center justify-center cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-white text-xl">arrow_back_ios_new</span>
+          </button>
+          <h1 className="font-headline-md text-headline-md font-bold text-primary">Melodies Player</h1>
+        </div>
+        
+        <div className="flex items-center gap-6">
+          <span 
+            onClick={() => navigate('/notifications-social')} 
+            className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+          >
+            notifications
+          </span>
+          <span 
+            onClick={() => navigate('/home')} 
+            className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+          >
+            home
+          </span>
+          {user && (
+            <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-sm border border-white/10">
+              {user.name[0].toUpperCase()}
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* Main player layout */}
+      <main className="relative z-10 flex-1 grid grid-cols-12 overflow-hidden h-[calc(100vh-64px)] bg-background/20">
+        
+        {/* Left column: Play Queue */}
+        <aside className="col-span-3 h-full border-r border-white/5 bg-surface-container-low/30 backdrop-blur-xl p-6 hidden md:flex flex-col gap-6">
+          <div className="flex justify-between items-center">
+            <h3 className="font-headline-md text-headline-md text-on-surface font-bold">Danh sách phát</h3>
+            <span className="text-[11px] bg-white/10 text-on-surface-variant px-2 py-0.5 rounded font-mono">
+              {queueIndex + 1}/{queue.length}
+            </span>
+          </div>
+
+          <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+            {queue.map((song, idx) => {
+              const isCurrent = idx === queueIndex;
+              return (
+                <div 
+                  key={song._id}
+                  onClick={() => play(song, queue)}
+                  className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer group ${
+                    isCurrent ? 'bg-primary/15 border border-primary/20' : 'hover:bg-white/5 border border-transparent'
+                  }`}
+                >
+                  <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 shadow-md">
+                    <img className="w-full h-full object-cover" src={getFullUrl(song.thumbnailUrl)} alt={song.title} />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="material-symbols-outlined text-white text-lg">play_arrow</span>
+                    </div>
+                  </div>
+
+                  <div className="flex-grow min-w-0">
+                    <span className={`block font-label-md text-label-md truncate font-bold ${isCurrent ? 'text-primary' : 'text-white'}`}>
+                      {song.title}
+                    </span>
+                    <span 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (song.artistId) navigate(`/artist-detail?id=${song.artistId}`);
+                      }}
+                      className="block font-label-sm text-label-sm text-on-surface-variant truncate hover:text-primary transition-colors cursor-pointer"
+                    >
+                      {song.artist}
+                    </span>
+                  </div>
+
+                  {isCurrent && isPlaying && (
+                    <span className="material-symbols-outlined text-primary text-lg animate-pulse">equalizer</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </aside>
+
+        {/* Center column: Album Cover and Primary Controls */}
+        <section className="col-span-12 md:col-span-6 flex flex-col items-center justify-center p-8 relative">
+          <div className="w-full max-w-[420px] flex flex-col gap-8 items-center">
+            
+            {/* Visual Cover */}
+            <div className="relative w-full aspect-square group">
+              <div className="absolute inset-0 bg-primary/30 blur-3xl opacity-40 group-hover:opacity-60 transition-opacity duration-700 rounded-full"></div>
+              <div className="relative z-10 w-full h-full rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/5 transition-transform duration-500 group-hover:scale-[1.02]">
+                <img className="w-full h-full object-cover" src={thumbnailSrc} alt={currentSong.title} />
+              </div>
+            </div>
+
+            {/* Song Metadata */}
+            <div className="w-full flex flex-col gap-6">
+              <div className="text-center">
+                <h2 className="font-headline-xl text-headline-xl text-white font-bold tracking-tight mb-2 line-clamp-1">
+                  {currentSong.title}
+                </h2>
+                <p 
+                  onClick={() => {
+                    if (currentSong.artistId) navigate(`/artist-detail?id=${currentSong.artistId}`);
+                  }}
+                  className="font-body-lg text-body-lg text-secondary font-medium hover:text-primary transition-colors cursor-pointer inline-block"
+                >
+                  {currentSong.artist}
+                </p>
+              </div>
+
+              {/* Seek scrub bar */}
+              <div className="flex flex-col gap-2">
+                <div 
+                  ref={progressBarRef}
+                  onClick={handleProgressBarClick}
+                  className="h-1.5 w-full bg-white/10 rounded-full cursor-pointer relative group"
+                >
+                  <div 
+                    style={{ width: `${progressPercent}%` }}
+                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary to-secondary rounded-full shadow-[0_0_10px_rgba(221,183,255,0.8)]"
+                  ></div>
+                  <div 
+                    style={{ left: `${progressPercent}%` }}
+                    className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity border-4 border-primary"
+                  ></div>
+                </div>
+                
+                <div className="flex justify-between font-label-sm text-label-sm text-on-surface-variant font-mono">
+                  <span>{formatTime(currentTime)}</span>
+                  <span>{formatTime(duration)}</span>
+                </div>
+              </div>
+
+              {/* Playback Button Controls */}
+              <div className="flex items-center justify-center gap-8">
+                <button 
+                  onClick={toggleShuffle}
+                  className={`material-symbols-outlined transition-colors cursor-pointer text-[26px] ${
+                    shuffle ? 'text-primary' : 'text-on-surface-variant hover:text-white'
+                  }`}
+                >
+                  shuffle
+                </button>
+                <button 
+                  onClick={prev}
+                  className="material-symbols-outlined text-white hover:text-primary transition-all text-[36px] active:scale-90 cursor-pointer"
+                >
+                  skip_previous
+                </button>
+                <button 
+                  onClick={togglePlay}
+                  className="w-18 h-18 bg-white text-background rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[36px] text-background" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    {isPlaying ? 'pause' : 'play_arrow'}
+                  </span>
+                </button>
+                <button 
+                  onClick={next}
+                  className="material-symbols-outlined text-white hover:text-primary transition-all text-[36px] active:scale-90 cursor-pointer"
+                >
+                  skip_next
+                </button>
+                <button 
+                  onClick={toggleRepeat}
+                  className={`material-symbols-outlined transition-colors cursor-pointer text-[26px] ${
+                    repeat !== 'none' ? 'text-primary' : 'text-on-surface-variant hover:text-white'
+                  }`}
+                >
+                  {repeat === 'one' ? 'repeat_one' : 'repeat'}
+                </button>
+              </div>
+
+              {/* Like / Volume Actions */}
+              <div className="flex justify-between items-center px-4 pt-2 border-t border-white/5">
+                <button 
+                  onClick={handleLikeToggle}
+                  className={`material-symbols-outlined cursor-pointer text-2xl transition-colors ${
+                    isLiked ? 'text-primary' : 'text-on-surface-variant hover:text-white'
+                  }`}
+                  style={{ fontVariationSettings: isLiked ? "'FILL' 1" : "'FILL' 0" }}
+                >
+                  favorite
+                </button>
+
+                {/* Volume slider */}
+                <div className="flex items-center gap-2 w-32 group">
+                  <span className="material-symbols-outlined text-on-surface-variant text-xl">
+                    {volume === 0 ? 'volume_off' : volume < 0.5 ? 'volume_down' : 'volume_up'}
+                  </span>
+                  <div 
+                    onClick={handleVolumeBarClick}
+                    className="flex-1 h-1 bg-white/10 rounded-full relative cursor-pointer"
+                  >
+                    <div 
+                      style={{ width: `${volume * 100}%` }}
+                      className="absolute top-0 left-0 h-full bg-on-surface-variant group-hover:bg-primary transition-colors"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* Right column: Lyrics Section */}
+        <aside className="col-span-3 h-full border-l border-white/5 bg-surface-container-low/10 backdrop-blur-xl p-6 hidden lg:flex flex-col gap-6">
+          <h3 className="font-headline-md text-headline-md text-on-surface font-bold">Lời bài hát</h3>
+          
+          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4 pb-12 select-none">
+            {lyricsLines.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-center text-on-surface-variant/50 p-4">
+                <div>
+                  <span className="material-symbols-outlined text-4xl mb-2">lyrics</span>
+                  <p className="font-label-md">Không có lời bài hát cho tác phẩm này.</p>
+                </div>
+              </div>
+            ) : (
+              lyricsLines.map((line, idx) => (
+                <p 
+                  key={idx} 
+                  className="font-headline-md text-body-lg text-on-surface-variant/80 hover:text-white transition-colors duration-200"
+                >
+                  {line}
+                </p>
+              ))
+            )}
+          </div>
+        </aside>
+
+      </main>
+    </div>
   );
 };
 

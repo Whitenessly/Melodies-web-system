@@ -1,6 +1,7 @@
 import Song from '../models/Song.js';
 import Playlist from '../models/Playlist.js';
 import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 import { saveBase64File } from '../utils/file.js';
 
 export async function getAllSongs(req, res) {
@@ -13,16 +14,16 @@ export async function getAllSongs(req, res) {
       if (req.user.role === 'admin') {
         // Admins can see everything
       } else {
-        // Listeners & Artists can see public tracks, or artists can see their own private tracks
+        // Listeners & Artists can see public approved tracks, or artists can see their own tracks (pending/private/blocked)
         query = {
           $or: [
-            { visibility: 'public' },
+            { visibility: 'public', moderationState: 'approved' },
             { artistId: req.user._id }
           ]
         };
       }
     } else {
-      query = { visibility: 'public' };
+      query = { visibility: 'public', moderationState: 'approved' };
     }
 
     if (search) {
@@ -54,7 +55,7 @@ export async function getAllSongs(req, res) {
 export async function getTopSongs(req, res) {
   try {
     // Top charts sorted by views descending
-    const songs = await Song.find({ visibility: 'public' })
+    const songs = await Song.find({ visibility: 'public', moderationState: 'approved' })
       .sort({ views: -1 })
       .limit(10);
     return res.status(200).json({ songs });
@@ -87,10 +88,31 @@ export async function createSong(req, res) {
       audioUrl,
       thumbnailUrl,
       lyrics: lyrics || '',
-      visibility: visibility || 'public'
+      visibility: visibility || 'public',
+      moderationState: req.user.role === 'admin' ? 'approved' : 'pending'
     });
 
     await song.save();
+
+    // Notify followers if song is immediately approved (e.g. uploaded by admin)
+    if (song.moderationState === 'approved') {
+      try {
+        const followers = await User.find({ following: req.user._id });
+        for (const follower of followers) {
+          const notification = new Notification({
+            userId: follower._id,
+            senderId: req.user._id,
+            title: 'Bài hát mới',
+            message: `${req.user.name} vừa tải lên bài hát mới: "${song.title}"`,
+            type: 'new_track',
+            link: `/player?songId=${song._id}`
+          });
+          await notification.save();
+        }
+      } catch (err) {
+        console.error('Failed to send upload notifications:', err);
+      }
+    }
 
     return res.status(201).json({
       message: 'Song uploaded successfully',

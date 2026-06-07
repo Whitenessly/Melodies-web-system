@@ -34,7 +34,9 @@ export async function register(req, res) {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        likedSongs: [],
+        following: []
       }
     });
   } catch (err) {
@@ -68,7 +70,9 @@ export async function login(req, res) {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        likedSongs: (user.likedSongs || []).map(id => id.toString()),
+        following: (user.following || []).map(id => id.toString())
       }
     });
   } catch (err) {
@@ -96,7 +100,9 @@ export async function updateProfile(req, res) {
         id: req.user._id,
         name: req.user.name,
         email: req.user.email,
-        role: req.user.role
+        role: req.user.role,
+        likedSongs: (req.user.likedSongs || []).map(id => id.toString()),
+        following: (req.user.following || []).map(id => id.toString())
       }
     });
   } catch (err) {

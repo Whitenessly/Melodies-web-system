@@ -1,6 +1,8 @@
 import './App.css';
 import React from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
+import { AuthProvider, useAuth } from './context/AuthContext.jsx';
+import { PlayerProvider } from './context/PlayerContext.jsx';
 import Home from './routes/Home';
 import ArtistDashboard from './routes/ArtistDashboard';
 import FullscreenPlayer from './routes/FullscreenPlayer';
@@ -11,26 +13,108 @@ import SearchResults from './routes/SearchResults';
 import AdminDashboard from './routes/AdminDashboard';
 import LibraryPlaylists from './routes/LibraryPlaylists';
 import NotificationsSocial from './routes/NotificationsSocial';
+import PlaylistDetail from './routes/PlaylistDetail';
+
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-primary gap-4">
+        <span className="material-symbols-outlined text-5xl animate-spin">sync</span>
+        <span className="font-headline-md text-headline-md font-bold">Melodies Loading...</span>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/home" replace />;
+  }
+
+  return children;
+};
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="" element={<Navigate to="/home" />} />
+      <Route path="/auth" element={<Auth />} />
+
+      {/* Protected Routes */}
+      <Route path="/home" element={
+        <ProtectedRoute>
+          <Home />
+        </ProtectedRoute>
+      } />
+      <Route path="/player" element={
+        <ProtectedRoute>
+          <FullscreenPlayer />
+        </ProtectedRoute>
+      } />
+      <Route path="/artist-detail" element={
+        <ProtectedRoute>
+          <ArtistDetail />
+        </ProtectedRoute>
+      } />
+      <Route path="/search-results" element={
+        <ProtectedRoute>
+          <SearchResults />
+        </ProtectedRoute>
+      } />
+      <Route path="/library-playlists" element={
+        <ProtectedRoute>
+          <LibraryPlaylists />
+        </ProtectedRoute>
+      } />
+      <Route path="/playlist-detail" element={
+        <ProtectedRoute>
+          <PlaylistDetail />
+        </ProtectedRoute>
+      } />
+      <Route path="/notifications-social" element={
+        <ProtectedRoute>
+          <NotificationsSocial />
+        </ProtectedRoute>
+      } />
+
+      {/* Artist & Admin only */}
+      <Route path="/artist-dashboard" element={
+        <ProtectedRoute allowedRoles={['artist', 'admin']}>
+          <ArtistDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/upload-manage" element={
+        <ProtectedRoute allowedRoles={['artist', 'admin']}>
+          <UploadManage />
+        </ProtectedRoute>
+      } />
+
+      {/* Admin only */}
+      <Route path="/admin-dashboard" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <AdminDashboard />
+        </ProtectedRoute>
+      } />
+
+      {/* Fallback route */}
+      <Route path="*" element={<Navigate to="/home" />} />
+    </Routes>
+  );
+}
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="" element={<Navigate to="/home" />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/artist-dashboard" element={<ArtistDashboard />} />
-        <Route path="/player" element={<FullscreenPlayer />} />
-        <Route path="/artist-detail" element={<ArtistDetail />} />
-        <Route path="/upload-manage" element={<UploadManage />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/search-results" element={<SearchResults />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        <Route path="/library-playlists" element={<LibraryPlaylists />} />
-        <Route path="/notifications-social" element={<NotificationsSocial />} />
-        {/* Fallback route */}
-        <Route path="*" element={<Navigate to="/home" />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <PlayerProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </PlayerProvider>
+    </AuthProvider>
   );
 }
 

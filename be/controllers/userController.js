@@ -15,7 +15,7 @@ export async function toggleLikeSong(req, res) {
 
     const index = req.user.likedSongs.indexOf(songId);
     let liked = false;
-    
+
     if (index === -1) {
       // Like song
       req.user.likedSongs.push(songId);
@@ -78,14 +78,14 @@ export async function getRecentlyPlayed(req, res) {
     const populatedUser = await User.findById(req.user._id)
       .populate('recentlyPlayed.songId')
       .exec();
-      
+
     const history = populatedUser.recentlyPlayed
       .filter(item => item.songId != null) // filter out deleted songs
       .map(item => ({
         song: item.songId,
         playedAt: item.playedAt
       }));
-      
+
     return res.status(200).json({ history });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to retrieve history', error: err.message });
@@ -102,7 +102,7 @@ export async function getArtistStats(req, res) {
 
     // Fetch songs owned by artist
     const songs = await Song.find({ artistId });
-    
+
     // Total views/streams
     const totalStreams = songs.reduce((sum, song) => sum + song.views, 0);
 
@@ -163,5 +163,43 @@ export async function deleteUser(req, res) {
     return res.status(200).json({ message: 'User deleted successfully' });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to delete user', error: err.message });
+  }
+}
+
+export async function getArtistPublicProfile(req, res) {
+  try {
+    const { id } = req.params;
+    const artist = await User.findById(id).select('-password');
+    if (!artist || artist.role !== 'artist') {
+      return res.status(404).json({ message: 'Artist not found' });
+    }
+
+    const followersCount = await User.countDocuments({ following: id });
+    const songs = await Song.find({ artistId: id, visibility: 'public', moderationState: 'approved' });
+
+    // Check if the current user is following this artist
+    const isFollowing = req.user ? req.user.following.includes(id) : false;
+
+    return res.status(200).json({
+      artist: {
+        _id: artist._id,
+        name: artist.name,
+        email: artist.email,
+        followersCount,
+        isFollowing
+      },
+      songs
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to retrieve artist profile', error: err.message });
+  }
+}
+
+export async function getPublicArtists(req, res) {
+  try {
+    const artists = await User.find({ role: 'artist' }).select('name email role');
+    return res.status(200).json({ artists });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to retrieve artists', error: err.message });
   }
 }

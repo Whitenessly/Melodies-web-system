@@ -1,22 +1,280 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
+import { api } from '../utils/api.js';
+import { useAuth } from '../context/AuthContext.jsx';
+import { usePlayer } from '../context/PlayerContext.jsx';
+import Sidebar from '../components/Sidebar.jsx';
+import Header from '../components/Header.jsx';
+import MusicPlayer from '../components/MusicPlayer.jsx';
 
 const ArtistDashboard = () => {
   const navigate = useNavigate();
-  const [isPlaying, setIsPlaying] = useState(false);
+  const { user } = useAuth();
+  const { play } = usePlayer();
+  
+  const [stats, setStats] = useState({ totalStreams: 0, followersCount: 0, storageUsed: 0, totalTracks: 0 });
+  const [songs, setSongs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchArtistStats = async () => {
+    try {
+      const data = await api.get('/users/artist/stats');
+      setStats(data.stats || { totalStreams: 0, followersCount: 0, storageUsed: 0, totalTracks: 0 });
+      setSongs(data.songs || []);
+    } catch (err) {
+      console.error('Failed to retrieve artist statistics:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchArtistStats();
+  }, []);
+
+  const handleDeleteSong = async (songId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa bài hát này?')) return;
+    try {
+      await api.delete(`/songs/${songId}`);
+      fetchArtistStats();
+    } catch (err) {
+      console.error(err);
+      alert('Xóa bài hát thất bại.');
+    }
+  };
+
+  const getFullUrl = (url) => {
+    if (!url) return '';
+    return url.startsWith('http') ? url : `http://localhost:8080${url}`;
+  };
 
   return (
     <>
-      <header className="bg-background/80 backdrop-blur-md text-primary font-body-md text-body-md docked full-width top-0 border-b border-white/10 flex justify-between items-center w-full px-gutter-desktop h-16 sticky top-0 z-50"><div className="flex items-center gap-4"><span className="font-headline-md text-headline-md font-bold text-primary">Melodies</span><div className="hidden md:flex items-center bg-surface-container-high rounded-full px-4 py-1.5 ml-8 border border-white/5"><span className="material-symbols-outlined text-on-surface-variant mr-2">search</span><input className="bg-transparent border-none focus:ring-0 text-body-md text-on-surface w-64 outline-none" placeholder="Tìm kiếm dữ liệu..." type="text" /></div></div><div className="flex items-center gap-6"><button className="text-on-surface-variant hover:text-primary transition-colors scale-95 active:scale-90 transition-transform"><span className="material-symbols-outlined">notifications</span></button><button className="text-on-surface-variant hover:text-primary transition-colors scale-95 active:scale-90 transition-transform"><span className="material-symbols-outlined">settings</span></button><div className="w-8 h-8 rounded-full overflow-hidden border border-primary/30"><img alt="User profile" data-alt="A professional close-up portrait of a modern music creator in a stylish, dark recording studio environment. The lighting is cinematic with soft purple and cyan rim lights, reflecting the high-fidelity and artistic mood of the Melodies platform. The image should have a shallow depth of field, focusing on a confident expression suitable for a professional analytics profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlgtmznmuls5fo21W8bMr6ps7Owf4lj-7F58g5G3e3qxOzLL-utNtl_tBTEvNsGxapxQwUylZbCdaJnsDIbuCZohtNMtXYtcORHb4_kl6Sg11YgDMPNe2gjRjt1JVwMv44z1barsQeZF2Ql36Sgl1sksSlPr2Q14CuoXJTyceSZC1yht5cyXIfuMdLVBjYNBPGsqg6Upm_pGttheRHHGW3G1J4Mfm-BWY0kqWL18GLnsXTdT4wJ7b6jk3NBRYefhqDGA5_uFzUD_U" /></div></div></header><aside className="bg-surface-container-low/50 backdrop-blur-xl text-primary font-label-md text-label-md docked w-sidebar-width h-full left-0 border-r border-white/5 fixed left-0 top-0 h-full flex flex-col z-40 pt-20 pb-8 hidden md:flex"><nav className="flex-1 flex flex-col px-4 gap-2"><Link className="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-white/5 hover:text-white transition-all" to="#"><span className="material-symbols-outlined">home</span> Home
-            </Link><Link className="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-white/5 hover:text-white transition-all" to="#"><span className="material-symbols-outlined">search</span> Search
-            </Link><Link className="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-white/5 hover:text-white transition-all" to="/library-playlists"><span className="material-symbols-outlined">library_music</span> Library
-            </Link><Link className="flex items-center gap-4 px-4 py-3 rounded-lg text-white border-l-4 border-primary bg-primary/10 transition-all" to="/artist-dashboard"><span className="material-symbols-outlined">insights</span> Analytics
-            </Link><div className="mt-8"><button className="w-full py-4 rounded-xl bg-primary text-on-primary font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all"><span className="material-symbols-outlined">upload</span> Tải lên Nhạc
-                </button></div></nav><div className="px-4 flex flex-col gap-2"><Link className="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-white/5 hover:text-white transition-all" to="#"><span className="material-symbols-outlined">person</span> Profile
-            </Link><Link className="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-white/5 hover:text-white transition-all" to="#"><span className="material-symbols-outlined">logout</span> Logout
-            </Link></div></aside><main className="md:ml-sidebar-width p-gutter-desktop min-h-screen pb-32"><section className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6"><div><h1 className="font-headline-xl text-headline-xl text-on-surface mb-2">Phân tích Nghệ sĩ</h1><p className="text-on-surface-variant font-body-lg text-body-lg">Chào mừng trở lại, Lyra. Đây là những gì đang diễn ra với âm nhạc của bạn.</p></div><div className="flex gap-4"><button className="px-6 py-2.5 rounded-full border border-white/10 hover:bg-white/5 transition-all font-label-md text-label-md flex items-center gap-2"><span className="material-symbols-outlined text-body-md">calendar_today</span> 30 ngày qua
-                </button><button className="px-6 py-2.5 rounded-full bg-secondary text-on-secondary-fixed font-bold hover:brightness-105 active:scale-95 transition-all flex items-center gap-2"><span className="material-symbols-outlined text-body-md">file_download</span> Xuất báo cáo
-                </button></div></section><section className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10"><div className="glass-card p-6 rounded-3xl flex flex-col justify-between"><div className="flex justify-between items-start mb-4"><div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary"><span className="material-symbols-outlined">groups</span></div><span className="text-secondary font-bold text-label-sm">+12%</span></div><div><h3 className="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider mb-1">Người theo dõi</h3><p className="text-headline-md font-headline-md">1.284.502</p></div></div><div className="glass-card p-6 rounded-3xl flex flex-col justify-between"><div className="flex justify-between items-start mb-4"><div className="w-12 h-12 rounded-2xl bg-secondary/20 flex items-center justify-center text-secondary"><span className="material-symbols-outlined">payments</span></div><span className="text-secondary font-bold text-label-sm">+$4.2k</span></div><div><h3 className="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider mb-1">Tiền bản quyền dự kiến</h3><p className="text-headline-md font-headline-md">$12.450,00</p></div></div><div className="md:col-span-2 glass-card p-6 rounded-3xl relative overflow-hidden group cursor-pointer"><div className="relative z-10 h-full flex flex-col justify-between"><div><h3 className="text-white/70 font-label-sm text-label-sm uppercase tracking-wider mb-2">Bài hát hàng đầu</h3><p className="text-headline-md font-headline-md text-white">Ethereal Nights</p><p className="text-secondary font-label-md text-label-md">Đang thịnh hành tại 12 quốc gia</p></div><div className="flex items-center gap-2 mt-4"><span className="material-symbols-outlined text-secondary">play_circle</span><span className="font-label-md text-label-md">45.2M lượt nghe</span></div></div><img alt="Top track background" className="absolute top-0 right-0 w-full h-full object-cover opacity-30 group-hover:scale-105 transition-transform duration-700" data-alt="Abstract music visualization background with neon cyan and electric purple energy waves flowing across a deep black canvas. The mood is high-energy, digital, and modern, representing a successful trending song in a professional music streaming interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuATQzDfCyNx8Nr1DvH5wnL7igm0fLtem_URcqLz0iaCcwWDTOvkfs5NYJryYQZ9lv_RGa5stUPd_IWaTUz9ky9IBPN1c55V7a3aDpI4Tg0AazA5geBmXRVLs5WK975GgOHS-dcqyE0a6rXqz4Vem4ukyBWJf4B0Qw0z9iBKGma_bXci7TcqT8GnnSkm9WACSZ6Xut9ZHngYiapMZVizhBWPMusPocFAQd1HUKtbklrKQSZgrcg7FsMBl1Ovxa-eScHdwFYOu5_WTew" /><div className="absolute inset-0 bg-gradient-to-r from-background via-background/40 to-transparent"></div></div></section><section className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10"><div className="glass-card p-8 rounded-3xl"><div className="flex justify-between items-center mb-8"><h2 className="font-headline-md text-headline-md">Tăng trưởng Khán giả</h2><div className="flex gap-2"><span className="w-3 h-3 rounded-full bg-secondary"></span><span className="w-3 h-3 rounded-full bg-primary"></span></div></div><div className="h-64 flex items-end gap-1 relative"><svg className="absolute inset-0 w-full h-full overflow-visible" preserveaspectratio="none"><path d="M0,150 Q50,130 100,160 T200,80 T300,120 T400,40 T500,90 T600,20" fill="none" stroke="#5de6ff" stroke-width="2"></path><path d="M0,180 Q50,160 100,190 T200,120 T300,150 T400,80 T500,130 T600,50" fill="none" stroke="#ddb7ff" stroke-width="2"></path></svg><div className="absolute bottom-0 left-0 w-full h-full flex justify-between items-end text-[10px] text-on-surface-variant font-label-sm uppercase"><span>Tuần 1</span><span>Tuần 2</span><span>Tuần 3</span><span>Tuần 4</span></div></div></div><div className="glass-card p-8 rounded-3xl"><div className="flex justify-between items-center mb-8"><h2 className="font-headline-md text-headline-md">Lượt nghe hàng tháng</h2><select className="bg-surface-container-high border-none rounded-lg text-label-sm text-on-surface py-1 pr-8"><option>2024</option><option>2023</option></select></div><div className="h-64 flex items-end justify-between gap-4"><div className="flex-1 bg-secondary/10 hover:bg-secondary/30 transition-all rounded-t-lg h-1/2 group relative"><div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest px-2 py-1 rounded text-[10px] transition-opacity">1.2M</div></div><div className="flex-1 bg-secondary/10 hover:bg-secondary/30 transition-all rounded-t-lg h-3/4 group relative"><div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest px-2 py-1 rounded text-[10px] transition-opacity">2.4M</div></div><div className="flex-1 bg-secondary/10 hover:bg-secondary/30 transition-all rounded-t-lg h-2/3 group relative"><div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest px-2 py-1 rounded text-[10px] transition-opacity">1.8M</div></div><div className="flex-1 bg-primary/20 hover:bg-primary/40 transition-all rounded-t-lg h-5/6 group relative border-x-2 border-t-2 border-primary/40"><div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest px-2 py-1 rounded text-[10px] transition-opacity">4.2M</div></div><div className="flex-1 bg-secondary/10 hover:bg-secondary/30 transition-all rounded-t-lg h-1/2 group relative"><div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest px-2 py-1 rounded text-[10px] transition-opacity">1.4M</div></div><div className="flex-1 bg-secondary/10 hover:bg-secondary/30 transition-all rounded-t-lg h-3/5 group relative"><div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest px-2 py-1 rounded text-[10px] transition-opacity">1.6M</div></div></div><div className="flex justify-between mt-4 text-[10px] text-on-surface-variant font-label-sm uppercase"><span>Th1</span><span>Th2</span><span>Th3</span><span>Th4</span><span>Th5</span><span>Th6</span></div></div></section><section className="glass-card rounded-3xl overflow-hidden"><div className="p-8 border-b border-white/5 flex justify-between items-center"><h2 className="font-headline-md text-headline-md">Tải lên Gần đây</h2><button className="text-primary font-label-md text-label-md hover:underline">Xem tất cả</button></div><div className="overflow-x-auto"><table className="w-full text-left"><thead className="bg-white/5 text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider"><tr><th className="px-8 py-4">Tên bài hát</th><th className="px-8 py-4">Ngày phát hành</th><th className="px-8 py-4">Trạng thái</th><th className="px-8 py-4">Lượt nghe</th><th className="px-8 py-4 text-right">Thao tác</th></tr></thead><tbody className="divide-y divide-white/5"><tr className="hover:bg-white/5 transition-colors"><td className="px-8 py-5 flex items-center gap-4"><div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest"><img alt="Song cover" data-alt="Modern album cover art featuring a lone musician silhouette against a foggy neon city backdrop. Deep blues and purples dominate the scene, creating a moody, atmospheric aesthetic perfectly suited for a premium music dashboard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPZa9MTiy1IDRQflE9nxXycNrIsXnKSRtNPP1minAMpFLFIzttIGUS7fh5t7PIy9K7LovRwUecI4ajhh9f-0N6OP1TVBZf0arFB1eXQ_YKWtzFinovl1KWtUZI11o3dsVye-5fhCNmvqOKIBBBypyuHvPJD8Sn4b6rOkX6DVjON-09jwFs689o3HfogL63jt8Niccp9om91aWjj-vpwWtSUlV_CVlP0BbRYSX23xyXRJDT7L30PmqU-vZK1wjz3zIUJ3yjQpQ_Uho" /></div><div><div className="font-bold text-on-surface">Neon Horizon</div><div className="text-label-sm text-on-surface-variant">Single</div></div></td><td className="px-8 py-5 text-on-surface-variant font-label-md">15 Th04, 2024</td><td className="px-8 py-5"><span className="px-3 py-1 rounded-full bg-green-500/10 text-green-400 text-[10px] font-bold uppercase">Đã phát hành</span></td><td className="px-8 py-5 text-on-surface font-label-md">1.2M</td><td className="px-8 py-5 text-right"><div className="flex justify-end gap-3"><button className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"><span className="material-symbols-outlined text-body-md">edit</span></button><button className="w-8 h-8 rounded-full hover:bg-error/10 flex items-center justify-center text-error transition-colors"><span className="material-symbols-outlined text-body-md">delete</span></button></div></td></tr><tr className="hover:bg-white/5 transition-colors"><td className="px-8 py-5 flex items-center gap-4"><div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest"><img alt="Song cover" data-alt="Digital art representing sound waves in a vibrant holographic style. The colors are dominated by electric cyan and magenta on a dark background. The composition is sleek and technical, ideal for high-end professional music analytics displays." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhzICGbCyFQHOYqEAC8I5BP16N1FEKaqYKqR4N6hvKZ9cMDIfIIRp_rZ5tx864hdYlAsBHjl0bA3nKWVmg92_cQEZrSTdoNXboOGiL8gQitp8e61HVHB0lDU4EnmIvwE99OfvwoMxyUPb4UaIwyGdIWkDZ1XqFuThaEeXMUFCEZMbThGTwDtbIIOxEHvIwTWrYFs2hZVlSZGUWYLFO8wVDy4orsKRdO1-8PNbvY5zpZvAT3RsP89K6Yuk5iRYMDOewXVcP9e-c7hg" /></div><div><div className="font-bold text-on-surface">Digital Echoes</div><div className="text-label-sm text-on-surface-variant">EP</div></div></td><td className="px-8 py-5 text-on-surface-variant font-label-md">02 Th04, 2024</td><td className="px-8 py-5"><span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase">Đang xử lý</span></td><td className="px-8 py-5 text-on-surface font-label-md">842K</td><td className="px-8 py-5 text-right"><div className="flex justify-end gap-3"><button className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"><span className="material-symbols-outlined text-body-md">edit</span></button><button className="w-8 h-8 rounded-full hover:bg-error/10 flex items-center justify-center text-error transition-colors"><span className="material-symbols-outlined text-body-md">delete</span></button></div></td></tr><tr className="hover:bg-white/5 transition-colors"><td className="px-8 py-5 flex items-center gap-4"><div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest"><img alt="Song cover" data-alt="A stylized graphic showing glowing concentric circles resembling a vinyl record on a deep black background. Neon purple highlights trace the grooves. The mood is sophisticated and musical, fitting for a modern streaming analytics interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYmqkxD49q1bhqra3bL_fXdTXBDpJPwjkMdYVmoezr9hRIXOz9F2x07UGFQELK_5CDxQSbvl7JPTcuG5LBoBBPCzNAvbJBXZRHHlgvXPabZhdE-xa35Ko-u-mvm9QyGcbN8DiVh6MbgbsGF10OeAm8wgWyCxXJVkoXE-gQq6UXAk14-mfUUDpEppTYh0jg-LETBmzq9g5GeOE9bFik1FQTC42icrBgww00l-WhIedHOBWuDIf4gejYS9e8aPMEIkwvM6424jROO-s" /></div><div><div className="font-bold text-on-surface">Midnight Pulse</div><div className="text-label-sm text-on-surface-variant">Single</div></div></td><td className="px-8 py-5 text-on-surface-variant font-label-md">28 Th03, 2024</td><td className="px-8 py-5"><span className="px-3 py-1 rounded-full bg-green-500/10 text-green-400 text-[10px] font-bold uppercase">Đã phát hành</span></td><td className="px-8 py-5 text-on-surface font-label-md">2.5M</td><td className="px-8 py-5 text-right"><div className="flex justify-end gap-3"><button className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"><span className="material-symbols-outlined text-body-md">edit</span></button><button className="w-8 h-8 rounded-full hover:bg-error/10 flex items-center justify-center text-error transition-colors"><span className="material-symbols-outlined text-body-md">delete</span></button></div></td></tr></tbody></table></div></section></main><footer className="bg-surface-container-lowest/90 backdrop-blur-lg text-secondary font-label-sm text-label-sm docked full-width bottom-0 h-player-height border-t border-white/10 shadow-xl fixed bottom-0 left-0 w-full z-50 flex items-center px-gutter-desktop justify-between"><div className="flex items-center gap-4 w-1/4"><div className="w-12 h-12 rounded bg-surface-container-highest overflow-hidden"><img alt="Currently playing" data-alt="An artistic, blurred background of stage lights in deep blue and violet tones. In the center, a sharp graphic of an equalizer is visible. The aesthetic is professional, musical, and high-fidelity, perfect for a footer music player on a streaming dashboard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAo_rEuPISo-VEKqkklM9ajuHVXZ1-GvxUKlm2EqxDYXwXhkqteWVc3igA1IWf3tYERIbp7w9fAZXBUudMM6EhsPvMupURI7W6-_UmI8RTa48wpOSQS8Cbw0DsrQ_4_XnanWft8l-N1k3JQrIUD3e4eombDnIJzG9lm-K9KXN-tVOtZkqOrJsMUMv2ytPnEh4Smuvs9cV9NA3jws8FPwpv1Z1CDmTm5afadr7N5Y2nxv238wokGPDspRQwPQy0EBzHRm_XdYWWOsH4" /></div><div className="hidden sm:block"><div className="text-white font-bold font-label-md text-label-md">Ethereal Nights</div><div className="text-on-surface-variant text-label-sm">Lyra & The Echoes</div></div></div><div className="flex flex-col items-center gap-2 flex-1"><div className="flex items-center gap-6"><button className="material-symbols-outlined text-on-surface-variant hover:text-white transition-colors">shuffle</button><button className="material-symbols-outlined text-on-surface-variant hover:text-white transition-colors">skip_previous</button><button className="w-10 h-10 rounded-full bg-white text-background flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"><span className="material-symbols-outlined">play_arrow</span></button><button className="material-symbols-outlined text-on-surface-variant hover:text-white transition-colors">skip_next</button><button className="material-symbols-outlined text-on-surface-variant hover:text-white transition-colors">repeat</button></div><div className="w-full max-w-md h-1 bg-white/10 rounded-full overflow-hidden relative"><div className="absolute left-0 top-0 h-full bg-secondary w-1/3"></div></div></div><div className="flex items-center justify-end gap-6 w-1/4"><div className="hidden md:flex items-center gap-2"><span className="material-symbols-outlined text-on-surface-variant text-body-md">volume_up</span><div className="w-24 h-1 bg-white/10 rounded-full"><div className="h-full bg-white w-2/3"></div></div></div><span className="font-headline-lg text-headline-lg text-primary opacity-50 select-none hidden lg:block">Melodies</span></div></footer><nav className="fixed bottom-0 left-0 w-full bg-surface-container-low/90 backdrop-blur-xl border-t border-white/5 flex md:hidden justify-around py-4 z-50"><Link className="flex flex-col items-center gap-1 text-on-surface-variant" to="#"><span className="material-symbols-outlined">home</span><span className="text-[10px]">Home</span></Link><Link className="flex flex-col items-center gap-1 text-on-surface-variant" to="#"><span className="material-symbols-outlined">search</span><span className="text-[10px]">Search</span></Link><Link className="flex flex-col items-center gap-1 text-white" to="/artist-dashboard"><span className="material-symbols-outlined" style={{fontVariationSettings: '\'FILL\' 1'}}>insights</span><span className="text-[10px]">Analytics</span></Link><Link className="flex flex-col items-center gap-1 text-on-surface-variant" to="/library-playlists"><span className="material-symbols-outlined">library_music</span><span className="text-[10px]">Library</span></Link></nav>
+      <Sidebar />
+
+      <main className="md:ml-sidebar-width p-gutter-desktop min-h-screen bg-background pb-[120px]">
+        <Header placeholder="Tìm kiếm dữ liệu..." />
+
+        {loading ? (
+          <div className="flex items-center justify-center py-20 text-primary">
+            <span className="material-symbols-outlined text-4xl animate-spin mr-2">sync</span>
+            <span>Đang tải số liệu thống kê...</span>
+          </div>
+        ) : (
+          <div className="max-w-6xl mx-auto px-margin-page py-10">
+            <section className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+              <div>
+                <h1 className="font-headline-xl text-headline-xl text-white mb-2 font-bold">Phân tích Nghệ sĩ</h1>
+                <p className="text-on-surface-variant font-body-lg text-body-lg">
+                  Chào mừng trở lại, {user?.name}. Đây là những gì đang diễn ra với âm nhạc của bạn.
+                </p>
+              </div>
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => navigate('/upload-manage')}
+                  className="px-6 py-2.5 rounded-full bg-secondary text-on-secondary font-bold hover:brightness-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer shadow-md"
+                >
+                  <span className="material-symbols-outlined text-body-md">upload</span>
+                  Tải lên bài hát mới
+                </button>
+              </div>
+            </section>
+
+            {/* Statistics boxes */}
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+              <div className="glass-panel p-6 rounded-3xl flex flex-col justify-between border border-white/5">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary">
+                    <span className="material-symbols-outlined">groups</span>
+                  </div>
+                  <span className="text-secondary font-bold text-label-sm">+12%</span>
+                </div>
+                <div>
+                  <h3 className="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider mb-1">Người theo dõi</h3>
+                  <p className="text-headline-md font-headline-md text-white font-bold">{stats.followersCount.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="glass-panel p-6 rounded-3xl flex flex-col justify-between border border-white/5">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-secondary/20 flex items-center justify-center text-secondary">
+                    <span className="material-symbols-outlined">payments</span>
+                  </div>
+                  <span className="text-secondary font-bold text-label-sm">+$420</span>
+                </div>
+                <div>
+                  <h3 className="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider mb-1">Tiền bản quyền dự kiến</h3>
+                  <p className="text-headline-md font-headline-md text-white font-bold">${(stats.totalStreams * 0.003).toFixed(2)}</p>
+                </div>
+              </div>
+
+              <div className="glass-panel p-6 rounded-3xl flex flex-col justify-between border border-white/5">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-tertiary/20 flex items-center justify-center text-tertiary">
+                    <span className="material-symbols-outlined">play_arrow</span>
+                  </div>
+                  <span className="text-secondary font-bold text-label-sm">+8.4%</span>
+                </div>
+                <div>
+                  <h3 className="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider mb-1">Tổng lượt nghe</h3>
+                  <p className="text-headline-md font-headline-md text-white font-bold">{stats.totalStreams.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="glass-panel p-6 rounded-3xl flex flex-col justify-between border border-white/5">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-surface-container-highest flex items-center justify-center text-on-surface">
+                    <span className="material-symbols-outlined">cloud</span>
+                  </div>
+                  <span className="text-on-surface-variant text-label-sm">Hạn mức: 10GB</span>
+                </div>
+                <div>
+                  <h3 className="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider mb-1">Dung lượng sử dụng</h3>
+                  <p className="text-headline-md font-headline-md text-white font-bold">{stats.storageUsed} GB</p>
+                </div>
+              </div>
+            </section>
+
+            {/* Growth Graph & Listening Months */}
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+              <div className="glass-panel p-8 rounded-3xl border border-white/5">
+                <div className="flex justify-between items-center mb-8">
+                  <h2 className="font-headline-md text-headline-md text-white font-bold">Tăng trưởng Khán giả</h2>
+                  <div className="flex gap-2">
+                    <span className="w-3 h-3 rounded-full bg-secondary"></span>
+                    <span className="w-3 h-3 rounded-full bg-primary"></span>
+                  </div>
+                </div>
+                <div className="h-64 flex items-end gap-1 relative border-b border-l border-white/15 pb-4 pl-4">
+                  <svg className="absolute inset-0 w-full h-full overflow-visible p-8" preserveAspectRatio="none">
+                    <path d="M0,150 Q50,130 100,160 T200,80 T300,120 T400,40 T500,90 T600,20" fill="none" stroke="#5de6ff" strokeWidth="2"></path>
+                    <path d="M0,180 Q50,160 100,190 T200,120 T300,150 T400,80 T500,130 T600,50" fill="none" stroke="#ddb7ff" strokeWidth="2"></path>
+                  </svg>
+                  <div className="absolute bottom-0 left-0 w-full flex justify-between items-end text-[10px] text-on-surface-variant font-label-sm uppercase px-8">
+                    <span>Tuần 1</span>
+                    <span>Tuần 2</span>
+                    <span>Tuần 3</span>
+                    <span>Tuần 4</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="glass-panel p-8 rounded-3xl border border-white/5">
+                <div className="flex justify-between items-center mb-8">
+                  <h2 className="font-headline-md text-headline-md text-white font-bold">Lượt nghe theo tháng</h2>
+                  <select className="bg-surface-container-high border-none rounded-lg text-label-sm text-on-surface py-1 pr-8 outline-none">
+                    <option>2026</option>
+                    <option>2025</option>
+                  </select>
+                </div>
+                <div className="h-64 flex items-end justify-between gap-4 border-b border-l border-white/15 pb-4 pl-4">
+                  <div className="flex-1 bg-secondary/15 hover:bg-secondary/35 transition-all rounded-t-lg h-1/2 group relative">
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest px-2 py-1 rounded text-[10px] transition-opacity text-white">1.2M</div>
+                  </div>
+                  <div className="flex-1 bg-secondary/15 hover:bg-secondary/35 transition-all rounded-t-lg h-3/4 group relative">
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest px-2 py-1 rounded text-[10px] transition-opacity text-white">2.4M</div>
+                  </div>
+                  <div className="flex-1 bg-secondary/15 hover:bg-secondary/35 transition-all rounded-t-lg h-2/3 group relative">
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest px-2 py-1 rounded text-[10px] transition-opacity text-white">1.8M</div>
+                  </div>
+                  <div className="flex-1 bg-primary/20 hover:bg-primary/40 transition-all rounded-t-lg h-5/6 group relative border-x border-t border-primary/40">
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest px-2 py-1 rounded text-[10px] transition-opacity text-white">4.2M</div>
+                  </div>
+                  <div className="flex-1 bg-secondary/15 hover:bg-secondary/35 transition-all rounded-t-lg h-1/2 group relative">
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest px-2 py-1 rounded text-[10px] transition-opacity text-white">1.4M</div>
+                  </div>
+                  <div className="flex-1 bg-secondary/15 hover:bg-secondary/35 transition-all rounded-t-lg h-3/5 group relative">
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-surface-container-highest px-2 py-1 rounded text-[10px] transition-opacity text-white">1.6M</div>
+                  </div>
+                </div>
+                <div className="flex justify-between mt-4 text-[10px] text-on-surface-variant font-label-sm uppercase pl-4">
+                  <span>Th1</span>
+                  <span>Th2</span>
+                  <span>Th3</span>
+                  <span>Th4</span>
+                  <span>Th5</span>
+                  <span>Th6</span>
+                </div>
+              </div>
+            </section>
+
+            {/* Recent Uploads Table */}
+            <section className="glass-panel rounded-3xl overflow-hidden border border-white/5">
+              <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/5">
+                <h2 className="font-headline-md text-headline-md text-white font-bold">Các bài hát của tôi</h2>
+                <button 
+                  onClick={() => navigate('/upload-manage')}
+                  className="text-primary font-label-md text-label-md hover:underline cursor-pointer"
+                >
+                  Quản lý tải lên
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                {songs.length > 0 ? (
+                  <table className="w-full text-left">
+                    <thead className="bg-white/5 text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+                      <tr>
+                        <th className="px-8 py-4">Tên bài hát</th>
+                        <th className="px-8 py-4">Thể loại</th>
+                        <th className="px-8 py-4">Trạng thái</th>
+                        <th className="px-8 py-4">Lượt nghe</th>
+                        <th className="px-8 py-4 text-right font-bold">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {songs.map(song => (
+                        <tr 
+                          key={song._id}
+                          className="hover:bg-white/5 transition-colors cursor-pointer"
+                          onClick={() => song.moderationState === 'approved' && play(song, songs)}
+                        >
+                          <td className="px-8 py-5 flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest">
+                              <img className="w-full h-full object-cover" src={getFullUrl(song.thumbnailUrl)} alt={song.title} />
+                            </div>
+                            <div>
+                              <div className="font-bold text-white group-hover:text-primary transition-colors">{song.title}</div>
+                              <div className="text-label-sm text-on-surface-variant">{song.visibility === 'public' ? 'Công khai' : 'Riêng tư'}</div>
+                            </div>
+                          </td>
+                          <td className="px-8 py-5 text-on-surface-variant font-label-md">
+                            {song.genre}
+                          </td>
+                          <td className="px-8 py-5">
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${song.moderationState === 'approved' ? 'bg-green-500/20 text-green-400' : song.moderationState === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+                              {song.moderationState === 'approved' ? 'Đã phát hành' : song.moderationState === 'pending' ? 'Chờ duyệt' : 'Bị chặn'}
+                            </span>
+                          </td>
+                          <td className="px-8 py-5 text-on-surface font-label-md font-bold">
+                            {song.views.toLocaleString()}
+                          </td>
+                          <td className="px-8 py-5 text-right" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex justify-end gap-3">
+                              <button 
+                                onClick={() => handleDeleteSong(song._id)}
+                                className="w-8 h-8 rounded-full hover:bg-error/10 flex items-center justify-center text-error transition-colors cursor-pointer"
+                              >
+                                <span className="material-symbols-outlined text-body-md">delete</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="text-center py-12 text-on-surface-variant">
+                    <span className="material-symbols-outlined text-5xl mb-3">audiotrack</span>
+                    <p className="font-body-md">Không có bài hát nào được tìm thấy. Tải nhạc ngay!</p>
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+        )}
+      </main>
+
+      <MusicPlayer />
     </>
   );
 };

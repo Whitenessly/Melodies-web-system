@@ -1,15 +1,344 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
+import { api } from '../utils/api.js';
+import { useAuth } from '../context/AuthContext.jsx';
+import Sidebar from '../components/Sidebar.jsx';
+import Header from '../components/Header.jsx';
+import MusicPlayer from '../components/MusicPlayer.jsx';
 
 const UploadManage = () => {
   const navigate = useNavigate();
-  const [isPlaying, setIsPlaying] = useState(false);
+  const { user } = useAuth();
+  
+  const [categories, setCategories] = useState([]);
+  const [artistSongs, setArtistSongs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Form State
+  const [title, setTitle] = useState('');
+  const [genre, setGenre] = useState('');
+  const [lyrics, setLyrics] = useState('');
+  const [visibility, setVisibility] = useState('public');
+  const [audioBase64, setAudioBase64] = useState('');
+  const [imageBase64, setImageBase64] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState('');
+  
+  // Progress tracker
+  const [progress, setProgress] = useState(0);
+
+  const fetchArtistData = async () => {
+    try {
+      const catData = await api.get('/categories');
+      setCategories(catData.categories || []);
+
+      const statsData = await api.get('/users/artist/stats');
+      setArtistSongs(statsData.songs || []);
+    } catch (err) {
+      console.error('Failed to fetch artist upload data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchArtistData();
+  }, []);
+
+  const handleAudioChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAudioBase64(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageBase64(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePublish = async (e) => {
+    e.preventDefault();
+    if (!title || !genre || !audioBase64 || !imageBase64) {
+      setMessage('Vui lòng điền đầy đủ tiêu đề, thể loại và chọn file âm thanh, ảnh đại diện.');
+      return;
+    }
+
+    setUploading(true);
+    setMessage('');
+    setProgress(15);
+
+    try {
+      setProgress(45);
+      await api.post('/songs', {
+        title,
+        genre,
+        lyrics,
+        visibility,
+        audio: audioBase64,
+        image: imageBase64
+      });
+      
+      setProgress(100);
+      setMessage('Tải bài hát lên thành công! Đang chờ kiểm duyệt từ Admin.');
+      
+      // Reset form
+      setTitle('');
+      setGenre('');
+      setLyrics('');
+      setAudioBase64('');
+      setImageBase64('');
+
+      // Reload list
+      fetchArtistData();
+    } catch (err) {
+      console.error(err);
+      setMessage(err.message || 'Tải bài hát lên thất bại.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteSong = async (songId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa bài hát này?')) return;
+    try {
+      await api.delete(`/songs/${songId}`);
+      fetchArtistData();
+    } catch (err) {
+      console.error(err);
+      alert('Xóa bài hát thất bại.');
+    }
+  };
+
+  const getFullUrl = (url) => {
+    if (!url) return '';
+    return url.startsWith('http') ? url : `http://localhost:8080${url}`;
+  };
 
   return (
     <>
-      <aside className="fixed left-0 top-0 h-full w-sidebar-width bg-surface/80 backdrop-blur-md border-r border-outline-variant flex flex-col py-base z-50"><div className="px-gutter-desktop mb-10"><h1 className="font-headline-md text-headline-md font-bold text-primary">Melodies</h1><p className="font-label-sm text-label-sm text-on-surface-variant">Premium Streaming</p></div><nav className="flex-grow space-y-2"><Link className="flex items-center px-gutter-desktop py-3 text-on-surface-variant hover:bg-surface-variant/50 hover:text-on-surface transition-colors" to="/home"><span className="material-symbols-outlined mr-4" data-icon="explore">explore</span><span className="font-body-md text-body-md">Explore</span></Link><Link className="flex items-center px-gutter-desktop py-3 text-on-surface-variant hover:bg-surface-variant/50 hover:text-on-surface transition-colors" to="/library-playlists"><span className="material-symbols-outlined mr-4" data-icon="library_music">library_music</span><span className="font-body-md text-body-md">Library</span></Link><Link className="flex items-center px-gutter-desktop py-3 text-on-surface-variant hover:bg-surface-variant/50 hover:text-on-surface transition-colors" to="/library-playlists"><span className="material-symbols-outlined mr-4" data-icon="favorite">favorite</span><span className="font-body-md text-body-md">Favorites</span></Link><Link className="flex items-center px-gutter-desktop py-3 text-on-surface border-l-4 border-primary bg-primary-container/10 transition-colors" to="/artist-dashboard"><span className="material-symbols-outlined mr-4" data-icon="audiotrack">audiotrack</span><span className="font-body-md text-body-md">My Tracks</span></Link><Link className="flex items-center px-gutter-desktop py-3 text-on-surface-variant hover:bg-surface-variant/50 hover:text-on-surface transition-colors" to="/artist-dashboard"><span className="material-symbols-outlined mr-4" data-icon="insights">insights</span><span className="font-body-md text-body-md">Analytics</span></Link><Link className="flex items-center px-gutter-desktop py-3 text-on-surface-variant hover:bg-surface-variant/50 hover:text-on-surface transition-colors" to="/home"><span className="material-symbols-outlined mr-4" data-icon="settings">settings</span><span className="font-body-md text-body-md">Settings</span></Link><Link className="flex items-center px-gutter-desktop py-3 text-on-surface-variant hover:bg-surface-variant/50 hover:text-on-surface transition-colors" to="/admin-dashboard"><span className="material-symbols-outlined mr-4" data-icon="admin_panel_settings">admin_panel_settings</span><span className="font-body-md text-body-md">Admin</span></Link></nav><div className="px-gutter-desktop mt-auto pt-base"><div className="flex items-center gap-3 p-2 rounded-xl bg-surface-container-high/50"><img alt="User Profile Picture" className="w-10 h-10 rounded-full object-cover" data-alt="A professional studio portrait of a young electronic music artist with neon purple highlights in their hair. They are wearing sleek, futuristic streetwear. The background is a soft, out-of-focus music studio with warm glowing equipment lights, maintaining a high-fidelity and creative professional atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBimuMjWhinJuwIKyYLWIFp_KIAZ0mhMLA1T28zY4y7im8KmcmafGLng9Cwn5wwLE_LFbU6VdWgO3gJPfv7JV09wzSC0SAxYxRdAC_gNM87UukesxxiT0m8uui2MD-kZIfMZn963uy7M26tG2t9qhmXRECOPaABTU-OlMootY5EHhS7Ww668hCcWcx0oH3tD-9kHvmj6bRSlCY49v7Zd0hOXK3Paey60DSFAoWZGhediEhuz7PzFo3viXTr4xxuQGsbZQBDbm5X1-I" /><div><p className="font-label-md text-label-md text-on-surface">Alex Rivers</p><p className="text-[10px] text-primary uppercase tracking-widest font-bold">Pro Artist</p></div></div></div></aside><header className="fixed top-0 right-0 w-[calc(100%-280px)] h-16 bg-surface/40 backdrop-blur-xl flex justify-between items-center px-gutter-desktop z-40"><div className="flex items-center bg-surface-container-highest/30 rounded-full px-4 py-1.5 w-96 border border-outline-variant/20 focus-within:ring-2 focus-within:ring-primary/50 transition-all"><span className="material-symbols-outlined text-on-surface-variant text-body-md mr-2" data-icon="search">search</span><input className="bg-transparent border-none text-body-md focus:ring-0 w-full placeholder:text-on-surface-variant/50" placeholder="Search catalog or tools..." type="text" /></div><div className="flex items-center gap-6"><button className="text-on-surface-variant hover:text-primary transition-colors"><span className="material-symbols-outlined" data-icon="notifications">notifications</span></button><button className="text-on-surface-variant hover:text-primary transition-colors"><span className="material-symbols-outlined" data-icon="settings">settings</span></button><div className="w-8 h-8 rounded-full bg-primary-container/20 border border-primary/30 flex items-center justify-center overflow-hidden"><img alt="User Profile" className="w-full h-full object-cover" data-alt="Detailed close-up of a digital artist avatar with soft ethereal lighting and cool blue and violet tones. The aesthetic is clean, professional, and energetically creative, fitting for a premium music platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAiWFkUUbM6EwBU8sOllkXO56aW27G6WGGdHVjNZuJCbxNVY9h2_hNXwtV0CWYhd4dtDNUwgpatW1vYPLHC3TRlhOUSsWFbBzaoKQgKbXnuDjGvwbtyLGUia4v2qt1Uo5RAeyd-okoFhPggurk2_9zv6hVE_XNn7AFw8bGd-_CE4JMnhWHv98Ec53o4ruFiQxeXNoZdwkSaxyilOAxlxFea0XENt0rLVX9hPF9x4qQ-wXIs01H2NQXiT22AHkrWFebp2pz1Np4Bvq0" /></div></div></header><main className="ml-sidebar-width pt-24 pb-[120px] px-margin-page min-h-screen relative overflow-hidden"><div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] -z-10"></div><div className="absolute bottom-[20%] left-[10%] w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[100px] -z-10"></div><div className="max-w-6xl mx-auto"><header className="mb-10"><h2 className="font-headline-xl text-headline-xl text-on-surface mb-2">Upload New Track</h2><p className="text-on-surface-variant font-body-lg">Share your latest creation with the world. Your high-fidelity audio deserves a premium home.</p></header><div className="grid grid-cols-1 lg:grid-cols-3 gap-8"><section className="lg:col-span-2 space-y-8"><div className="glass-card rounded-2xl p-8 ethereal-glow"><form className="space-y-6"><div><label className="block font-label-md text-label-md text-on-surface-variant mb-2">Track Title</label><input className="w-full bg-surface-container-lowest/50 border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md focus:border-primary/50 transition-all" placeholder="Enter track name..." type="text" /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label className="block font-label-md text-label-md text-on-surface-variant mb-2">Genre</label><select className="w-full bg-surface-container-lowest/50 border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md focus:border-primary/50 appearance-none transition-all"><option>Select Genre</option><option>Ethereal Wave</option><option>Ambient Techno</option><option>Neo-Soul</option><option>Liquid Drum & Bass</option></select></div><div><label className="block font-label-md text-label-md text-on-surface-variant mb-2">Album / Collection</label><div className="flex gap-2"><select className="flex-grow bg-surface-container-lowest/50 border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md focus:border-primary/50 appearance-none transition-all"><option>Singles</option><option>Neon Nights (EP)</option><option>Create New...</option></select><button className="bg-surface-variant/30 p-3 rounded-xl hover:bg-surface-variant/50 transition-colors border border-outline-variant/30" type="button"><span className="material-symbols-outlined text-primary" data-icon="add">add</span></button></div></div></div><div><label className="block font-label-md text-label-md text-on-surface-variant mb-3">Visibility</label><div className="flex gap-4"><label className="flex-1 flex items-center justify-between p-4 bg-surface-container-lowest/30 border border-outline-variant/30 rounded-xl cursor-pointer hover:border-primary/50 transition-all group"><div className="flex items-center"><span className="material-symbols-outlined mr-3 text-on-surface-variant group-hover:text-primary" data-icon="public">public</span><span className="text-body-md">Public</span></div><input checked="" className="text-primary focus:ring-primary bg-transparent border-outline-variant/50 w-5 h-5" name="visibility" type="radio" /></label><label className="flex-1 flex items-center justify-between p-4 bg-surface-container-lowest/30 border border-outline-variant/30 rounded-xl cursor-pointer hover:border-primary/50 transition-all group"><div className="flex items-center"><span className="material-symbols-outlined mr-3 text-on-surface-variant group-hover:text-primary" data-icon="lock">lock</span><span className="text-body-md">Private</span></div><input className="text-primary focus:ring-primary bg-transparent border-outline-variant/50 w-5 h-5" name="visibility" type="radio" /></label></div></div><div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8"><div className="border-2 border-dashed border-outline-variant/40 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:border-primary/50 transition-colors group cursor-pointer bg-surface-container-low/20"><div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined text-primary" data-icon="cloud_upload">cloud_upload</span></div><p className="font-label-md text-label-md text-on-surface mb-1">Audio File</p><p className="text-[11px] text-on-surface-variant">Drag .mp3 or .wav (Max 100MB)</p></div><div className="border-2 border-dashed border-outline-variant/40 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:border-secondary/50 transition-colors group cursor-pointer bg-surface-container-low/20"><div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined text-secondary" data-icon="image">image</span></div><p className="font-label-md text-label-md text-on-surface mb-1">Thumbnail</p><p className="text-[11px] text-on-surface-variant">High-res artwork (1:1 Ratio)</p></div></div><button className="w-full bg-primary text-on-primary py-4 rounded-xl font-headline-md text-headline-md font-bold hover:brightness-110 active:scale-[0.98] transition-all ethereal-glow mt-4" type="submit">
-                                Publish Track
-                            </button></form></div><div className="glass-card rounded-2xl p-6 border-primary/20 bg-primary/5"><div className="flex justify-between items-center mb-3"><div className="flex items-center gap-3"><span className="material-symbols-outlined text-primary animate-pulse" data-icon="sync">sync</span><p className="font-label-md text-label-md text-on-surface">Uploading: "Starlight Drift.wav"</p></div><span className="font-label-sm text-label-sm text-primary">74%</span></div><div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-primary to-secondary w-[74%] rounded-full shadow-[0_0_10px_rgba(221,183,255,0.5)]"></div></div></div></section><aside className="space-y-6"><div className="glass-card rounded-2xl p-6 h-full"><div className="flex items-center justify-between mb-6"><h3 className="font-headline-md text-headline-md text-on-surface">Recent Activity</h3><button className="text-primary text-label-sm hover:underline">View All</button></div><div className="space-y-4"><div className="flex items-center gap-4 p-3 rounded-xl hover:bg-surface-variant/30 transition-all border border-transparent hover:border-outline-variant/20 group"><div className="w-12 h-12 rounded-lg bg-surface-container-highest overflow-hidden relative"><img className="w-full h-full object-cover opacity-60" data-alt="Abstract cinematic art of shimmering liquid metal in shades of electric blue and violet. High-contrast lighting and soft bokeh effects create a sense of professional depth and ethereal energy." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSF1npnzam0i95vFcOMmI9yinxh5oTdOs9-BLdY592X_P9hzoXdybB1g26b2VyMZwR5JnIrpDmbnO2WEGSue5b1HQ22HTQuQwVZ4DdPjj29ZK004bfySMHscnIf8X4DbSLu1TbxnF_djV5DPBj2y0ustuPsIJqObUclx1pRmHKyIlvdyTYV-_q66yPORgjwc-vN8EWTz02GEro0MDw50K5QJfhxUH31Iq--ZilyHHOn0nePbvrX7hOyo6uEWBZ5kpb4IOOJU0jAfo" /><div className="absolute inset-0 flex items-center justify-center"><span className="material-symbols-outlined text-white text-body-md" data-icon="edit">edit</span></div></div><div className="flex-grow overflow-hidden"><p className="font-label-md text-label-md text-on-surface truncate">Midnight Echoes</p><p className="text-[10px] text-tertiary-container uppercase font-bold tracking-tighter">Draft</p></div><div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><button className="p-1.5 hover:text-primary transition-colors"><span className="material-symbols-outlined text-[18px]" data-icon="edit">edit</span></button><button className="p-1.5 hover:text-error transition-colors"><span className="material-symbols-outlined text-[18px]" data-icon="delete">delete</span></button></div></div><div className="flex items-center gap-4 p-3 rounded-xl hover:bg-surface-variant/30 transition-all border border-transparent hover:border-outline-variant/20 group"><div className="w-12 h-12 rounded-lg bg-surface-container-highest overflow-hidden"><img className="w-full h-full object-cover" data-alt="Vibrant, high-energy image of a soundboard in a darkened professional studio, with neon cyan and magenta lights glowing from the sliders and buttons. The atmosphere is professional, sleek, and energetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnjXySfHDJnU0XvnpA7JauCYMReJsr82F0-qiJC7QGeu2PUy5qrNQ4en9-JIccl0Jpww5IJCTohYqgfZfuDEB3VPfQqfcwNdLPEk72Ez1sWwzhZAHsffZBDBQ8Sfs8l3YSyrYc5zG02v9nz4hEmPwcmqTZg5oZBpfSSz76O-mjpl966wzgiKDfLT4lG1hJnb6YQaVD4xSfW9yJxC1_054MYKDwxzOJsze_9dLJMJ8J_17NImRURm-9pbn1qJpKxqFKqgIrhAC1tvw" /></div><div className="flex-grow overflow-hidden"><p className="font-label-md text-label-md text-on-surface truncate">Solar Flare</p><p className="text-[10px] text-secondary uppercase font-bold tracking-tighter">Published • 2h ago</p></div><div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><button className="p-1.5 hover:text-primary transition-colors"><span className="material-symbols-outlined text-[18px]" data-icon="analytics">analytics</span></button><button className="p-1.5 hover:text-primary transition-colors"><span className="material-symbols-outlined text-[18px]" data-icon="share">share</span></button></div></div><div className="flex items-center gap-4 p-3 rounded-xl hover:bg-surface-variant/30 transition-all border border-transparent hover:border-outline-variant/20 group"><div className="w-12 h-12 rounded-lg bg-surface-container-highest overflow-hidden"><img className="w-full h-full object-cover" data-alt="A macro shot of vibrant pink and blue ink swirling in water, creating intricate ethereal patterns. The lighting is soft and focused, echoing the creative and professional aesthetic of the platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZ-aH0v6s-HQfFqhm7rMg9XuVX9vwLJqkoP30os3yodElKsdkG-50R87ID-qy29YZMil-s80IsLbTMroewBz4fWe6mM_SLlvPXDAnO_C1mr2AMWfIAbJZW0NjRCGGVV4c8aKWO7gA2BCW8voIDyMWZHEWNQEVbRE0vSTZzmucCCBwrIeh06iXVnRnmAvbMyrGXIAMnWks-xiNgKxnW5gSrXAkwbIZkQ01DsS7lR_UimRdD73K6l6sSQ_oJ2fOAVFfiZFNBNuJ5omY" /></div><div className="flex-grow overflow-hidden"><p className="font-label-md text-label-md text-on-surface truncate">Crystal Cascade</p><p className="text-[10px] text-secondary uppercase font-bold tracking-tighter">Published • Yesterday</p></div><div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><button className="p-1.5 hover:text-primary transition-colors"><span className="material-symbols-outlined text-[18px]" data-icon="analytics">analytics</span></button><button className="p-1.5 hover:text-primary transition-colors"><span className="material-symbols-outlined text-[18px]" data-icon="share">share</span></button></div></div><div className="flex items-center gap-4 p-3 rounded-xl hover:bg-surface-variant/30 transition-all border border-transparent hover:border-outline-variant/20 group"><div className="w-12 h-12 rounded-lg bg-surface-container-highest overflow-hidden relative"><img className="w-full h-full object-cover opacity-60" data-alt="Minimalist architectural lighting in a dark space, with sharp white and purple lines forming a geometric composition. The mood is sophisticated, technical, and high-end." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBQfaHYhyx3YnkF8uuYYcCPzLYdNDwADLM7WeYNUAn_eY89nFwWMyngyUIFROVIem1E5iyeKsHJWUvnTshDL2SFKpq4rTi-ws--po1ajeTbL2XVCHU_NctKYtLZfwfS0GD1OHw9q_yuISaoqn1kezpQ6qw131pX10gOeU8v_Lobx_Rf2UCnWXFnYhCFetD1dz_Cp4xugunbxgvA2nhEmbdIAT4-HvHd_rXJ0lF1MORZ24vmwT1b0U4HTDJ_E2jY76lDvRIs6YpO00" /><div className="absolute inset-0 flex items-center justify-center"><span className="material-symbols-outlined text-white text-body-md" data-icon="pending">pending</span></div></div><div className="flex-grow overflow-hidden"><p className="font-label-md text-label-md text-on-surface truncate">Velvet Pulse</p><p className="text-[10px] text-tertiary-container uppercase font-bold tracking-tighter">Draft</p></div><div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><button className="p-1.5 hover:text-primary transition-colors"><span className="material-symbols-outlined text-[18px]" data-icon="edit">edit</span></button><button className="p-1.5 hover:text-error transition-colors"><span className="material-symbols-outlined text-[18px]" data-icon="delete">delete</span></button></div></div></div><div className="mt-8 p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 border border-white/5"><h4 className="font-label-md text-label-md text-primary mb-4">Channel Health</h4><div className="space-y-4"><div className="flex justify-between items-end"><div><p className="text-on-surface-variant text-[11px] uppercase tracking-wider">Total Streams</p><p className="text-headline-md font-bold text-on-surface">12.4k</p></div><div className="text-secondary flex items-center text-label-sm"><span className="material-symbols-outlined text-[14px]" data-icon="trending_up">trending_up</span><span>+18%</span></div></div><div className="flex justify-between items-end"><div><p className="text-on-surface-variant text-[11px] uppercase tracking-wider">Storage Used</p><p className="text-headline-md font-bold text-on-surface">4.2 GB</p></div><p className="text-on-surface-variant text-label-sm">of 10 GB</p></div><div className="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden"><div className="h-full bg-primary w-[42%]"></div></div></div></div></div></aside></div></div></main><footer className="fixed bottom-0 left-0 w-full h-player-height flex items-center justify-between px-gutter-desktop z-50 bg-surface-container-lowest/80 backdrop-blur-2xl border-t border-outline-variant/30"><div className="flex items-center gap-4 w-1/4"><div className="w-14 h-14 rounded-lg overflow-hidden shadow-lg border border-white/10"><img className="w-full h-full object-cover" data-alt="Digital album art featuring neon light trails against a dark, minimalist background. The colors are predominantly electric blue and vibrant violet, creating a sleek, ethereal vibe for the music track." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4L6W7-5xzr5AbUPefXcESmWO0z1WbolKgMrs_KO_owkOWYEpmrvaOOp8LfF9939pLHPogDaGQLakT4myYUx5Ugw0efLtHz1_KHtiKh3hLhYYht9ZGPzyrZaMG6z5mwHmJEOjt2Eiacmv80YCEgXaBZEWlfj-azcRzkmSFmUp5OSY2VCsNih1LGF3Hmc8mjEHHq42q4E5pMT3cxJW9ylHtzJ7PxvEQpbawOkQ7jyjSB1hBPnlf7qLcOW31boZ4la_jbk_xkRGQEpE" /></div><div className="hidden sm:block"><p className="font-label-md text-label-md text-on-surface truncate max-w-[150px]">Solar Flare</p><p className="text-[11px] text-on-surface-variant">Alex Rivers</p></div></div><div className="flex flex-col items-center gap-2 w-1/2"><div className="flex items-center gap-6"><button className="text-on-surface-variant hover:text-primary transition-colors"><span className="material-symbols-outlined" data-icon="shuffle">shuffle</span></button><button className="text-on-surface hover:text-primary transition-colors"><span className="material-symbols-outlined" data-icon="skip_previous">skip_previous</span></button><button className="w-10 h-10 bg-primary text-on-primary rounded-full flex items-center justify-center hover:scale-105 transition-transform"><span className="material-symbols-outlined" data-icon="play_arrow" style={{fontVariationSettings: '\'FILL\' 1'}}>play_arrow</span></button><button className="text-on-surface hover:text-primary transition-colors"><span className="material-symbols-outlined" data-icon="skip_next">skip_next</span></button><button className="text-on-surface-variant hover:text-primary transition-colors"><span className="material-symbols-outlined" data-icon="repeat">repeat</span></button></div><div className="w-full max-w-lg flex items-center gap-3"><span className="text-[10px] text-on-surface-variant">1:24</span><div className="flex-grow h-1 bg-surface-container-highest rounded-full relative group cursor-pointer"><div className="absolute left-0 top-0 h-full bg-secondary w-1/3 rounded-full"></div><div className="absolute left-1/3 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"></div></div><span className="text-[10px] text-on-surface-variant">3:45</span></div></div><div className="flex items-center justify-end gap-4 w-1/4"><span className="material-symbols-outlined text-on-surface-variant text-body-md" data-icon="volume_up">volume_up</span><div className="w-24 h-1 bg-surface-container-highest rounded-full overflow-hidden"><div className="h-full bg-on-surface-variant w-2/3"></div></div><button className="text-on-surface-variant hover:text-primary transition-colors"><span className="material-symbols-outlined" data-icon="lyrics">lyrics</span></button><button className="text-on-surface-variant hover:text-primary transition-colors"><span className="material-symbols-outlined" data-icon="queue_music">queue_music</span></button></div></footer>
+      <Sidebar />
+
+      <main className="md:ml-sidebar-width pt-8 pb-[120px] bg-background min-h-screen">
+        <Header placeholder="Tìm kiếm trong kho bài hát..." />
+
+        <div className="max-w-6xl mx-auto px-margin-page py-10 relative">
+          <header className="mb-10">
+            <h2 className="font-headline-xl text-headline-xl text-white mb-2 font-bold">Tải lên bài hát mới</h2>
+            <p className="text-on-surface-variant font-body-lg text-body-lg">
+              Chia sẻ tác phẩm âm nhạc mới của bạn. Tác phẩm chất lượng cao của bạn xứng đáng một ngôi nhà cao cấp.
+            </p>
+          </header>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Form Section */}
+            <section className="lg:col-span-2 space-y-8">
+              <div className="glass-panel rounded-2xl p-8 border border-white/5 shadow-xl">
+                <form onSubmit={handlePublish} className="space-y-6">
+                  <div>
+                    <label className="block font-label-md text-label-md text-on-surface-variant mb-2 font-semibold">Tên bài hát</label>
+                    <input 
+                      type="text" 
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="w-full bg-surface-container-lowest/50 border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md text-white focus:border-primary/50 transition-all outline-none" 
+                      placeholder="Nhập tên bài hát..." 
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block font-label-md text-label-md text-on-surface-variant mb-2 font-semibold">Thể loại</label>
+                      <select 
+                        value={genre}
+                        onChange={(e) => setGenre(e.target.value)}
+                        className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md text-white focus:border-primary/50 transition-all outline-none"
+                        required
+                      >
+                        <option value="">Chọn thể loại</option>
+                        {categories.map(c => (
+                          <option key={c._id} value={c.name}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-label-md text-label-md text-on-surface-variant mb-2 font-semibold">Chế độ hiển thị</label>
+                      <div className="flex gap-4">
+                        <label className="flex-grow flex items-center justify-between p-3.5 bg-surface-container-lowest/30 border border-outline-variant/30 rounded-xl cursor-pointer hover:border-primary/50 transition-all group">
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary">public</span>
+                            <span className="text-body-md text-white">Public</span>
+                          </div>
+                          <input 
+                            type="radio" 
+                            name="visibility" 
+                            value="public"
+                            checked={visibility === 'public'}
+                            onChange={() => setVisibility('public')}
+                            className="text-primary focus:ring-primary bg-transparent border-outline-variant/50 w-5 h-5 cursor-pointer"
+                          />
+                        </label>
+                        <label className="flex-grow flex items-center justify-between p-3.5 bg-surface-container-lowest/30 border border-outline-variant/30 rounded-xl cursor-pointer hover:border-primary/50 transition-all group">
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary">lock</span>
+                            <span className="text-body-md text-white">Private</span>
+                          </div>
+                          <input 
+                            type="radio" 
+                            name="visibility" 
+                            value="private"
+                            checked={visibility === 'private'}
+                            onChange={() => setVisibility('private')}
+                            className="text-primary focus:ring-primary bg-transparent border-outline-variant/50 w-5 h-5 cursor-pointer"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-label-md text-label-md text-on-surface-variant mb-2 font-semibold">Lời bài hát (Tùy chọn)</label>
+                    <textarea 
+                      value={lyrics}
+                      onChange={(e) => setLyrics(e.target.value)}
+                      rows="4"
+                      className="w-full bg-surface-container-lowest/50 border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md text-white focus:border-primary/50 transition-all outline-none resize-none"
+                      placeholder="Viết lời bài hát tại đây..."
+                    />
+                  </div>
+
+                  {/* Upload components */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Audio upload */}
+                    <div className="border-2 border-dashed border-outline-variant/40 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:border-primary/50 transition-colors group relative cursor-pointer bg-surface-container-low/20">
+                      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <span className="material-symbols-outlined text-primary">cloud_upload</span>
+                      </div>
+                      <p className="font-label-md text-label-md text-on-surface mb-1 font-bold">Audio File</p>
+                      <p className="text-[11px] text-on-surface-variant mb-4">Click để chọn file .mp3 hoặc .wav</p>
+                      <input 
+                        type="file" 
+                        accept="audio/*" 
+                        onChange={handleAudioChange}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        required={!audioBase64}
+                      />
+                      {audioBase64 && (
+                        <p className="text-[10px] bg-primary/25 text-primary px-3 py-1 rounded-full font-bold">File đã tải lên thành công</p>
+                      )}
+                    </div>
+
+                    {/* Image thumbnail upload */}
+                    <div className="border-2 border-dashed border-outline-variant/40 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:border-secondary/50 transition-colors group relative cursor-pointer bg-surface-container-low/20">
+                      <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <span className="material-symbols-outlined text-secondary">image</span>
+                      </div>
+                      <p className="font-label-md text-label-md text-on-surface mb-1 font-bold">Cover Thumbnail</p>
+                      <p className="text-[11px] text-on-surface-variant mb-4">Click để chọn ảnh bìa (Tỷ lệ 1:1)</p>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleImageChange}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        required={!imageBase64}
+                      />
+                      {imageBase64 && (
+                        <p className="text-[10px] bg-secondary/25 text-secondary px-3 py-1 rounded-full font-bold">Ảnh đã tải lên thành công</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {message && (
+                    <p className={`text-label-sm font-semibold ${message.includes('thành công') ? 'text-secondary' : 'text-error'}`}>
+                      {message}
+                    </p>
+                  )}
+
+                  <button 
+                    type="submit" 
+                    disabled={uploading}
+                    className="w-full bg-primary text-on-primary py-4 rounded-xl font-headline-md text-headline-md font-bold hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer mt-4 flex items-center justify-center"
+                  >
+                    {uploading ? `Đang xuất bản (${progress}%)` : 'Xuất bản bài hát'}
+                  </button>
+                </form>
+              </div>
+
+              {/* Progress bar inside form */}
+              {uploading && (
+                <div className="glass-panel rounded-2xl p-6 border border-primary/20 bg-primary/5">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-primary animate-pulse">sync</span>
+                      <p className="font-label-md text-label-md text-on-surface">Đang xử lý file nhạc...</p>
+                    </div>
+                    <span className="font-label-sm text-label-sm text-primary font-bold">{progress}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
+                    <div 
+                      style={{ width: `${progress}%` }}
+                      className="h-full bg-gradient-to-r from-primary to-secondary rounded-full shadow-[0_0_10px_rgba(221,183,255,0.5)] transition-all duration-300"
+                    ></div>
+                  </div>
+                </div>
+              )}
+            </section>
+
+            {/* Sidebar list of recent uploads */}
+            <aside className="space-y-6">
+              <div className="glass-panel rounded-2xl p-6 border border-white/5 shadow-xl max-h-[640px] overflow-y-auto custom-scrollbar">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-headline-md text-headline-md text-white font-bold">Bài hát đã đăng</h3>
+                  <span className="text-secondary text-label-sm font-bold">{artistSongs.length} bài hát</span>
+                </div>
+                
+                <div className="space-y-4">
+                  {artistSongs.length > 0 ? (
+                    artistSongs.map(song => (
+                      <div 
+                        key={song._id}
+                        className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-all border border-transparent hover:border-outline-variant/20 group"
+                      >
+                        <div className="w-12 h-12 rounded-lg bg-surface-container-highest overflow-hidden flex-shrink-0">
+                          <img className="w-full h-full object-cover" src={getFullUrl(song.thumbnailUrl)} alt={song.title} />
+                        </div>
+                        <div className="flex-grow overflow-hidden min-w-0">
+                          <p className="font-label-md text-label-md text-white truncate font-bold">{song.title}</p>
+                          <span className={`inline-block text-[9px] uppercase font-bold px-2 py-0.5 rounded ${song.moderationState === 'approved' ? 'bg-green-500/20 text-green-400' : song.moderationState === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+                            {song.moderationState === 'approved' ? 'Đã duyệt' : song.moderationState === 'pending' ? 'Chờ duyệt' : 'Bị chặn'}
+                          </span>
+                        </div>
+                        <button 
+                          onClick={() => handleDeleteSong(song._id)}
+                          className="p-1.5 text-error hover:bg-error/10 rounded-full transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">delete</span>
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-on-surface-variant text-label-sm">Bạn chưa tải lên bài hát nào.</p>
+                  )}
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </main>
+
+      <MusicPlayer />
     </>
   );
 };

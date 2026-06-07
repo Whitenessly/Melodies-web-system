@@ -56,6 +56,11 @@
   --font-label-md: Inter, sans-serif;
   --font-body-md: Inter, sans-serif;
   --font-body-lg: Inter, sans-serif;
+
+  --spacing-sidebar-width: 328px;
+  --spacing-player-height: 96px;
+  --spacing-gutter-desktop: 24px;
+  --spacing-margin-page: 24px;
 }
 
 :root {
@@ -115,4 +120,30 @@
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(221, 183, 255, 0.3);
+}
+
+/* Floating Layout Overrides for standard pages */
+main.md\:ml-sidebar-width {
+  margin-top: 24px !important;
+  margin-right: 24px !important;
+  margin-bottom: 144px !important;
+  min-height: calc(100vh - 168px) !important;
+  border-radius: 24px !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.1) !important;
+  background-color: rgba(23, 31, 51, 0.3) !important;
+  background-image: none !important;
+  backdrop-filter: blur(24px) !important;
+  overflow-y: auto !important;
+}
+
+@media (min-width: 768px) {
+  main.md\:ml-sidebar-width {
+    margin-left: 328px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  main.md\:ml-sidebar-width {
+    margin-left: 24px !important;
+  }
 }

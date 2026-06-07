@@ -2,6 +2,11 @@ import mongoose from 'mongoose';
 import User from './models/User.js';
 import Song from './models/Song.js';
 import Album from './models/Album.js';
+import Comment from './models/Comment.js';
+import Notification from './models/Notification.js';
+import Category from './models/Category.js';
+import SupportTicket from './models/SupportTicket.js';
+import Promotion from './models/Promotion.js';
 import { hashPassword } from './utils/token.js';
 
 const MONGO_URI = 'mongodb://localhost:27017/melodies';
@@ -68,6 +73,11 @@ async function seed() {
     await User.deleteMany({});
     await Song.deleteMany({});
     await Album.deleteMany({});
+    await Comment.deleteMany({});
+    await Notification.deleteMany({});
+    await Category.deleteMany({});
+    await SupportTicket.deleteMany({});
+    await Promotion.deleteMany({});
     console.log('Cleared existing database entries.');
 
     // Create Users
@@ -99,14 +109,50 @@ async function seed() {
     await listener.save();
     console.log('Seeded core users (Admin, Artist, Listener).');
 
-    // Create Songs linked to Artist
+    // Create Songs linked to Artist (approved by default)
     const songsToInsert = songsData.map(song => ({
       ...song,
-      artistId: artist._id
+      artistId: artist._id,
+      moderationState: 'approved'
     }));
     
     const dbSongs = await Song.insertMany(songsToInsert);
-    console.log(`Seeded ${dbSongs.length} mockup songs.`);
+    console.log(`Seeded ${dbSongs.length} approved mockup songs.`);
+
+    // Create 2 pending songs to populate the Admin moderation queue
+    const pendingSongs = [
+      {
+        title: 'Midnight Echoes',
+        artist: 'Alex Rivers',
+        artistId: artist._id,
+        genre: 'Electronic',
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
+        thumbnailUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCdXvFXudTrfms4Gd2heUbMWz_UX4R6b79xI9JuY0PXpHNFMLhbmD8hfkRmDHqXYAPBuCiRXIhwCxdsWqQmsGyaUaxvzc42EyOTqKF2IjoEk0TBeBUn4BgzwNghy1bP3aIWkw7j4DHiajRZ-qFGwzz81hr6y4SfcGGI5-RfwRYTCvScDmKm_JtojVs-E_VQHifx1LWazsDrmNGr8RJnbzKJVpbwS_3bZHWkmVe9FBpzq5ZoRz6hOD0540WcEsvL4PFXQA6iEegy_Jk',
+        views: 0,
+        likes: 0,
+        lyrics: 'Voices fading in the dark...',
+        moderationState: 'pending'
+      },
+      {
+        title: 'Synthetic Soul',
+        artist: 'Alex Rivers',
+        artistId: artist._id,
+        genre: 'Retro-synth',
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
+        thumbnailUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC0Vvd0Xs1Kb1nFbwTqJdxvvTy5pkPZuSBE3p1Q9GUkKt_4P8tTdJJOOCfFp486P3hg1oTAG4ioODVMU4p4YaxpgBCVB9Ea5fiGkr-C3qxibrBDumpwhBfcqlEtfe6zhGYtV-2T1UsYLeHv8VVZzNUV9FgJjeWk1_a3zJzREe1JVQADoyaKPC4uVnuHgP3g5yA9OZ6R4MeJDjCoP586Ar1qKR4pRDaSCH_0KCEzz37tg_Wg1WdbG4Ch6CYcs413teIphQeF9AVWoOg',
+        views: 0,
+        likes: 0,
+        lyrics: 'Machine thoughts, human feelings...',
+        moderationState: 'pending'
+      }
+    ];
+    await Song.insertMany(pendingSongs);
+    console.log('Seeded pending songs for moderation queue.');
+
+    // Setup follow relationship: Wesley Listener follows Alex Rivers (artist)
+    listener.following.push(artist._id);
+    await listener.save();
+    console.log('Setup Wesley Listener following Alex Rivers.');
 
     // Create an Album and link songs
     const album = new Album({
@@ -125,6 +171,61 @@ async function seed() {
       { albumId: album._id }
     );
     console.log('Seeded mockup album.');
+
+    // Create Categories
+    const categories = [
+      { name: 'Electronic', description: 'Energetic synthesized beats' },
+      { name: 'Brutalist', description: 'Industrial, raw soundscapes' },
+      { name: 'Retro-synth', description: 'Nostalgic 80s synthesizer tracks' },
+      { name: 'V-Pop', description: 'Vietnamese Popular music' },
+      { name: 'Indie', description: 'Independent alternative sounds' }
+    ];
+    await Category.insertMany(categories);
+    console.log('Seeded music categories.');
+
+    // Create Comments
+    const comments = [
+      { songId: dbSongs[0]._id, userId: listener._id, content: 'Bản phối cực chất! Thích nhịp synth ghê.', rating: 5 },
+      { songId: dbSongs[3]._id, userId: listener._id, content: 'Bài hát rất cảm động, gợi nhớ nhiều kỷ niệm.', rating: 5 }
+    ];
+    await Comment.insertMany(comments);
+    console.log('Seeded song comments.');
+
+    // Create Notifications
+    const notifications = [
+      {
+        userId: listener._id,
+        senderId: artist._id,
+        title: 'Album mới: Neon Nights',
+        message: 'Alex Rivers vừa phát hành album Neon Nights. Trải nghiệm ngay các bài hát độc quyền!',
+        type: 'new_track',
+        link: `/library-playlists`
+      },
+      {
+        userId: listener._id,
+        title: 'Hệ thống cập nhật',
+        message: 'Melodies vừa cập nhật giao diện mới cực đẹp theo phong cách Sonic Ethereal!',
+        type: 'system'
+      }
+    ];
+    await Notification.insertMany(notifications);
+    console.log('Seeded user notifications.');
+
+    // Create support tickets
+    const tickets = [
+      { userId: listener._id, subject: 'Lỗi phát nhạc', message: 'Tôi không thể nghe được bài Vapor Wave trên điện thoại.' },
+      { userId: artist._id, subject: 'Doanh thu tháng 5', message: 'Tôi chưa nhận được báo cáo doanh thu chi tiết cho tháng 5/2026.' }
+    ];
+    await SupportTicket.insertMany(tickets);
+    console.log('Seeded support tickets.');
+
+    // Create Promotions
+    const promotions = [
+      { title: 'Melodies Premium 1 Month', description: 'Trải nghiệm 1 tháng Premium miễn phí', code: 'PREMIUM1M', discountPercent: 100 },
+      { artistId: artist._id, title: 'Alex Rivers Merch Discount', description: 'Giảm giá 15% khi mua áo phông của Alex Rivers', code: 'ALEXR15', discountPercent: 15 }
+    ];
+    await Promotion.insertMany(promotions);
+    console.log('Seeded promotions.');
 
     console.log('Database seeding completed successfully!');
     process.exit(0);

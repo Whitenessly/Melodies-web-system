@@ -1,17 +1,368 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
+import { createPortal } from 'react-dom';
+import { api } from '../utils/api.js';
+import { usePlayer } from '../context/PlayerContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
+import Sidebar from '../components/Sidebar.jsx';
+import Header from '../components/Header.jsx';
+import MusicPlayer from '../components/MusicPlayer.jsx';
 
 const LibraryPlaylists = () => {
   const navigate = useNavigate();
-  const [isPlaying, setIsPlaying] = useState(false);
+  const { play } = usePlayer();
+  const { user, toggleLikeSong } = useAuth();
+  
+  const [playlists, setPlaylists] = useState([]);
+  const [songs, setSongs] = useState([]);
+  const [followedArtists, setFollowedArtists] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Playlist Creation Modal State
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [playlistTitle, setPlaylistTitle] = useState('');
+  const [playlistDesc, setPlaylistDesc] = useState('');
+  const [playlistVisibility, setPlaylistVisibility] = useState('private');
+  const [playlistImage, setPlaylistImage] = useState('');
+  const [creating, setCreating] = useState(false);
+
+  const fetchLibraryData = async () => {
+    try {
+      const playlistsData = await api.get('/playlists');
+      const songsData = await api.get('/songs');
+      
+      // Fetch public artists to find followed ones
+      const artistsData = await api.get('/users/artists');
+      const artists = (artistsData.artists || []).filter(u => 
+        user?.following && user.following.includes(u._id)
+      );
+
+      setPlaylists(playlistsData.playlists || []);
+      setSongs(songsData.songs || []);
+      setFollowedArtists(artists);
+    } catch (err) {
+      console.error('Failed to load library data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchLibraryData();
+    }
+  }, [user]);
+
+  const handlePlaySong = (song, list) => {
+    play(song, list);
+  };
+
+  const handleUnlike = async (e, songId) => {
+    e.stopPropagation();
+    try {
+      await toggleLikeSong(songId);
+      // Refresh list
+      fetchLibraryData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPlaylistImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCreatePlaylistSubmit = async (e) => {
+    e.preventDefault();
+    if (!playlistTitle.trim()) return;
+    setCreating(true);
+    try {
+      await api.post('/playlists', {
+        title: playlistTitle,
+        description: playlistDesc,
+        visibility: playlistVisibility,
+        image: playlistImage
+      });
+      // Reset & Refresh
+      setPlaylistTitle('');
+      setPlaylistDesc('');
+      setPlaylistImage('');
+      setShowCreateModal(false);
+      fetchLibraryData();
+    } catch (err) {
+      console.error(err);
+      alert('Tạo playlist thất bại.');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const likedSongs = songs.filter(s => user?.likedSongs && user.likedSongs.includes(s._id));
+
+  const getFullUrl = (url) => {
+    if (!url) return '';
+    return url.startsWith('http') ? url : `http://localhost:8080${url}`;
+  };
 
   return (
     <>
-      <nav className="flex justify-between items-center w-full px-gutter-desktop h-16 sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/10"><div className="flex items-center gap-8"><h1 className="font-headline-md text-headline-md font-bold text-primary">Melodies</h1><div className="hidden md:flex items-center bg-surface-container-high rounded-full px-4 py-1.5 gap-3 border border-white/5"><span className="material-symbols-outlined text-on-surface-variant">search</span><input className="bg-transparent border-none focus:ring-0 text-label-md font-label-md w-64 text-on-surface placeholder-on-surface-variant" placeholder="Tìm kiếm bài hát, nghệ sĩ..." type="text" /></div></div><div className="flex items-center gap-4"><button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors p-2 transition-transform scale-95 active:scale-90" data-icon="notifications">notifications</button><button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors p-2 transition-transform scale-95 active:scale-90" data-icon="settings">settings</button><div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center overflow-hidden border border-white/20"><img alt="User profile" className="w-full h-full object-cover" data-alt="A high-quality professional portrait of a modern user with a friendly expression. The lighting is soft and cinematic, with a clean studio background that matches the deep indigo and violet tones of a premium music application. The overall aesthetic is polished, energetic, and contemporary, emphasizing a creative persona." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0UZ7lvpZpSSJt7ZRH-kWvFzqTWgvJyiGKtBipdIYbI5Zig0zZgIODyA8iaO8WNVIgMXqkceZGru5bYyITDLl9IBmPy6MhcOK0u5B1psxFAH24vhp_rr5oumUJEk9DgQ95WmNEutX8Ok6a90GDnsuNQheIAbSsX8rhOzQS3YU5aN4z9Ro-TFzbfGs2gDS03ckz6UtzkAiBt-DtmCR38i9ei70qWHfLT4jhRpWj5l2_J5LDq02ZP8ljDgNs_-g_C5oXu6ZPevG9r00" /></div></div></nav><aside className="fixed left-0 top-0 h-full flex flex-col z-40 docked w-sidebar-width bg-surface-container-low/50 backdrop-blur-xl border-r border-white/5 pt-20 pb-24"><div className="px-6 mb-8"><button className="w-full bg-primary text-on-primary font-label-md text-label-md py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:brightness-110 transition-all active:scale-95"><span className="material-symbols-outlined" style={{fontVariationSettings: '\'FILL\' 1'}}>add</span>
-                Upload Music
-            </button></div><nav className="flex-1 overflow-y-auto px-3 space-y-1"><Link className="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-white/5 hover:text-white transition-all" to="#"><span className="material-symbols-outlined">home</span><span className="font-label-md text-label-md">Home</span></Link><Link className="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-white/5 hover:text-white transition-all" to="#"><span className="material-symbols-outlined">search</span><span className="font-label-md text-label-md">Search</span></Link><Link className="flex items-center gap-4 px-4 py-3 rounded-lg text-white border-l-4 border-primary bg-primary/10 transition-all" to="/library-playlists"><span className="material-symbols-outlined" style={{fontVariationSettings: '\'FILL\' 1'}}>library_music</span><span className="font-label-md text-label-md">Library</span></Link><Link className="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-white/5 hover:text-white transition-all" to="/artist-dashboard"><span className="material-symbols-outlined">insights</span><span className="font-label-md text-label-md">Analytics</span></Link><div className="mt-8 pt-6 border-t border-white/5"><h3 className="px-4 text-label-sm font-label-sm text-on-surface-variant/50 uppercase tracking-widest mb-4">Followed Artists</h3><div className="space-y-2"><div className="flex items-center gap-3 px-4 py-2 cursor-pointer group"><img className="w-8 h-8 rounded-full artist-glow" data-alt="A portrait of a soulful jazz singer in a dimly lit, atmospheric club environment. The lighting is warm and moody, with deep purple and electric cyan stage lights casting a creative glow. The style is professional and energetic, capturing a moment of intense musical expression in a high-fidelity cinematic manner." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2cIKMwCJHprnSgtcMGr0Rs8_3tbhsLjdoN7U0i-M9cWB4biQYygXQbYiWnmn7BZAoHqq9sNeFBrCP-TVeMr5JwPrZ2QPzCd09Z0iAPvJj235Luy-oobTeN9oNRPGwrHVw5r9Pcb4XW-I8JrkvLZ5Vullb1iS2LuHoeQZUU_fxS9oUIRklY1LPlcJSOOAlp1KwtiU9H0NXbiZID0MyEl08tikHByrvaQT3x2LbYMlgRwX3e8nuThedmXLaxJi0xb5dWJ4UFeh5f_Y" /><span className="font-label-md text-label-md text-on-surface-variant group-hover:text-white">Sơn Tùng M-TP</span></div><div className="flex items-center gap-3 px-4 py-2 cursor-pointer group"><img className="w-8 h-8 rounded-full artist-glow" data-alt="A close-up shot of a modern pop artist performing on stage. The atmosphere is electric with vibrant pink and blue neon lights creating a dynamic backdrop. The lighting highlights the energetic and creative personality of the artist, maintaining a sleek, professional digital art style suitable for a premium music platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDF9wYlQMfsDdxweTjwWDSfEy1okQ0xBgxEchj7hYvj501zy06DCGM7aetr6lexmjleqI3kQfUro7GNCHwWEbXnqwHUTuUgBE0HzjM9kOJbBrc_4rj3HbkiHOUYGP4SFodwebDLEjdQ6SNXiBbLQyRc_Dul7cCvfFeeDSO3_vi8VuQFe6hmEbHKuxl_qaOB9Oa-VBE4xmHerWolpYK8riHEZhYLCx4Xe6dphkf1JUDI7h-O8scuxnqyzeDWM34c3VuR3wKEZfpuQmE" /><span className="font-label-md text-label-md text-on-surface-variant group-hover:text-white">Suboi</span></div><div className="flex items-center gap-3 px-4 py-2 cursor-pointer group"><img className="w-8 h-8 rounded-full artist-glow" data-alt="An artistic portrait of an electronic music producer in a studio filled with modular synthesizers and soft neon light. The mood is deep and professional, using a palette of dark navy and glowing cyan to create depth. The lighting is precise, emphasizing a high-tech, creative environment for musical innovation." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgafMmRdKIlxhyJ63fvE7D5QSHIPG7qiMT9nZ4QD6aAetw5bnlCvWnAiOVdXiC2LSO4Os1RPis4OVgpc3GEhf2DCqTu26c7mKlaTqY0GYjnFIluwFZr2K-46B-Bx89qsVZtevVYFEHahcKSM6zMp7MAAEBfXgyTVHUFklaPSthaNjTyvw8Fi6aGALcxQpM9NQMG8PF-rpHV3TE-i_-tkIRHhRIWi2nhfpeTK4K671PB3aDXYw96sDGu2KVHDHyiWjiSP_zuhEqw8c" /><span className="font-label-md text-label-md text-on-surface-variant group-hover:text-white">Hoàng Thùy Linh</span></div></div></div></nav><div className="px-3 pb-4 space-y-1"><Link className="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-white/5 hover:text-white transition-all" to="#"><span className="material-symbols-outlined">person</span><span className="font-label-md text-label-md">Profile</span></Link><Link className="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-white/5 hover:text-white transition-all" to="#"><span className="material-symbols-outlined">logout</span><span className="font-label-md text-label-md">Logout</span></Link></div></aside><main className="ml-sidebar-width pb-[120px]"><div className="max-w-7xl mx-auto px-margin-page py-10"><header className="mb-12"><h2 className="font-headline-xl text-headline-xl text-white mb-2">Thư viện của bạn</h2><p className="text-on-surface-variant font-body-lg text-body-lg">Quản lý các bản nhạc, danh sách phát và nghệ sĩ yêu thích.</p></header><section className="mb-16"><div className="flex justify-between items-end mb-6"><h3 className="font-headline-md text-headline-md text-white">Vừa nghe gần đây</h3><Link className="text-primary font-label-md text-label-md hover:underline" to="#">Xem tất cả</Link></div><div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6"><div className="group cursor-pointer"><div className="relative aspect-square rounded-xl overflow-hidden mb-4 shadow-2xl transition-transform duration-300 group-hover:-translate-y-2"><img className="w-full h-full object-cover" data-alt="A cinematic album cover featuring abstract geometric shapes floating in a deep purple cosmic nebula. The lighting is dramatic, with neon cyan accents highlighting the edges of the floating forms. The mood is ethereal and energetic, designed for a high-fidelity modern music streaming experience." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5kYad0ffITzXDK1HygpEQtcTKnQmok892QQBL5vurMkV57yeGj9VfAxjsPukngZVoMhmq-Iemw6SJJ2VgUYeP1JN9Q12EAnj5w8yNEm71rJxzkS8nf01A5EDkIGDCJMKG3LTYtOq3DG8ZTF-FfTDrrccO8Vqn0DqE7gGYPYOBUqEGFW3HiLXz7SsFji_7V7p-r1MVYslSrzLKP4zc03FxEDS9TsQLAHf0KqiNSmeUEmy6zHKbhxeOhAlyGPguSByPRB3DSYdfhR0" /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]"><button className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg transition-transform scale-90 group-hover:scale-100"><span className="material-symbols-outlined" style={{fontVariationSettings: '\'FILL\' 1'}}>play_arrow</span></button></div></div><h4 className="font-label-md text-label-md text-white group-hover:text-primary transition-colors truncate">Lạc Trôi</h4><p className="font-label-sm text-label-sm text-on-surface-variant">Sơn Tùng M-TP</p></div><div className="group cursor-pointer"><div className="relative aspect-square rounded-xl overflow-hidden mb-4 shadow-2xl transition-transform duration-300 group-hover:-translate-y-2"><img className="w-full h-full object-cover" data-alt="A high-contrast black and white photography of a crowded concert at night, with vibrant neon purple lighting effects added digitally to create depth. The mood is professional and energetic, evoking the feeling of a live music festival. The style is clean and modern, fitting for a premium music platform dashboard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhkpkpUen_aoNt-R6O5c3XBJnYQzgoSb_i2qFlWHQb8YYuJUPSOc80XRS_FJlTwsD8IidKix7Vtd3knG1_CZQfKmyEnNwy8Fdz4A_VD5pJq1c5EIpJJFeZrC98jMPMvPftJ9PZ-nAVsyLGkZZ_1ViF-fXPoOfKAsK9kSebLzinr4GNS106iAHNssJTB8_NP1WbLlfMW5Tzy0ZHgC-yLM4G0zsFEI2A1LNOeuLPYGv4smOGS7q8K3jpiCrQ0_37mNhXjQWhDsoE49c" /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]"><button className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg transition-transform scale-90 group-hover:scale-100"><span className="material-symbols-outlined" style={{fontVariationSettings: '\'FILL\' 1'}}>play_arrow</span></button></div></div><h4 className="font-label-md text-label-md text-white group-hover:text-primary transition-colors truncate">Gieo Quẻ</h4><p className="font-label-sm text-label-sm text-on-surface-variant">Hoàng Thùy Linh</p></div><div className="group cursor-pointer"><div className="relative aspect-square rounded-xl overflow-hidden mb-4 shadow-2xl transition-transform duration-300 group-hover:-translate-y-2"><img className="w-full h-full object-cover" data-alt="An abstract artistic representation of sound waves in vibrant electric blue and violet against a deep obsidian background. The visual is crisp and high-resolution, featuring a glassmorphic blur around the edges. The aesthetic is sophisticated and professional, capturing the energetic essence of modern electronic music." src="https://lh3.googleusercontent.com/aida-public/AB6AXuANLwY2hVwuQNYfY5eKQGxecdyMs7y5eI3jFHq4MDHG3SRbFmH_F3O7y7CFf4TB3dj7zOxn8BCsXpIIGjUJ4an1nlv3OVrB84k4fb8MbpwcNE1SrAmQwcNoNgnKfrv6-BmP4PQtlKkv9gMabOJiiVCOw4-BvppPDRyBAYE2Ox3ngKdRHnFDXG_yMGGhjzTXMLiYTYUsFCfwXzXi4yX4UUbcScQ7GG0GgZuge_SYA1g1MqXOgWJcnueFEP96A1Rhk99LNWxf0q73icY" /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]"><button className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg transition-transform scale-90 group-hover:scale-100"><span className="material-symbols-outlined" style={{fontVariationSettings: '\'FILL\' 1'}}>play_arrow</span></button></div></div><h4 className="font-label-md text-label-md text-white group-hover:text-primary transition-colors truncate">24K Magic</h4><p className="font-label-sm text-label-sm text-on-surface-variant">Bruno Mars</p></div><div className="group cursor-pointer"><div className="relative aspect-square rounded-xl overflow-hidden mb-4 shadow-2xl transition-transform duration-300 group-hover:-translate-y-2"><img className="w-full h-full object-cover" data-alt="A minimalist digital artwork showing a vintage microphone surrounded by swirling ribbons of light in primary purple and neon cyan. The lighting is soft yet focused, creating a premium feel. The mood is creative and professional, blending old-school music icons with a futuristic, modern design language." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB05rLoKMTLZNEl3QHXYwDhWVPShoAE1q5YK4ertMsgwp74qBr8bmQ2SwIifvTaSkC5_0xlq2GJtsuzllp-ZpfoTfXEGgVzJ2n1FJVKa1hQZCVaJYKXSQEigqfzMAOJqW01VssEwtSJPwaDEjSxnqDpFLBm5fIPbMUb_Rk1DGWlbLwheLLK8rgZup6OKwMkcWq_3atim_DsQBDjM_bxeDgliUo31etFXVxqNbTpqHePbnD5Z7kLpEMZo8zC7XXgAIESdvcBGZ6VlmI" /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]"><button className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg transition-transform scale-90 group-hover:scale-100"><span className="material-symbols-outlined" style={{fontVariationSettings: '\'FILL\' 1'}}>play_arrow</span></button></div></div><h4 className="font-label-md text-label-md text-white group-hover:text-primary transition-colors truncate">Best of Suboi</h4><p className="font-label-sm text-label-sm text-on-surface-variant">Suboi</p></div><div className="group cursor-pointer"><div className="relative aspect-square rounded-xl overflow-hidden mb-4 shadow-2xl transition-transform duration-300 group-hover:-translate-y-2"><img className="w-full h-full object-cover" data-alt="A cinematic, low-angle shot of a grand piano in a dark, moody room. Soft shafts of light pierce the darkness, highlighting the keys in a soft primary purple. The atmosphere is serene and professional, with a deep glassmorphic blur in the background. The visual style is high-end and artistic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPSa3LO767SNdej0E1CC4BWwP1Hs7BqOUSGvxIUKWVxmwx1pvIyMnUkoWUg_tXb_hBo7GCiK-OWMO_qsbFZi18AL7TZFgtHLyPE9DtuJjnfS7CAiFoPOj1BgNuZiyvQ-cb-zEMow6F1Fk-_hKTkpxuCng4R2CD25D7d_oR4NAWTedE_f5WqcB8-HrvSsyHOkN5fc2JQFy17Ra19YxEs5F-maJRQGnQJqvUlOYaAvU0NItitkZ9vScHMeWPCrsTkd8yskrBcNQ7neU" /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]"><button className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg transition-transform scale-90 group-hover:scale-100"><span className="material-symbols-outlined" style={{fontVariationSettings: '\'FILL\' 1'}}>play_arrow</span></button></div></div><h4 className="font-label-md text-label-md text-white group-hover:text-primary transition-colors truncate">Piano Chill</h4><p className="font-label-sm text-label-sm text-on-surface-variant">Lofi Studio</p></div><div className="group cursor-pointer"><div className="relative aspect-square rounded-xl overflow-hidden mb-4 shadow-2xl transition-transform duration-300 group-hover:-translate-y-2"><img className="w-full h-full object-cover" data-alt="A modern digital illustration of a city skyline at dusk, rendered in shades of dark indigo and vibrant pink. The city lights are stylized as glowing points, creating an energetic and urban mood. The professional artistic style is consistent with a high-end music streaming application's aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDaoyuRjoXT1EH1UgQ3_MPj3HQiB-qP23Y2aOHpvjvjXud8HjdDAQCl_JsSrY2-mYNx116Ig2It7LhXzcKrbsEHeXRv97LXVGvXs9hrHfqYq_fFWphqWGkD3xXMR9bY-u0NEWBcFUlOAVPu6Ghzv2Wd6qa9AQgglbO3sZJ1dxhldvRV5JsfzlGd_p3V4LXVspTAU96sAqxRNsRgOw0L45gVo1Cpr4NdwFVZxu1HXHQwlNVumRmU_pANoUwXMTT-kdBK5m94MJJArOA" /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]"><button className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg transition-transform scale-90 group-hover:scale-100"><span className="material-symbols-outlined" style={{fontVariationSettings: '\'FILL\' 1'}}>play_arrow</span></button></div></div><h4 className="font-label-md text-label-md text-white group-hover:text-primary transition-colors truncate">Urban Vibe</h4><p className="font-label-sm text-label-sm text-on-surface-variant">V-Pop Wave</p></div></div></section><section className="mb-16"><h3 className="font-headline-md text-headline-md text-white mb-6">Danh sách phát của tôi</h3><div className="grid grid-cols-1 md:grid-cols-3 gap-6"><div className="md:col-span-2 glass-card rounded-2xl p-6 flex flex-col justify-between group h-80 relative overflow-hidden"><div className="absolute top-0 right-0 w-1/2 h-full opacity-30 group-hover:opacity-50 transition-opacity"><img className="w-full h-full object-cover" data-alt="An energetic concert scene with a large crowd and dynamic stage lighting in shades of electric blue and violet. The shot is wide, capturing the scale and excitement of a professional music performance. The overall mood is vibrant and creative, with a high-end cinematic feel." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuyMm-xvJmCRS5D8xMgkuGHW2IYy1YhVt8qwytdhlCd6En90uX-JVLYMYlokdX_3XomYdThZUhlY4SQoR-jUi_DtyYncZ_U3-w-QorboncGKU6YgU6lQ-habfw35DY3kDyLhnV93y719Qw19qcisoM6LYAYxSSlT-6uCYnJAE06JHs3edc_RZzsulwKspSAqyMnsEKM1-vkUtgeqAnGss8ge-_AMJBThqrWt1AXuWO3MIHEnYYeo69S8TjTbn1j-50Qq35-aRaBrU" /></div><div className="relative z-10"><div className="flex items-center gap-2 mb-4"><span className="bg-secondary/20 text-secondary px-3 py-1 rounded-full text-label-sm font-label-sm border border-secondary/30">Công khai</span><span className="text-on-surface-variant font-label-sm text-label-sm">• 48 bài hát</span></div><h4 className="font-headline-lg text-headline-lg text-white mb-2">Nhạc Quẩy Cuối Tuần</h4><p className="text-on-surface-variant font-body-md text-body-md max-w-sm">Tuyển tập những bản nhạc EDM và V-Pop sôi động nhất để bắt đầu kỳ nghỉ.</p></div><div className="flex items-center gap-4 relative z-10"><button className="bg-primary text-on-primary px-6 py-2.5 rounded-full font-bold flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all"><span className="material-symbols-outlined" style={{fontVariationSettings: '\'FILL\' 1'}}>play_arrow</span>
-                                Phát ngay
-                            </button><button className="p-2.5 rounded-full border border-white/10 hover:bg-white/5 transition-all"><span className="material-symbols-outlined text-white">more_horiz</span></button></div></div><div className="glass-card rounded-2xl p-6 flex flex-col group relative overflow-hidden"><div className="flex items-center justify-between mb-6 relative z-10"><span className="bg-surface-container-highest text-on-surface-variant px-3 py-1 rounded-full text-label-sm font-label-sm border border-white/5">Riêng tư</span><span className="material-symbols-outlined text-on-surface-variant">lock</span></div><div className="relative z-10 mt-auto"><h4 className="font-headline-md text-headline-md text-white mb-1">Giai Điệu Buồn</h4><p className="text-on-surface-variant font-label-md text-label-md mb-4">32 bài hát • Tạo bởi Bạn</p><div className="flex -space-x-3"><img className="w-10 h-10 rounded-full border-2 border-background" data-alt="Small avatar of a music artist." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEdQnarUDq0Yw8_lJLQpBzdP7uvpsXEhOn_2_p7XCQCrxqWayCnwdY7SWg6ADyxHy4EONfYOT01JwLWjHmg5wzgIYfPlrqpPt9eb8sRBk5LYBRxV6TbCO3knMnjYNgpONIJXhWP2P24LpU-vlnhve34xTk1ecRIu_yzXUVXYgg4D0VMw4q-UlV4txgaJbPE1NDGryAFS5vQnYNf3aTiGwdKg7Knxpo1oIj-0WGShL3ldph2IjPBh1GEEfVu_twCPKFcCBclmQKWQo" /><img className="w-10 h-10 rounded-full border-2 border-background" data-alt="Small avatar of a music artist." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeUzTxDtHcWGNT92pgWc4XOKTKsEqD4O1NErisng3NXHb9VHrQP0BNdNu-cOKWlHHILjreNNYgrAlihdGCRW3TWu3RU6bxtyfEvm1srLkMnvcd3Z9oCWep_UIoXlamkl8SNvRr8PQc-u0EzRBWQreKX4w6L7UxSi318whP--mSTx97dd4VYGq2xyyFmUGIP-ixEbxVNtbccnkZlbISCca3Bo4b6eGeltpYq3Rlvs8MsHuWbfODhqm6YeMKQZt1k9DxCH4wpIkgthE" /><img className="w-10 h-10 rounded-full border-2 border-background" data-alt="Small avatar of a music artist." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3DzMJxgLUXSv4KbYANCV3-qr6WTXkzSsPrNBH4oNa6Eqkrc3SX6fPRjlM36QQTQNArjWKT4suhWCxYlF8_HMJBOddRnz4Mmc5c1PmSCxIXi9GnGFLpSQdncjhCCSKgJbrIfSUbN7uIxea8HNAx2bzG3O1c8O8VXNFYe161_fiaEZ42fV5-Y9TXlHEJErUIkNoDP6FUO9oRQCSABa7Uoe5qDELPe92fCW8cbITaM01lMW34AnIwjyPi8w8aho0fe76LtZ-_ucu0kE" /><div className="w-10 h-10 rounded-full border-2 border-background bg-surface-container-highest flex items-center justify-center text-label-sm font-label-sm text-on-surface-variant">+29</div></div></div><div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity"><button className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg"><span className="material-symbols-outlined" style={{fontVariationSettings: '\'FILL\' 1'}}>play_arrow</span></button></div></div></div></section><section className="mb-10"><div className="flex justify-between items-center mb-6"><h3 className="font-headline-md text-headline-md text-white">Bài hát yêu thích</h3><div className="flex gap-2"><button className="p-2 rounded-lg bg-surface-container-high border border-white/5 hover:bg-white/5 transition-all"><span className="material-symbols-outlined text-white">sort</span></button></div></div><div className="overflow-x-auto"><table className="w-full text-left border-separate border-spacing-y-2"><thead><tr className="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider"><th className="px-6 py-4 font-normal"># Tiêu đề</th><th className="px-6 py-4 font-normal">Album</th><th className="px-6 py-4 font-normal">Ngày thêm</th><th className="px-6 py-4 font-normal text-right"><span className="material-symbols-outlined text-base">schedule</span></th><th className="px-6 py-4"></th></tr></thead><tbody className="space-y-4"><tr className="group hover:bg-white/5 transition-colors cursor-pointer rounded-xl"><td className="px-6 py-4 first:rounded-l-xl"><div className="flex items-center gap-4"><span className="w-4 text-on-surface-variant font-label-md text-label-md group-hover:hidden">1</span><span className="w-4 text-primary group-hover:inline-block hidden material-symbols-outlined">play_arrow</span><img className="w-12 h-12 rounded-lg object-cover" data-alt="Square album art for a contemporary pop track. Bright neon colors and professional studio lighting create a high-energy, creative vibe. The overall look is clean, modern, and artistic, perfect for a high-fidelity music interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSaaJzvK9Mk132DiYqipEJqx6kEGQybYlcDcmC4oGjfnVUgwr94HImEgwIHmOdEyARjoD2Q-dKWddeM2rco0KaJ90nGaCOjMD-eb_zjhFm9ABNODkY_87HqDN2sqb2K3L53vB-YyV1wsUjvVwQm55_tvCWWXP1ksBLHpS6H2iiID_IspOGn80YEmBlJ7YqhiYeyCgaklJ96zmyM2J7Ag72ZGuPrVL8KdEy3oC4yHuVj71rHI_ATkb_cJPnSAnzoHBgtVXCKmNUtGg" /><div><p className="font-label-md text-label-md text-white group-hover:text-primary transition-colors">Một Cú Lừa</p><p className="font-label-sm text-label-sm text-on-surface-variant">Bích Phương</p></div></div></td><td className="px-6 py-4 font-label-md text-label-md text-on-surface-variant">Tâm Trạng Tan Chậm</td><td className="px-6 py-4 font-label-md text-label-md text-on-surface-variant">2 thg 1, 2024</td><td className="px-6 py-4 font-label-md text-label-md text-on-surface-variant text-right">3:42</td><td className="px-6 py-4 last:rounded-r-xl text-right"><div className="flex items-center justify-end gap-4"><button className="material-symbols-outlined text-primary" style={{fontVariationSettings: '\'FILL\' 1'}}>favorite</button><button className="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100">more_horiz</button></div></td></tr><tr className="group hover:bg-white/5 transition-colors cursor-pointer rounded-xl"><td className="px-6 py-4 first:rounded-l-xl"><div className="flex items-center gap-4"><span className="w-4 text-on-surface-variant font-label-md text-label-md group-hover:hidden">2</span><span className="w-4 text-primary group-hover:inline-block hidden material-symbols-outlined">play_arrow</span><img className="w-12 h-12 rounded-lg object-cover" data-alt="Creative album artwork featuring an abstract painting with deep primary purple and electric cyan strokes. The mood is sophisticated and professional, designed for a modern user's favorite songs list. The lighting is high-key and vibrant." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOdmkbsCrz4BmhfuOumry2AVnOi2m2Er61yAfiOaAj9VLawCLobqAgQZ_uUTzh89uEx4FjvgwekUxzzpm8bNZZInGUkETjqKxgnc_ykaajfsJKssYsdPDwCsVpA3su8XTx1KaoowUi_7xv12GrpgsCsfzO8DIC5K_IauO0jKON3TyAVFmgkjdKNvZEzHfuEkGKjCcvywa_jOzGZMf0kbJaAiSWlWUR_Qz60TaautzsQP_GtVWtAhKIe9cTppUezzAnLAscjnFNAm8" /><div><p className="font-label-md text-label-md text-white group-hover:text-primary transition-colors">See Tình</p><p className="font-label-sm text-label-sm text-on-surface-variant">Hoàng Thùy Linh</p></div></div></td><td className="px-6 py-4 font-label-md text-label-md text-on-surface-variant">LINK</td><td className="px-6 py-4 font-label-md text-label-md text-on-surface-variant">12 thg 1, 2024</td><td className="px-6 py-4 font-label-md text-label-md text-on-surface-variant text-right">3:05</td><td className="px-6 py-4 last:rounded-r-xl text-right"><div className="flex items-center justify-end gap-4"><button className="material-symbols-outlined text-primary" style={{fontVariationSettings: '\'FILL\' 1'}}>favorite</button><button className="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100">more_horiz</button></div></td></tr><tr className="group hover:bg-white/5 transition-colors cursor-pointer rounded-xl"><td className="px-6 py-4 first:rounded-l-xl"><div className="flex items-center gap-4"><span className="w-4 text-on-surface-variant font-label-md text-label-md group-hover:hidden">3</span><span className="w-4 text-primary group-hover:inline-block hidden material-symbols-outlined">play_arrow</span><img className="w-12 h-12 rounded-lg object-cover" data-alt="Album cover for a deep house track, featuring a minimalist urban nightscape with neon highlights in primary purple. The style is professional and moody, with a glassmorphic depth effect. The lighting captures the energetic pulse of city life in a sleek, digital artistic format." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcF-3z8SCR-zAXTHOuwgjw6U-qW_dGQ2A8ecyqyLl_DiHTRxxujaPiPd-xX_2YQGPd95_lSWBJhaphYD3dmC0ZUNvDNAMTKGrHk8Bsi79PNJ3rFksAJVYYg4xnJy2ORqGWN8mfUoHrWPK3JWJhJwLVihUlztzGWvzm_wR8sG2suEnrF8MgCnnu_YSHbmIojnSNKTqDZYrnM2K-mCQ55OYk68IeLbvXhtRke9cbvGQ3h3jHJyMzrR0dpqkBi40ObBAo25n-IDEQ3EM" /><div><p className="font-label-md text-label-md text-white group-hover:text-primary transition-colors">Cắt Đôi Nỗi Sầu</p><p className="font-label-sm text-label-sm text-on-surface-variant">Tăng Duy Tân</p></div></div></td><td className="px-6 py-4 font-label-md text-label-md text-on-surface-variant">Single</td><td className="px-6 py-4 font-label-md text-label-md text-on-surface-variant">15 thg 1, 2024</td><td className="px-6 py-4 font-label-md text-label-md text-on-surface-variant text-right">3:12</td><td className="px-6 py-4 last:rounded-r-xl text-right"><div className="flex items-center justify-end gap-4"><button className="material-symbols-outlined text-primary" style={{fontVariationSettings: '\'FILL\' 1'}}>favorite</button><button className="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100">more_horiz</button></div></td></tr></tbody></table></div></section></div></main><footer className="fixed bottom-0 left-0 w-full z-50 flex items-center px-gutter-desktop justify-between bg-surface-container-lowest/90 backdrop-blur-lg h-player-height border-t border-white/10 shadow-xl"><div className="flex items-center gap-4 w-1/4"><img className="w-14 h-14 rounded-lg shadow-lg" data-alt="Close-up of album artwork on the music player. Vibrant cosmic nebula in purple and blue tones, creating a creative and energetic atmosphere for the playing track. High-fidelity and professional visual style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAz6lGtRlG5eDFJsy-1Wd1IrdoIKK96YK051pRJ2rp_Kr54riRtike8bghBWAGPbfVdPJt0T6T7QoWUHjRdFJN8wGXDGv97dsMrZjKcIT8ApK-DWj2ztJsEucAjuR2rYqE8Pzx5zz1nH2Qe4gq8Vu54jWN6-ZBUwzBRdWg9OSyiSmOTheOQg8-udRMfpAdnmVzP5Ym3G5qNQHSMH3dL7b_q1k31UvenntZpe8vzB1xBUdEkj7TNCNWNkVlHYBRJKzMDrVuWTdO54u8" /><div><h5 className="text-label-md font-label-md text-white">Lạc Trôi</h5><p className="text-label-sm font-label-sm text-on-surface-variant">Sơn Tùng M-TP</p></div><button className="material-symbols-outlined text-primary ml-2" style={{fontVariationSettings: '\'FILL\' 1'}}>favorite</button></div><div className="flex flex-col items-center gap-2 flex-1 max-w-xl"><div className="flex items-center gap-6"><button className="material-symbols-outlined text-on-surface-variant hover:text-white transition-colors">shuffle</button><button className="material-symbols-outlined text-white hover:text-primary transition-colors text-3xl">skip_previous</button><button className="w-12 h-12 rounded-full bg-white text-background flex items-center justify-center hover:scale-105 active:scale-95 transition-all"><span className="material-symbols-outlined text-3xl" style={{fontVariationSettings: '\'FILL\' 1'}}>play_arrow</span></button><button className="material-symbols-outlined text-white hover:text-primary transition-colors text-3xl">skip_next</button><button className="material-symbols-outlined text-on-surface-variant hover:text-white transition-colors">repeat</button></div><div className="w-full flex items-center gap-3"><span className="text-label-sm font-label-sm text-on-surface-variant">1:45</span><div className="flex-1 h-1 bg-white/10 rounded-full relative overflow-hidden group cursor-pointer"><div className="absolute top-0 left-0 h-full w-1/3 bg-primary rounded-full group-hover:bg-secondary transition-colors"></div><div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"></div></div><span className="text-label-sm font-label-sm text-on-surface-variant">3:42</span></div></div><div className="flex items-center justify-end gap-4 w-1/4"><button className="material-symbols-outlined text-on-surface-variant hover:text-white transition-colors">mic</button><button className="material-symbols-outlined text-on-surface-variant hover:text-white transition-colors">queue_music</button><button className="material-symbols-outlined text-on-surface-variant hover:text-white transition-colors">devices</button><div className="flex items-center gap-2 w-32 group"><span className="material-symbols-outlined text-on-surface-variant group-hover:text-white transition-colors">volume_up</span><div className="flex-1 h-1 bg-white/10 rounded-full relative overflow-hidden"><div className="absolute top-0 left-0 h-full w-2/3 bg-on-surface-variant group-hover:bg-primary transition-colors"></div></div></div></div></footer>
+      <Sidebar />
+
+      <main className="md:ml-sidebar-width pb-[120px] bg-background min-h-screen">
+        <Header placeholder="Tìm kiếm trong thư viện..." />
+
+        {loading ? (
+          <div className="flex items-center justify-center h-[calc(100vh-64px)] text-primary">
+            <span className="material-symbols-outlined text-4xl animate-spin mr-2">sync</span>
+            <span>Đang tải thư viện của bạn...</span>
+          </div>
+        ) : (
+          <div className="max-w-7xl mx-auto px-margin-page py-10">
+            <header className="mb-12 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+              <div>
+                <h2 className="font-headline-xl text-headline-xl text-white mb-2 font-bold">Thư viện của bạn</h2>
+                <p className="text-on-surface-variant font-body-lg text-body-lg">Quản lý các bản nhạc, danh sách phát và nghệ sĩ yêu thích.</p>
+              </div>
+              <button 
+                onClick={() => setShowCreateModal(true)}
+                className="bg-primary text-on-primary font-label-md text-label-md py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-xl"
+              >
+                <span className="material-symbols-outlined">add</span>
+                Tạo Playlist
+              </button>
+            </header>
+
+            {/* Followed Artists Section */}
+            <section className="mb-16">
+              <h3 className="font-headline-md text-headline-md text-white mb-6 font-bold">Nghệ sĩ đang theo dõi</h3>
+              <div className="flex flex-wrap gap-6">
+                {followedArtists.length > 0 ? (
+                  followedArtists.map(artist => (
+                    <div 
+                      key={artist._id}
+                      onClick={() => navigate(`/artist-detail?id=${artist._id}`)}
+                      className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-xl border border-white/5 group hover:bg-white/10 transition-colors cursor-pointer"
+                    >
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-primary-container flex items-center justify-center font-bold text-xs">
+                        {artist.name[0].toUpperCase()}
+                      </div>
+                      <span className="font-label-md text-label-md text-white font-bold">{artist.name}</span>
+                      <span className="inline-block text-[10px] bg-secondary/25 text-secondary px-2 py-0.5 rounded-full font-bold uppercase">Followed</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-on-surface-variant/75 text-body-md">Bạn chưa theo dõi nghệ sĩ nào.</p>
+                )}
+              </div>
+            </section>
+
+            {/* My Playlists list */}
+            <section className="mb-16">
+              <h3 className="font-headline-md text-headline-md text-white mb-6 font-bold">Danh sách phát của tôi</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {playlists.length > 0 ? (
+                  playlists.map(pl => (
+                    <div 
+                      key={pl._id}
+                      onClick={() => navigate(`/playlist-detail?id=${pl._id}`)}
+                      className="glass-panel rounded-2xl p-6 flex flex-col group relative overflow-hidden h-72 justify-between cursor-pointer hover:bg-white/10 transition-colors border border-white/5"
+                    >
+                      <div className="flex items-center justify-between mb-6 relative z-10">
+                        <span className={`px-3 py-1 rounded-full text-label-sm font-label-sm border ${pl.visibility === 'public' ? 'bg-secondary/25 text-secondary border-secondary/30' : 'bg-surface-container-highest text-on-surface-variant border-white/5'}`}>
+                          {pl.visibility === 'public' ? 'Công khai' : 'Riêng tư'}
+                        </span>
+                        <span className="material-symbols-outlined text-on-surface-variant">
+                          {pl.visibility === 'public' ? 'public' : 'lock'}
+                        </span>
+                      </div>
+                      
+                      <div className="relative z-10 mt-auto">
+                        <h4 className="font-headline-md text-headline-md text-white mb-1 font-bold truncate">{pl.title}</h4>
+                        <p className="text-on-surface-variant font-label-md text-label-md mb-2 truncate">{pl.description || 'Không có mô tả'}</p>
+                        <p className="text-on-surface-variant text-[11px] font-semibold">{pl.songs?.length || 0} bài hát</p>
+                      </div>
+
+                      {pl.songs && pl.songs.length > 0 && (
+                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); play(pl.songs[0], pl.songs); }}
+                            className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-3 glass-panel p-8 rounded-2xl text-center border border-dashed border-white/10">
+                    <span className="material-symbols-outlined text-5xl text-on-surface-variant/50 mb-3">playlist_play</span>
+                    <p className="text-on-surface-variant font-body-md mb-4">Bạn chưa tạo danh sách phát nào.</p>
+                    <button 
+                      onClick={() => setShowCreateModal(true)}
+                      className="px-6 py-2 rounded-full bg-primary text-on-primary font-bold hover:brightness-110 cursor-pointer"
+                    >
+                      Tạo ngay playlist đầu tiên
+                    </button>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Liked songs list */}
+            <section className="mb-10">
+              <h3 className="font-headline-md text-headline-md text-white mb-6 font-bold">Bài hát yêu thích</h3>
+              <div className="glass-panel rounded-3xl p-6 border border-white/5 overflow-hidden">
+                {likedSongs.length > 0 ? (
+                  <table className="w-full text-left border-separate border-spacing-y-2">
+                    <thead>
+                      <tr className="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider border-b border-white/5">
+                        <th className="px-6 py-4 font-normal"># Tiêu đề</th>
+                        <th className="px-6 py-4 font-normal">Thể loại</th>
+                        <th className="px-6 py-4 font-normal text-right">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="space-y-4">
+                      {likedSongs.map((song, i) => (
+                        <tr 
+                          key={song._id}
+                          onClick={() => handlePlaySong(song, likedSongs)}
+                          className="group hover:bg-white/5 transition-colors cursor-pointer rounded-xl"
+                        >
+                          <td className="px-6 py-4 first:rounded-l-xl">
+                            <div className="flex items-center gap-4">
+                              <span className="w-4 text-on-surface-variant font-label-md text-label-md group-hover:hidden font-bold">
+                                {i + 1}
+                              </span>
+                              <span className="w-4 text-primary group-hover:inline-block hidden material-symbols-outlined">
+                                play_arrow
+                              </span>
+                              <img className="w-12 h-12 rounded-lg object-cover" src={getFullUrl(song.thumbnailUrl)} alt={song.title} />
+                              <div className="min-w-0 overflow-hidden">
+                                <p className="font-label-md text-label-md text-white group-hover:text-primary transition-colors font-bold truncate">
+                                  {song.title}
+                                </p>
+                                <p 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (song.artistId) navigate(`/artist-detail?id=${song.artistId}`);
+                                  }}
+                                  className="font-label-sm text-label-sm text-on-surface-variant truncate hover:text-primary transition-colors cursor-pointer"
+                                >
+                                  {song.artist}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 font-label-md text-label-md text-on-surface-variant">
+                            {song.genre}
+                          </td>
+                          <td className="px-6 py-4 last:rounded-r-xl text-right">
+                            <div className="flex items-center justify-end gap-4">
+                              <button 
+                                onClick={(e) => handleUnlike(e, song._id)}
+                                className="material-symbols-outlined text-primary cursor-pointer hover:scale-110 transition-transform" 
+                                style={{ fontVariationSettings: "'FILL' 1" }}
+                              >
+                                favorite
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="text-center py-12 text-on-surface-variant">
+                    <span className="material-symbols-outlined text-5xl mb-3">favorite_border</span>
+                    <p className="font-body-md">Không có bài hát yêu thích nào.</p>
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+        )}
+      </main>
+
+      {/* Playlist Creation Modal */}
+      {showCreateModal && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="glass-panel p-8 rounded-3xl w-full max-w-md border border-white/10 relative">
+            <button 
+              onClick={() => setShowCreateModal(false)}
+              className="absolute top-4 right-4 text-on-surface-variant hover:text-white cursor-pointer"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+            <h3 className="font-headline-md text-headline-md text-white mb-6 font-bold">Tạo Playlist Mới</h3>
+            
+            <form onSubmit={handleCreatePlaylistSubmit} className="space-y-4">
+              <div>
+                <label className="block text-label-sm text-on-surface-variant mb-2">Tên Playlist</label>
+                <input 
+                  type="text" 
+                  value={playlistTitle}
+                  onChange={(e) => setPlaylistTitle(e.target.value)}
+                  className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md text-white focus:border-primary transition-all outline-none"
+                  placeholder="Nhập tên playlist..."
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-label-sm text-on-surface-variant mb-2">Mô tả</label>
+                <textarea 
+                  value={playlistDesc}
+                  onChange={(e) => setPlaylistDesc(e.target.value)}
+                  rows="3"
+                  className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md text-white focus:border-primary transition-all outline-none resize-none"
+                  placeholder="Nhập mô tả ngắn..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-label-sm text-on-surface-variant mb-2">Quyền truy cập</label>
+                <select 
+                  value={playlistVisibility}
+                  onChange={(e) => setPlaylistVisibility(e.target.value)}
+                  className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md text-white focus:border-primary transition-all outline-none"
+                >
+                  <option value="private">Riêng tư (Private)</option>
+                  <option value="public">Công khai (Public)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-label-sm text-on-surface-variant mb-2">Ảnh bìa (Tùy chọn)</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="w-full text-label-sm text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-label-sm file:font-semibold file:bg-primary/20 file:text-primary file:cursor-pointer hover:file:bg-primary/30"
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={creating}
+                className="w-full py-3 bg-primary text-on-primary rounded-xl font-bold hover:brightness-110 transition-all cursor-pointer flex justify-center items-center mt-6"
+              >
+                {creating ? 'Đang tạo...' : 'Tạo Playlist'}
+              </button>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      <MusicPlayer />
     </>
   );
 };

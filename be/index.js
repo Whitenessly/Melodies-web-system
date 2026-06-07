@@ -10,6 +10,12 @@ import songRoutes from './routes/songRoutes.js';
 import albumRoutes from './routes/albumRoutes.js';
 import playlistRoutes from './routes/playlistRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import commentRoutes from './routes/commentRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
+import supportRoutes from './routes/supportRoutes.js';
+import promotionRoutes from './routes/promotionRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 dotenv.config();
 const PORT = process.env.PORT || 8080;
@@ -34,6 +40,12 @@ app.use('/api/songs', songRoutes);
 app.use('/api/albums', albumRoutes);
 app.use('/api/playlists', playlistRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/comments', commentRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/promotions', promotionRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Root message
 app.get('/', (req, res) => {
