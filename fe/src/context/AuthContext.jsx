@@ -63,9 +63,9 @@ export const AuthProvider = ({ children }) => {
     return data.liked;
   };
 
-  const updateProfile = async (name) => {
-    const data = await api.put('/auth/profile', { name });
-    setUser(prev => prev ? { ...prev, name: data.user.name } : null);
+  const updateProfile = async (profileData) => {
+    const data = await api.put('/auth/profile', profileData);
+    setUser(data.user);
     return data.user;
   };
 
@@ -85,8 +85,24 @@ export const AuthProvider = ({ children }) => {
     return data.followed;
   };
 
+  const toggleLikePlaylist = async (playlistId) => {
+    const data = await api.post('/users/likes/playlist', { playlistId });
+    setUser(prev => {
+      if (!prev) return null;
+      const likedPlaylists = prev.likedPlaylists ? [...prev.likedPlaylists] : [];
+      const index = likedPlaylists.indexOf(playlistId);
+      if (index === -1) {
+        likedPlaylists.push(playlistId);
+      } else {
+        likedPlaylists.splice(index, 1);
+      }
+      return { ...prev, likedPlaylists };
+    });
+    return data.liked;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile, toggleLikeSong, toggleFollowArtist }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, register, logout, updateProfile, toggleLikeSong, toggleFollowArtist, toggleLikePlaylist }}>
       {children}
     </AuthContext.Provider>
   );

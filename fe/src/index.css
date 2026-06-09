@@ -87,6 +87,10 @@
     background: linear-gradient(to top, #0b1326 0%, transparent 100%);
 }
 
+.header-gradient {
+    background: linear-gradient(to bottom, rgba(132, 43, 210, 0.15), transparent);
+}
+
 /* custom scrollbar */
 ::-webkit-scrollbar {
     width: 6px;

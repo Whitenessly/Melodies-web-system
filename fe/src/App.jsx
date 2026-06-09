@@ -14,6 +14,8 @@ import AdminDashboard from './routes/AdminDashboard';
 import LibraryPlaylists from './routes/LibraryPlaylists';
 import NotificationsSocial from './routes/NotificationsSocial';
 import PlaylistDetail from './routes/PlaylistDetail';
+import Settings from './routes/Settings';
+
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -80,6 +82,12 @@ function AppRoutes() {
           <NotificationsSocial />
         </ProtectedRoute>
       } />
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <Settings />
+        </ProtectedRoute>
+      } />
+
 
       {/* Artist & Admin only */}
       <Route path="/artist-dashboard" element={

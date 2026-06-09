@@ -1,5 +1,5 @@
 import express from 'express';
-import { toggleLikeSong, toggleFollowArtist, getRecentlyPlayed, getArtistStats, getAllUsers, deleteUser, getArtistPublicProfile, getPublicArtists } from '../controllers/userController.js';
+import { toggleLikeSong, toggleFollowArtist, getRecentlyPlayed, getArtistStats, getAllUsers, deleteUser, getArtistPublicProfile, getPublicArtists, toggleLikePlaylist } from '../controllers/userController.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -7,6 +7,7 @@ const router = express.Router();
 router.use(authenticate); // All user actions require authentication
 
 router.post('/likes', toggleLikeSong);
+router.post('/likes/playlist', toggleLikePlaylist);
 router.post('/follow', toggleFollowArtist);
 router.get('/history', getRecentlyPlayed);
 router.get('/artist/stats', getArtistStats);

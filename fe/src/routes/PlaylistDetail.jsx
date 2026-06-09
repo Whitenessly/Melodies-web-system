@@ -8,11 +8,23 @@ import Header from '../components/Header.jsx';
 import MusicPlayer from '../components/MusicPlayer.jsx';
 import defaultCover from '../assets/default-cover.png';
 
+import { createPortal } from 'react-dom';
+
 const PlaylistDetail = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { play, currentSong, isPlaying, toggleShuffle, shuffle } = usePlayer();
-  const { user, toggleLikeSong } = useAuth();
+  const { user, toggleLikeSong, toggleLikePlaylist } = useAuth();
+
+  // Dropdown & Edit Modal states
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [editVisibility, setEditVisibility] = useState('private');
+  const [editImage, setEditImage] = useState('');
+  const [updating, setUpdating] = useState(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
 
   const [playlist, setPlaylist] = useState(null);
   const [allSongs, setAllSongs] = useState([]);
@@ -92,17 +104,20 @@ const PlaylistDetail = () => {
     }
   };
 
-  const handleDeletePlaylist = async () => {
-    if (!playlistId) return;
-    const confirmDelete = window.confirm('Bạn có chắc chắn muốn xóa danh sách phát này không?');
-    if (!confirmDelete) return;
+  const handleDeletePlaylist = () => {
+    setShowDeleteConfirmModal(true);
+  };
 
+  const executeDeletePlaylist = async () => {
+    if (!playlistId) return;
     try {
       await api.delete(`/playlists/${playlistId}`);
       navigate('/library-playlists');
     } catch (err) {
       console.error('Failed to delete playlist:', err);
       alert('Không thể xóa danh sách phát.');
+    } finally {
+      setShowDeleteConfirmModal(false);
     }
   };
 
@@ -115,6 +130,49 @@ const PlaylistDetail = () => {
     }
   };
 
+  const handleOpenEdit = () => {
+    if (playlist) {
+      setEditTitle(playlist.title);
+      setEditDesc(playlist.description || '');
+      setEditVisibility(playlist.visibility || 'private');
+      setEditImage('');
+      setShowEditModal(true);
+    }
+    setShowDropdown(false);
+  };
+
+  const handleEditFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editTitle.trim()) return;
+    setUpdating(true);
+    try {
+      await api.put(`/playlists/${playlistId}`, {
+        title: editTitle,
+        description: editDesc,
+        visibility: editVisibility,
+        image: editImage || undefined
+      });
+      setShowEditModal(false);
+      await fetchPlaylistData();
+    } catch (err) {
+      console.error(err);
+      alert('Cập nhật playlist thất bại.');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const getFullUrl = (url) => {
     if (!url) return '';
     return url.startsWith('http') ? url : `http://localhost:8080${url}`;
@@ -122,11 +180,33 @@ const PlaylistDetail = () => {
 
   const isLiked = (songId) => user?.likedSongs?.includes(songId) || false;
 
+  const isPlaylistLiked = user?.likedPlaylists?.includes(playlistId) || false;
+
   const getPlaylistCover = () => {
     if (playlist && playlist.thumbnailUrl) {
       return getFullUrl(playlist.thumbnailUrl);
     }
     return defaultCover;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Chưa rõ';
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    return `${day} thg ${month}, ${year}`;
+  };
+
+  const formatPlaylistDuration = (songsList) => {
+    if (!songsList || songsList.length === 0) return '0 phút';
+    const totalSeconds = songsList.length * 210;
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    if (hours > 0) {
+      return `Khoảng ${hours} giờ ${minutes} phút`;
+    }
+    return `Khoảng ${minutes} phút`;
   };
 
   // Find songs that are NOT already in the playlist
@@ -187,14 +267,14 @@ const PlaylistDetail = () => {
         <div className="max-w-7xl mx-auto px-margin-page pt-12">
           
           {/* Header Banner Section (Stitch Template Design) */}
-          <section className="bg-gradient-to-b from-primary/15 to-transparent pb-8 flex flex-col md:flex-row gap-8 items-end rounded-3xl p-6 border border-white/5 mb-6">
+          <section className="header-gradient px-margin-page pt-12 pb-8 flex flex-col md:flex-row gap-8 items-end rounded-3xl p-6 border border-white/5 mb-6">
             <div className="relative group flex-shrink-0">
               <img 
-                className="w-56 h-56 md:w-64 md:h-64 object-cover rounded-2xl shadow-2xl transition-transform duration-500 group-hover:scale-[1.02]" 
+                className="w-64 h-64 md:w-72 md:h-72 object-cover rounded-xl shadow-2xl transition-transform duration-500 group-hover:scale-[1.02]" 
                 src={getPlaylistCover()} 
                 alt={playlist.title} 
               />
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors rounded-2xl"></div>
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors rounded-xl"></div>
             </div>
             
             <div className="flex-1 space-y-4 text-center md:text-left">
@@ -211,9 +291,11 @@ const PlaylistDetail = () => {
               <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl">{playlist.description || 'Không có mô tả cho danh sách phát này.'}</p>
               
               <div className="flex items-center justify-center md:justify-start gap-2 font-body-md text-on-surface-variant">
-                <span className="text-on-surface font-semibold font-bold">Của bạn</span>
+                <span className="text-on-surface font-semibold font-bold">{user?.name || 'Wesley Listener'}</span>
                 <span className="opacity-40">•</span>
                 <span>{playlist.songs?.length || 0} bài hát</span>
+                <span className="opacity-40">•</span>
+                <span>{formatPlaylistDuration(playlist.songs)}</span>
               </div>
             </div>
           </section>
@@ -237,6 +319,19 @@ const PlaylistDetail = () => {
               Trộn bài
             </button>
             <button 
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (toggleLikePlaylist && playlist) {
+                  await toggleLikePlaylist(playlist._id);
+                }
+              }}
+              className={`w-12 h-12 flex items-center justify-center rounded-full hover:bg-surface-variant transition-all cursor-pointer ${isPlaylistLiked ? 'text-primary' : 'text-on-surface-variant'}`}
+            >
+              <span className="material-symbols-outlined" style={{ fontVariationSettings: isPlaylistLiked ? "'FILL' 1" : "'FILL' 0" }}>
+                {isPlaylistLiked ? 'favorite' : 'favorite_border'}
+              </span>
+            </button>
+            <button 
               onClick={() => {
                 const el = document.getElementById('add-songs-section');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -246,13 +341,40 @@ const PlaylistDetail = () => {
               <span className="material-symbols-outlined">add</span>
               Thêm bài hát
             </button>
-            <button 
-              onClick={handleDeletePlaylist}
-              className="ml-auto bg-surface-container-high text-error px-6 py-3 rounded-full font-headline-md text-label-md flex items-center gap-2 border border-error/20 hover:bg-error/10 transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined">delete</span>
-              Xóa Playlist
-            </button>
+
+            <div className="relative ml-auto">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDropdown(!showDropdown);
+                }}
+                className={`w-12 h-12 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors cursor-pointer ${showDropdown ? 'text-primary bg-surface-variant/30' : 'text-on-surface-variant'}`}
+              >
+                <span className="material-symbols-outlined">more_horiz</span>
+              </button>
+              
+              {showDropdown && (
+                <div className="absolute right-0 mt-2 w-48 rounded-2xl bg-surface-container border border-white/10 shadow-2xl py-2 z-30">
+                  <button 
+                    onClick={handleOpenEdit}
+                    className="w-full text-left px-4 py-3 hover:bg-white/5 text-label-md text-white font-bold flex items-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm">edit</span>
+                    Chỉnh sửa
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setShowDropdown(false);
+                      handleDeletePlaylist();
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-error/10 text-label-md text-error font-bold flex items-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                    Xóa playlist
+                  </button>
+                </div>
+              )}
+            </div>
           </section>
 
           {/* Song list in Playlist (Stitch Template Design) */}
@@ -264,7 +386,8 @@ const PlaylistDetail = () => {
                     <tr className="text-on-surface-variant border-b border-outline-variant/20 font-label-sm text-label-sm uppercase tracking-widest">
                       <th className="py-4 px-4 w-12 text-center">#</th>
                       <th className="py-4 px-4">Tiêu đề</th>
-                      <th className="py-4 px-4">Thể loại</th>
+                      <th className="py-4 px-4">Album</th>
+                      <th className="py-4 px-4">Ngày thêm</th>
                       <th className="py-4 px-4 text-right pr-12">
                         <span className="material-symbols-outlined text-sm">schedule</span>
                       </th>
@@ -307,20 +430,23 @@ const PlaylistDetail = () => {
                             </div>
                           </td>
                           <td className="py-3 px-4 text-on-surface-variant">
-                            {song.genre}
+                            {song.albumId?.title || 'Single'}
+                          </td>
+                          <td className="py-3 px-4 text-on-surface-variant">
+                            {formatDate(song.createdAt)}
                           </td>
                           <td className="py-3 px-4 text-right pr-8">
                             <div className="flex items-center justify-end gap-6">
                               <button 
                                 onClick={(e) => handleRemoveSong(e, song._id)}
-                                className="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors p-1"
+                                className="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors p-1 cursor-pointer"
                                 title="Xóa khỏi playlist"
                               >
                                 delete
                               </button>
                               <button 
                                 onClick={(e) => handleLikeSong(e, song._id)}
-                                className={`material-symbols-outlined hover:scale-110 transition-transform ${isLiked(song._id) ? 'text-primary' : 'text-on-surface-variant group-hover:visible invisible'}`}
+                                className={`material-symbols-outlined hover:scale-110 transition-transform cursor-pointer ${isLiked(song._id) ? 'text-primary' : 'text-on-surface-variant group-hover:visible invisible'}`}
                               >
                                 {isLiked(song._id) ? 'favorite' : 'favorite_border'}
                               </button>
@@ -412,6 +538,108 @@ const PlaylistDetail = () => {
           </section>
         </div>
       </main>
+
+      {/* Playlist Edit Modal */}
+      {showEditModal && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="glass-panel p-8 rounded-3xl w-full max-w-md border border-white/10 relative">
+            <button 
+              onClick={() => setShowEditModal(false)}
+              className="absolute top-4 right-4 text-on-surface-variant hover:text-white cursor-pointer"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+            <h3 className="font-headline-md text-headline-md text-white mb-6 font-bold">Chỉnh sửa Playlist</h3>
+            
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <label className="block text-label-sm text-on-surface-variant mb-2">Tên Playlist</label>
+                <input 
+                  type="text" 
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md text-white focus:border-primary transition-all outline-none"
+                  placeholder="Nhập tên playlist..."
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-label-sm text-on-surface-variant mb-2">Mô tả</label>
+                <textarea 
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  rows="3"
+                  className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md text-white focus:border-primary transition-all outline-none resize-none"
+                  placeholder="Nhập mô tả ngắn..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-label-sm text-on-surface-variant mb-2">Quyền truy cập</label>
+                <select 
+                  value={editVisibility}
+                  onChange={(e) => setEditVisibility(e.target.value)}
+                  className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md text-white focus:border-primary transition-all outline-none"
+                >
+                  <option value="private">Riêng tư (Private)</option>
+                  <option value="public">Công khai (Public)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-label-sm text-on-surface-variant mb-2">Ảnh bìa mới (Tùy chọn)</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={handleEditFileChange}
+                  className="w-full text-label-sm text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-label-sm file:font-semibold file:bg-primary/20 file:text-primary file:cursor-pointer hover:file:bg-primary/30"
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={updating}
+                className="w-full py-3 bg-primary text-on-primary rounded-xl font-bold hover:brightness-110 transition-all cursor-pointer flex justify-center items-center mt-6"
+              >
+                {updating ? 'Đang cập nhật...' : 'Lưu thay đổi'}
+              </button>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Delete Confirmation Warning Modal */}
+      {showDeleteConfirmModal && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="glass-panel p-8 rounded-3xl w-full max-w-sm border border-error/20 relative shadow-2xl">
+            <div className="flex flex-col items-center text-center">
+              <span className="material-symbols-outlined text-error text-6xl mb-4 select-none">warning</span>
+              <h3 className="font-headline-md text-headline-md text-white mb-2 font-bold">Cảnh Báo Xóa</h3>
+              <p className="text-on-surface-variant font-body-md text-body-md mb-6">
+                Bạn có chắc chắn muốn xóa danh sách phát <span className="text-white font-bold">"{playlist?.title}"</span> không? Hành động này không thể hoàn tác.
+              </p>
+              
+              <div className="flex gap-4 w-full">
+                <button 
+                  onClick={() => setShowDeleteConfirmModal(false)}
+                  className="flex-1 py-3 bg-white/5 text-white border border-white/10 rounded-xl font-bold hover:bg-white/10 transition-all cursor-pointer"
+                >
+                  Hủy bỏ
+                </button>
+                <button 
+                  onClick={executeDeletePlaylist}
+                  className="flex-1 py-3 bg-error text-on-error rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-lg"
+                >
+                  Xác nhận xóa
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       <MusicPlayer />
     </>

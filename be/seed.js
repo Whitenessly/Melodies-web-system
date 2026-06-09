@@ -7,6 +7,7 @@ import Notification from './models/Notification.js';
 import Category from './models/Category.js';
 import SupportTicket from './models/SupportTicket.js';
 import Promotion from './models/Promotion.js';
+import Playlist from './models/Playlist.js';
 import { hashPassword } from './utils/token.js';
 
 const MONGO_URI = 'mongodb://localhost:27017/melodies';
@@ -78,6 +79,7 @@ async function seed() {
     await Category.deleteMany({});
     await SupportTicket.deleteMany({});
     await Promotion.deleteMany({});
+    await Playlist.deleteMany({});
     console.log('Cleared existing database entries.');
 
     // Create Users
@@ -86,7 +88,12 @@ async function seed() {
       name: 'Melodies Admin',
       email: 'admin@melodies.com',
       password: adminPass,
-      role: 'admin'
+      role: 'admin',
+      avatarUrl: "",
+      paymentMethods: [
+        { brand: 'Visa', cardholderName: 'Melodies Admin', last4: '4242', expiry: '12/2026', isDefault: true },
+        { brand: 'Mastercard', cardholderName: 'Melodies Admin', last4: '8899', expiry: '05/2025', isDefault: false }
+      ]
     });
     await admin.save();
 
@@ -95,7 +102,12 @@ async function seed() {
       name: 'Alex Rivers',
       email: 'artist@melodies.com',
       password: artistPass,
-      role: 'artist'
+      role: 'artist',
+      avatarUrl: "",
+      paymentMethods: [
+        { brand: 'Visa', cardholderName: 'Alex Rivers', last4: '4242', expiry: '12/2026', isDefault: true },
+        { brand: 'Mastercard', cardholderName: 'Alex Rivers', last4: '8899', expiry: '05/2025', isDefault: false }
+      ]
     });
     await artist.save();
 
@@ -104,10 +116,15 @@ async function seed() {
       name: 'Wesley Listener',
       email: 'listener@melodies.com',
       password: listenerPass,
-      role: 'listener'
+      role: 'listener',
+      avatarUrl: "",
+      paymentMethods: [
+        { brand: 'Visa', cardholderName: 'Wesley Listener', last4: '4242', expiry: '12/2026', isDefault: true },
+        { brand: 'Mastercard', cardholderName: 'Wesley Listener', last4: '8899', expiry: '05/2025', isDefault: false }
+      ]
     });
     await listener.save();
-    console.log('Seeded core users (Admin, Artist, Listener).');
+    console.log('Seeded core users (Admin, Artist, Listener) with payment methods.');
 
     // Create Songs linked to Artist (approved by default)
     const songsToInsert = songsData.map(song => ({
@@ -171,6 +188,18 @@ async function seed() {
       { albumId: album._id }
     );
     console.log('Seeded mockup album.');
+
+    // Create a playlist for Wesley Listener
+    const playlist = new Playlist({
+      title: 'Nhạc Quẩy Cuối Tuần',
+      description: 'Danh sách phát nhạc năng động, bùng nổ năng lượng cho những ngày cuối tuần vui vẻ.',
+      userId: listener._id,
+      thumbnailUrl: dbSongs[0].thumbnailUrl,
+      songs: [dbSongs[0]._id, dbSongs[1]._id, dbSongs[2]._id, dbSongs[3]._id],
+      visibility: 'public'
+    });
+    await playlist.save();
+    console.log('Seeded a playlist for Wesley Listener.');
 
     // Create Categories
     const categories = [

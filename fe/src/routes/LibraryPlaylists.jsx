@@ -37,7 +37,16 @@ const LibraryPlaylists = () => {
         user?.following && user.following.includes(u._id)
       );
 
-      setPlaylists(playlistsData.playlists || []);
+      const rawPlaylists = playlistsData.playlists || [];
+      const sortedPlaylists = [...rawPlaylists].sort((a, b) => {
+        const aLiked = user?.likedPlaylists?.includes(a._id);
+        const bLiked = user?.likedPlaylists?.includes(b._id);
+        if (aLiked && !bLiked) return -1;
+        if (!aLiked && bLiked) return 1;
+        return 0;
+      });
+
+      setPlaylists(sortedPlaylists);
       setSongs(songsData.songs || []);
       setFollowedArtists(artists);
     } catch (err) {
@@ -178,9 +187,14 @@ const LibraryPlaylists = () => {
                         <span className={`px-3 py-1 rounded-full text-label-sm font-label-sm border ${pl.visibility === 'public' ? 'bg-secondary/25 text-secondary border-secondary/30' : 'bg-surface-container-highest text-on-surface-variant border-white/5'}`}>
                           {pl.visibility === 'public' ? 'Công khai' : 'Riêng tư'}
                         </span>
-                        <span className="material-symbols-outlined text-on-surface-variant">
-                          {pl.visibility === 'public' ? 'public' : 'lock'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          {user?.likedPlaylists?.includes(pl._id) && (
+                            <span className="material-symbols-outlined text-primary select-none" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
+                          )}
+                          <span className="material-symbols-outlined text-on-surface-variant select-none">
+                            {pl.visibility === 'public' ? 'public' : 'lock'}
+                          </span>
+                        </div>
                       </div>
                       
                       <div className="relative z-10 mt-auto">

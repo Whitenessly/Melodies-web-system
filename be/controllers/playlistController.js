@@ -15,7 +15,13 @@ export async function getUserPlaylists(req, res) {
 export async function getPlaylistById(req, res) {
   try {
     const { id } = req.params;
-    const playlist = await Playlist.findById(id).populate('songs');
+    const playlist = await Playlist.findById(id).populate({
+      path: 'songs',
+      populate: {
+        path: 'albumId',
+        model: 'Album'
+      }
+    });
     if (!playlist) {
       return res.status(404).json({ message: 'Playlist not found' });
     }
@@ -150,5 +156,38 @@ export async function deletePlaylist(req, res) {
     return res.status(200).json({ message: 'Playlist deleted successfully' });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to delete playlist', error: err.message });
+  }
+}
+
+export async function updatePlaylist(req, res) {
+  try {
+    const { id } = req.params;
+    const { title, description, visibility, image } = req.body;
+
+    const playlist = await Playlist.findById(id);
+    if (!playlist) {
+      return res.status(404).json({ message: 'Playlist not found' });
+    }
+
+    if (playlist.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Forbidden: You do not own this playlist' });
+    }
+
+    if (title !== undefined) playlist.title = title;
+    if (description !== undefined) playlist.description = description;
+    if (visibility !== undefined) playlist.visibility = visibility;
+    
+    if (image) {
+      playlist.thumbnailUrl = saveBase64File(image, 'playlists', 'png');
+    }
+
+    await playlist.save();
+
+    return res.status(200).json({
+      message: 'Playlist updated successfully',
+      playlist
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to update playlist', error: err.message });
   }
 }

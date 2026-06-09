@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import Song from '../models/Song.js';
+import Playlist from '../models/Playlist.js';
 
 export async function toggleLikeSong(req, res) {
   try {
@@ -201,5 +202,42 @@ export async function getPublicArtists(req, res) {
     return res.status(200).json({ artists });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to retrieve artists', error: err.message });
+  }
+}
+
+export async function toggleLikePlaylist(req, res) {
+  try {
+    const { playlistId } = req.body;
+    if (!playlistId) {
+      return res.status(400).json({ message: 'Playlist ID is required' });
+    }
+
+    const playlist = await Playlist.findById(playlistId);
+    if (!playlist) {
+      return res.status(404).json({ message: 'Playlist not found' });
+    }
+
+    if (!req.user.likedPlaylists) {
+      req.user.likedPlaylists = [];
+    }
+
+    const index = req.user.likedPlaylists.indexOf(playlistId);
+    let liked = false;
+
+    if (index === -1) {
+      req.user.likedPlaylists.push(playlistId);
+      liked = true;
+    } else {
+      req.user.likedPlaylists.splice(index, 1);
+    }
+
+    await req.user.save();
+
+    return res.status(200).json({
+      message: liked ? 'Playlist liked' : 'Playlist unliked',
+      liked
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to like/unlike playlist', error: err.message });
   }
 }

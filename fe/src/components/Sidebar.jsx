@@ -97,7 +97,15 @@ const Sidebar = () => {
           <>
             <div className="flex items-center gap-3 px-4 py-2 mb-2 rounded-lg bg-white/5">
               <div className="w-8 h-8 rounded-full overflow-hidden bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-sm">
-                {user.name[0].toUpperCase()}
+                {user.avatarUrl ? (
+                  <img 
+                    src={user.avatarUrl.startsWith('http') ? user.avatarUrl : `http://localhost:8080${user.avatarUrl}`} 
+                    alt="" 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : (
+                  user.name[0].toUpperCase()
+                )}
               </div>
               <div className="overflow-hidden">
                 <p className="font-label-md text-label-md text-white truncate">{user.name}</p>
