@@ -19,7 +19,10 @@ export async function getAllAlbums(req, res) {
       query.genre = new RegExp(`^${genre}$`, 'i');
     }
 
-    const albums = await Album.find(query).populate('songs').sort({ createdAt: -1 });
+    const albums = await Album.find(query).populate({
+      path: 'songs',
+      match: { isDeleted: { $ne: true } }
+    }).sort({ createdAt: -1 });
     return res.status(200).json({ albums });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to retrieve albums', error: err.message });
@@ -29,7 +32,10 @@ export async function getAllAlbums(req, res) {
 export async function getAlbumById(req, res) {
   try {
     const { id } = req.params;
-    const album = await Album.findById(id).populate('songs');
+    const album = await Album.findById(id).populate({
+      path: 'songs',
+      match: { isDeleted: { $ne: true } }
+    });
     if (!album) {
       return res.status(404).json({ message: 'Album not found' });
     }
@@ -55,7 +61,7 @@ export async function createAlbum(req, res) {
     // Verify songs are owned by artist
     let songIds = [];
     if (songs && Array.isArray(songs)) {
-      const dbSongs = await Song.find({ _id: { $in: songs }, artistId: req.user._id });
+      const dbSongs = await Song.find({ _id: { $in: songs }, artistId: req.user._id, isDeleted: { $ne: true } });
       songIds = dbSongs.map(s => s._id);
     }
 

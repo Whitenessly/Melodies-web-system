@@ -1,23 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import { api } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { usePlayer } from '../context/PlayerContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import Header from '../components/Header.jsx';
 import MusicPlayer from '../components/MusicPlayer.jsx';
 
 const NotificationsSocial = () => {
-  const { user } = useAuth();
+  const { setHasUnread } = useAuth();
   const { play } = usePlayer();
+  const { t } = useLanguage();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch notifications and some songs (for mock friends playback activity)
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const notifData = await api.get('/notifications');
-      setNotifications(notifData.notifications || []);
+      const notifs = notifData.notifications || [];
+      setNotifications(notifs);
+      setHasUnread(notifs.some(n => !n.read));
       
       const songsData = await api.get('/songs');
       setSongs(songsData.songs || []);
@@ -26,17 +32,18 @@ const NotificationsSocial = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setHasUnread]);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    Promise.resolve().then(() => fetchData());
+  }, [fetchData]);
 
   const handleMarkAllRead = async () => {
     try {
       await api.put('/notifications/read-all');
       // Update state locally
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setHasUnread(false);
     } catch (err) {
       console.error('Failed to mark all as read:', err);
     }
@@ -46,25 +53,32 @@ const NotificationsSocial = () => {
     try {
       await api.put(`/notifications/${id}/read`);
       // Update state locally
-      setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
+      setNotifications(prev => {
+        const updated = prev.map(n => n._id === id ? { ...n, read: true } : n);
+        setHasUnread(updated.some(n => !n.read));
+        return updated;
+      });
+      if (link) {
+        navigate(link);
+      }
     } catch (err) {
       console.error('Failed to mark single notification as read:', err);
     }
   };
 
   const formatTimeAgo = (dateString) => {
-    if (!dateString) return 'Hôm nay';
+    if (!dateString) return t('Hôm nay');
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 1) return 'Vừa xong';
-    if (diffMins < 60) return `${diffMins} phút trước`;
-    if (diffHours < 24) return `${diffHours} giờ trước`;
-    return `${diffDays} ngày trước`;
+ 
+    if (diffMins < 1) return t('Vừa xong');
+    if (diffMins < 60) return `${diffMins} ${t('phút trước')}`;
+    if (diffHours < 24) return `${diffHours} ${t('giờ trước')}`;
+    return `${diffDays} ${t('ngày trước')}`;
   };
 
   // Mock friends data that uses actual songs in the system
@@ -76,7 +90,7 @@ const NotificationsSocial = () => {
       defaultSongTitle: 'Midnight Pulse',
       defaultSongArtist: 'Neon Velocity',
       active: true,
-      time: 'Đang nghe'
+      time: t('Đang nghe')
     },
     {
       name: 'Hoàng Nam',
@@ -85,7 +99,7 @@ const NotificationsSocial = () => {
       defaultSongTitle: 'Concrete Jungle',
       defaultSongArtist: 'The Architects',
       active: false,
-      time: '5 phút trước'
+      time: t('5 phút trước')
     },
     {
       name: 'Minh Anh',
@@ -94,7 +108,7 @@ const NotificationsSocial = () => {
       defaultSongTitle: 'Vapor Wave',
       defaultSongArtist: 'Digital Muse',
       active: true,
-      time: 'Đang nghe'
+      time: t('Đang nghe')
     },
     {
       name: 'Quốc Trung',
@@ -103,7 +117,7 @@ const NotificationsSocial = () => {
       defaultSongTitle: 'Thanh Xuân',
       defaultSongArtist: 'Da LAB',
       active: false,
-      time: '1 giờ trước'
+      time: t('1 giờ trước')
     }
   ];
 
@@ -118,19 +132,19 @@ const NotificationsSocial = () => {
       <Sidebar />
       
       <main className="md:ml-sidebar-width pb-[120px] min-h-screen bg-background text-on-background">
-        <Header placeholder="Tìm kiếm bài hát, thông báo..." />
+        <Header placeholder={t("Tìm kiếm bài hát, thông báo...")} />
 
         <div className="max-w-7xl mx-auto px-gutter-desktop py-margin-page grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Notifications Column */}
           <div className="lg:col-span-8 space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="font-headline-lg text-headline-lg text-white font-bold">Thông báo</h2>
+              <h2 className="font-headline-lg text-headline-lg text-white font-bold">{t("Thông báo")}</h2>
               {notifications.some(n => !n.read) && (
                 <button 
                   onClick={handleMarkAllRead}
                   className="text-primary hover:text-secondary font-label-md text-label-md transition-all cursor-pointer font-bold"
                 >
-                  Đánh dấu tất cả là đã đọc
+                  {t("Đánh dấu tất cả là đã đọc")}
                 </button>
               )}
             </div>
@@ -138,12 +152,12 @@ const NotificationsSocial = () => {
             {loading ? (
               <div className="flex items-center justify-center py-20 text-primary">
                 <span className="material-symbols-outlined text-3xl animate-spin mr-2">sync</span>
-                <span>Đang tải thông báo...</span>
+                <span>{t("Đang tải thông báo...")}</span>
               </div>
             ) : notifications.length === 0 ? (
               <div className="glass-panel p-12 rounded-3xl text-center text-on-surface-variant">
                 <span className="material-symbols-outlined text-5xl mb-4 opacity-50">notifications_off</span>
-                <p className="font-body-lg text-body-lg">Bạn không có thông báo nào mới.</p>
+                <p className="font-body-lg text-body-lg">{t("Bạn không có thông báo nào mới.")}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -176,7 +190,7 @@ const NotificationsSocial = () => {
                       </p>
                       {!notif.read && (
                         <span className="inline-block mt-3 text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded font-bold">
-                          Mới
+                          {t("Mới")}
                         </span>
                       )}
                     </div>
@@ -189,7 +203,7 @@ const NotificationsSocial = () => {
           {/* Social / Friends Column */}
           <div className="lg:col-span-4 space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="font-headline-md text-headline-md text-white font-bold">Hoạt động bạn bè</h3>
+              <h3 className="font-headline-md text-headline-md text-white font-bold">{t("Hoạt động bạn bè")}</h3>
               <span className="material-symbols-outlined text-on-surface-variant">group</span>
             </div>
 
@@ -218,11 +232,11 @@ const NotificationsSocial = () => {
                       <p className="font-label-md text-white truncate font-bold">{friend.name}</p>
                       {friend.active ? (
                         <p className="text-label-sm text-on-surface-variant truncate">
-                          Đang nghe: <span className="text-secondary italic">"{friend.song ? friend.song.title : friend.defaultSongTitle}"</span>
+                          {t("Đang nghe")}: <span className="text-secondary italic">"{friend.song ? friend.song.title : friend.defaultSongTitle}"</span>
                         </p>
                       ) : (
                         <p className="text-label-sm text-on-surface-variant truncate">
-                          Đã nghe: <span className="text-on-surface-variant/70 italic">"{friend.song ? friend.song.title : friend.defaultSongTitle}"</span> ({friend.time})
+                          {t("Đã nghe")}: <span className="text-on-surface-variant/70 italic">"{friend.song ? friend.song.title : friend.defaultSongTitle}"</span> ({friend.time})
                         </p>
                       )}
                     </div>

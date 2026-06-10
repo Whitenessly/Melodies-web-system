@@ -10,7 +10,7 @@ export async function toggleLikeSong(req, res) {
     }
 
     const song = await Song.findById(songId);
-    if (!song) {
+    if (!song || song.isDeleted === true) {
       return res.status(404).json({ message: 'Song not found' });
     }
 
@@ -77,7 +77,10 @@ export async function toggleFollowArtist(req, res) {
 export async function getRecentlyPlayed(req, res) {
   try {
     const populatedUser = await User.findById(req.user._id)
-      .populate('recentlyPlayed.songId')
+      .populate({
+        path: 'recentlyPlayed.songId',
+        match: { isDeleted: { $ne: true } }
+      })
       .exec();
 
     const history = populatedUser.recentlyPlayed
@@ -102,10 +105,13 @@ export async function getArtistStats(req, res) {
     const artistId = req.user._id;
 
     // Fetch songs owned by artist
-    const songs = await Song.find({ artistId });
+    const songs = await Song.find({ artistId, isDeleted: { $ne: true } });
 
     // Total views/streams
     const totalStreams = songs.reduce((sum, song) => sum + song.views, 0);
+
+    // Total likes
+    const totalLikes = songs.reduce((sum, song) => sum + (song.likes || 0), 0);
 
     // Follower count (users who follow this artistId)
     const followersCount = await User.countDocuments({ following: artistId });
@@ -118,7 +124,8 @@ export async function getArtistStats(req, res) {
         totalStreams,
         followersCount,
         storageUsed,
-        totalTracks: songs.length
+        totalTracks: songs.length,
+        totalLikes
       },
       songs
     });
@@ -152,12 +159,13 @@ export async function deleteUser(req, res) {
 
     // Cleanup: If deleted user was an artist, delete their songs too
     if (user.role === 'artist') {
-      const songs = await Song.find({ artistId: id });
+      const songs = await Song.find({ artistId: id, isDeleted: { $ne: true } });
       for (const song of songs) {
         // Remove from playlists/likes
         await Playlist.updateMany({ songs: song._id }, { $pull: { songs: song._id } });
         await User.updateMany({ likedSongs: song._id }, { $pull: { likedSongs: song._id } });
-        await Song.findByIdAndDelete(song._id);
+        song.isDeleted = true;
+        await song.save();
       }
     }
 
@@ -176,7 +184,7 @@ export async function getArtistPublicProfile(req, res) {
     }
 
     const followersCount = await User.countDocuments({ following: id });
-    const songs = await Song.find({ artistId: id, visibility: 'public', moderationState: 'approved' });
+    const songs = await Song.find({ artistId: id, visibility: 'public', moderationState: 'approved', isDeleted: { $ne: true } });
 
     // Check if the current user is following this artist
     const isFollowing = req.user ? req.user.following.includes(id) : false;

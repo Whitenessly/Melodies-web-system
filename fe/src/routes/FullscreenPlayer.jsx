@@ -1,10 +1,14 @@
-import React, { useRef } from 'react';
-import { useNavigate } from 'react-router';
+import { useRef, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router';
 import { usePlayer } from '../context/PlayerContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
+import { api } from '../utils/api.js';
 
 const FullscreenPlayer = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { t } = useLanguage();
   const { 
     currentSong, 
     isPlaying, 
@@ -25,8 +29,27 @@ const FullscreenPlayer = () => {
     play
   } = usePlayer();
 
-  const { user, toggleLikeSong } = useAuth();
+  const { user, toggleLikeSong, hasUnread } = useAuth();
   const progressBarRef = useRef(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const songId = params.get('songId');
+    if (songId) {
+      const loadSong = async () => {
+        try {
+          const res = await api.get('/songs');
+          const song = res.songs?.find(s => s._id === songId);
+          if (song) {
+            play(song, res.songs || []);
+          }
+        } catch (err) {
+          console.error("Failed to load song from query param:", err);
+        }
+      };
+      Promise.resolve().then(() => loadSong());
+    }
+  }, [location.search, play]);
 
   const formatTime = (secs) => {
     if (isNaN(secs)) return '0:00';
@@ -76,15 +99,15 @@ const FullscreenPlayer = () => {
         </div>
         <div className="relative z-10 flex flex-col items-center gap-4">
           <span className="material-symbols-outlined text-6xl text-primary animate-bounce">music_note</span>
-          <h2 className="font-headline-lg text-headline-lg text-white font-bold">Chưa chọn bài hát nào</h2>
+          <h2 className="font-headline-lg text-headline-lg text-white font-bold">{t("Chưa chọn bài hát nào")}</h2>
           <p className="text-body-md text-on-surface-variant max-w-sm text-center">
-            Quay lại trang chủ và nhấp vào một bài hát bất kỳ để bắt đầu thưởng thức âm nhạc.
+            {t("Quay lại trang chủ và nhấp vào một bài hát bất kỳ để bắt đầu thưởng thức âm nhạc.")}
           </p>
           <button 
             onClick={() => navigate('/home')}
             className="mt-4 px-6 py-3 rounded-full bg-primary text-on-primary font-bold hover:scale-105 transition-transform cursor-pointer"
           >
-            Quay về trang chủ
+            {t("Quay về trang chủ")}
           </button>
         </div>
       </div>
@@ -120,12 +143,19 @@ const FullscreenPlayer = () => {
         </div>
         
         <div className="flex items-center gap-6">
-          <span 
-            onClick={() => navigate('/notifications-social')} 
-            className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+          <button 
+            onClick={() => navigate('/notifications-social')}
+            className="relative w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:text-primary hover:bg-white/5 transition-all scale-95 active:scale-90 cursor-pointer"
+            title={t("Thông báo")}
           >
-            notifications
-          </span>
+            <span className="material-symbols-outlined">notifications</span>
+            {hasUnread && (
+              <span className="absolute top-2 right-2 flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-error"></span>
+              </span>
+            )}
+          </button>
           <span 
             onClick={() => navigate('/home')} 
             className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
@@ -146,7 +176,7 @@ const FullscreenPlayer = () => {
         {/* Left column: Play Queue */}
         <aside className="col-span-3 h-full border-r border-white/5 bg-surface-container-low/30 backdrop-blur-xl p-6 hidden md:flex flex-col gap-6">
           <div className="flex justify-between items-center">
-            <h3 className="font-headline-md text-headline-md text-on-surface font-bold">Danh sách phát</h3>
+            <h3 className="font-headline-md text-headline-md text-on-surface font-bold">{t("Danh sách phát")}</h3>
             <span className="text-[11px] bg-white/10 text-on-surface-variant px-2 py-0.5 rounded font-mono">
               {queueIndex + 1}/{queue.length}
             </span>
@@ -320,14 +350,14 @@ const FullscreenPlayer = () => {
 
         {/* Right column: Lyrics Section */}
         <aside className="col-span-3 h-full border-l border-white/5 bg-surface-container-low/10 backdrop-blur-xl p-6 hidden lg:flex flex-col gap-6">
-          <h3 className="font-headline-md text-headline-md text-on-surface font-bold">Lời bài hát</h3>
+          <h3 className="font-headline-md text-headline-md text-on-surface font-bold">{t("Lời bài hát")}</h3>
           
           <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4 pb-12 select-none">
             {lyricsLines.length === 0 ? (
               <div className="h-full flex items-center justify-center text-center text-on-surface-variant/50 p-4">
                 <div>
                   <span className="material-symbols-outlined text-4xl mb-2">lyrics</span>
-                  <p className="font-label-md">Không có lời bài hát cho tác phẩm này.</p>
+                  <p className="font-label-md">{t("Không có lời bài hát cho tác phẩm này.")}</p>
                 </div>
               </div>
             ) : (

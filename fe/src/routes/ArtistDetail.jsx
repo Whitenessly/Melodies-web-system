@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { api } from '../utils/api.js';
 import { usePlayer } from '../context/PlayerContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import Header from '../components/Header.jsx';
 import MusicPlayer from '../components/MusicPlayer.jsx';
@@ -12,6 +13,7 @@ const ArtistDetail = () => {
   const navigate = useNavigate();
   const { play, currentSong, isPlaying, togglePlay } = usePlayer();
   const { user, toggleLikeSong, toggleFollowArtist } = useAuth();
+  const { t } = useLanguage();
 
   const [artist, setArtist] = useState(null);
   const [songs, setSongs] = useState([]);
@@ -111,7 +113,7 @@ const ArtistDetail = () => {
           <Header />
           <div className="flex items-center justify-center h-[calc(100vh-64px)] text-primary">
             <span className="material-symbols-outlined text-4xl animate-spin mr-2">sync</span>
-            <span>Đang tải thông tin nghệ sĩ...</span>
+            <span>{t("Đang tải thông tin nghệ sĩ...")}</span>
           </div>
         </main>
         <MusicPlayer />
@@ -127,12 +129,12 @@ const ArtistDetail = () => {
           <Header />
           <div className="glass-panel p-12 rounded-3xl text-center text-on-surface-variant max-w-lg mx-auto mt-20">
             <span className="material-symbols-outlined text-5xl mb-4 opacity-50">person_off</span>
-            <p className="font-body-lg text-body-lg">Không tìm thấy thông tin nghệ sĩ này.</p>
+            <p className="font-body-lg text-body-lg">{t("Không tìm thấy thông tin nghệ sĩ này.")}</p>
             <button 
               onClick={() => navigate('/home')}
               className="mt-6 px-6 py-2 rounded-full bg-primary text-on-primary font-bold hover:brightness-110 active:scale-95 transition-all"
             >
-              Quay lại trang chủ
+              {t("Quay lại trang chủ")}
             </button>
           </div>
         </main>
@@ -163,13 +165,13 @@ const ArtistDetail = () => {
           <div className="relative w-full px-margin-page pb-12 z-10">
             <div className="flex items-center gap-2 text-secondary mb-4">
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-              <span className="font-label-md text-label-md uppercase tracking-wider font-bold">Nghệ sĩ xác minh</span>
+              <span className="font-label-md text-label-md uppercase tracking-wider font-bold">{t("Nghệ sĩ xác minh")}</span>
             </div>
             
             <h2 className="font-headline-xl text-headline-xl text-white mb-6 font-bold tracking-tight">
               {artist.name}
             </h2>
-
+ 
             <div className="flex items-center gap-6">
               {songs.length > 0 ? (
                 <button 
@@ -177,7 +179,7 @@ const ArtistDetail = () => {
                   className="bg-primary text-on-primary px-8 py-3.5 rounded-full font-label-md text-label-md font-bold hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer shadow-lg"
                 >
                   <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
-                  PHÁT NGHE
+                  {t("PHÁT NGHE")}
                 </button>
               ) : (
                 <button 
@@ -185,10 +187,10 @@ const ArtistDetail = () => {
                   className="bg-white/10 text-white/50 px-8 py-3.5 rounded-full font-label-md text-label-md font-bold cursor-not-allowed flex items-center gap-2"
                 >
                   <span className="material-symbols-outlined">music_off</span>
-                  Không có nhạc
+                  {t("Không có nhạc")}
                 </button>
               )}
-
+ 
               <button 
                 onClick={handleFollowClick}
                 className={`px-8 py-3.5 rounded-full font-label-md text-label-md font-bold border-2 transition-all active:scale-95 cursor-pointer ${
@@ -197,28 +199,28 @@ const ArtistDetail = () => {
                     : 'border-white/20 hover:border-white/50 text-white'
                 }`}
               >
-                {artist.isFollowing ? 'ĐANG THEO DÕI' : 'THEO DÕI'}
+                {artist.isFollowing ? t('ĐANG THEO DÕI') : t('THEO DÕI')}
               </button>
-
+ 
               <div className="ml-auto text-on-surface-variant font-label-md text-label-md">
-                <span className="text-white font-bold text-lg">{artist.followersCount.toLocaleString()}</span> Người theo dõi
+                <span className="text-white font-bold text-lg">{artist.followersCount.toLocaleString()}</span> {t("Người theo dõi")}
               </div>
             </div>
           </div>
         </header>
-
+ 
         {/* Content columns */}
         <div className="px-margin-page mt-12 grid grid-cols-1 lg:grid-cols-12 gap-12 text-on-background">
           
           {/* Left Side: Song list */}
           <div className="col-span-12 lg:col-span-8 space-y-12">
             <section>
-              <h3 className="font-headline-md text-headline-md text-white mb-6 font-bold">Danh sách bài hát</h3>
+              <h3 className="font-headline-md text-headline-md text-white mb-6 font-bold">{t("Danh sách bài hát")}</h3>
               
               {songs.length === 0 ? (
                 <div className="glass-panel p-8 rounded-2xl text-center text-on-surface-variant">
                   <span className="material-symbols-outlined text-4xl mb-2">library_music</span>
-                  <p>Nghệ sĩ chưa có bài hát nào được duyệt.</p>
+                  <p>{t("Nghệ sĩ chưa có bài hát nào được duyệt.")}</p>
                 </div>
               ) : (
                 <div className="space-y-1">
@@ -258,7 +260,7 @@ const ArtistDetail = () => {
                         </div>
 
                         <div className="text-on-surface-variant text-label-md font-mono hidden sm:block">
-                          {song.views.toLocaleString()} lượt nghe
+                          {song.views.toLocaleString()} {t("lượt nghe")}
                         </div>
 
                         <button 
@@ -284,19 +286,19 @@ const ArtistDetail = () => {
             {/* Biography */}
             <section className="glass-panel rounded-3xl p-8 relative overflow-hidden group border border-white/5">
               <div className="relative z-10">
-                <h3 className="font-headline-md text-headline-md text-white mb-4 font-bold">Giới thiệu</h3>
+                <h3 className="font-headline-md text-headline-md text-white mb-4 font-bold">{t("Giới thiệu")}</h3>
                 <p className="text-on-surface-variant font-body-md leading-relaxed mb-6">
-                  {artist.name} là một nghệ sĩ sáng tạo, đam mê tạo ra các cung bậc cảm xúc âm nhạc đỉnh cao. Sự kết hợp khéo léo giữa ca từ sâu lắng và các giai điệu tinh tế đem lại một làn sóng mới cho người hâm mộ.
+                  {artist.name}{t(" là một nghệ sĩ sáng tạo, đam mê tạo ra các cung bậc cảm xúc âm nhạc đỉnh cao. Sự kết hợp khéo léo giữa ca từ sâu lắng và các giai điệu tinh tế đem lại một làn sóng mới cho người hâm mộ.")}
                 </p>
                 <div className="grid grid-cols-2 gap-4 mt-6">
                   <div className="bg-surface-container/50 p-4 rounded-xl border border-white/5">
-                    <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mb-1 font-bold">Tổng lượt nghe</p>
+                    <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mb-1 font-bold">{t("Tổng lượt nghe")}</p>
                     <h4 className="font-headline-md text-headline-md text-secondary font-bold font-mono">
                       {totalViews.toLocaleString()}
                     </h4>
                   </div>
                   <div className="bg-surface-container/50 p-4 rounded-xl border border-white/5">
-                    <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mb-1 font-bold">Bài hát</p>
+                    <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mb-1 font-bold">{t("Bài hát")}</p>
                     <h4 className="font-headline-md text-headline-md text-primary font-bold font-mono">
                       {songs.length}
                     </h4>
@@ -308,7 +310,7 @@ const ArtistDetail = () => {
             {/* Fans Also Like */}
             {fansAlsoLike.length > 0 && (
               <section>
-                <h3 className="font-headline-md text-headline-md text-white mb-6 font-bold">Người hâm mộ cũng thích</h3>
+                <h3 className="font-headline-md text-headline-md text-white mb-6 font-bold">{t("Người hâm mộ cũng thích")}</h3>
                 <div className="space-y-4">
                   {fansAlsoLike.map(other => (
                     <div 
@@ -323,7 +325,7 @@ const ArtistDetail = () => {
                         <h5 className="font-body-md text-body-md font-bold text-white group-hover:text-primary transition-colors truncate">
                           {other.name}
                         </h5>
-                        <p className="text-on-surface-variant text-label-sm uppercase tracking-wider">Nghệ sĩ</p>
+                        <p className="text-on-surface-variant text-label-sm uppercase tracking-wider">{t("Nghệ sĩ")}</p>
                       </div>
                       <span className="material-symbols-outlined text-on-surface-variant hover:text-white">
                         chevron_right

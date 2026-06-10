@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { api } from '../utils/api.js';
 import { usePlayer } from '../context/PlayerContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import Header from '../components/Header.jsx';
 import MusicPlayer from '../components/MusicPlayer.jsx';
@@ -12,6 +13,7 @@ const SearchResults = () => {
   const navigate = useNavigate();
   const { play } = usePlayer();
   const { user } = useAuth();
+  const { t } = useLanguage();
   
   const [filter, setFilter] = useState('all'); // 'all' | 'songs' | 'artists' | 'albums'
   const [songs, setSongs] = useState([]);
@@ -80,13 +82,13 @@ const SearchResults = () => {
       <Sidebar />
 
       <main className="md:ml-sidebar-width min-h-screen pb-[120px] bg-background">
-        <Header placeholder="Bạn muốn nghe gì?" />
+        <Header placeholder={t("Bạn muốn nghe gì?")} />
 
         <div className="p-margin-page">
           {/* Query label */}
           <div className="mb-6">
             <h2 className="text-on-surface-variant font-label-md text-label-md">
-              Kết quả tìm kiếm cho: <span className="text-white font-bold text-lg">"{searchQuery || 'Tất cả'}"</span>
+              {t("Kết quả tìm kiếm cho:")} <span className="text-white font-bold text-lg">"{searchQuery || t('Tất cả')}"</span>
             </h2>
           </div>
 
@@ -96,32 +98,32 @@ const SearchResults = () => {
               onClick={() => setFilter('all')}
               className={`px-6 py-2 rounded-full font-label-md text-label-md whitespace-nowrap cursor-pointer transition-all ${filter === 'all' ? 'bg-primary text-on-primary font-bold' : 'bg-surface-container-highest/50 text-on-surface-variant hover:bg-surface-container-highest'}`}
             >
-              Tất cả
+              {t("Tất cả")}
             </button>
             <button 
               onClick={() => setFilter('songs')}
               className={`px-6 py-2 rounded-full font-label-md text-label-md whitespace-nowrap cursor-pointer transition-all ${filter === 'songs' ? 'bg-primary text-on-primary font-bold' : 'bg-surface-container-highest/50 text-on-surface-variant hover:bg-surface-container-highest'}`}
             >
-              Bài hát
+              {t("Bài hát")}
             </button>
             <button 
               onClick={() => setFilter('artists')}
               className={`px-6 py-2 rounded-full font-label-md text-label-md whitespace-nowrap cursor-pointer transition-all ${filter === 'artists' ? 'bg-primary text-on-primary font-bold' : 'bg-surface-container-highest/50 text-on-surface-variant hover:bg-surface-container-highest'}`}
             >
-              Nghệ sĩ
+              {t("Nghệ sĩ")}
             </button>
             <button 
               onClick={() => setFilter('albums')}
               className={`px-6 py-2 rounded-full font-label-md text-label-md whitespace-nowrap cursor-pointer transition-all ${filter === 'albums' ? 'bg-primary text-on-primary font-bold' : 'bg-surface-container-highest/50 text-on-surface-variant hover:bg-surface-container-highest'}`}
             >
-              Album
+              {t("Album")}
             </button>
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-20 text-primary">
               <span className="material-symbols-outlined text-4xl animate-spin mr-2">sync</span>
-              <span>Đang tìm kiếm...</span>
+              <span>{t("Đang tìm kiếm...")}</span>
             </div>
           ) : (
             <div className="space-y-12">
@@ -130,7 +132,7 @@ const SearchResults = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                   {/* Top Result box */}
                   <section className="lg:col-span-5 space-y-6">
-                    <h2 className="font-headline-lg text-headline-lg text-white font-bold">Kết quả hàng đầu</h2>
+                    <h2 className="font-headline-lg text-headline-lg text-white font-bold">{t("Kết quả hàng đầu")}</h2>
                     {topResult ? (
                       <div 
                         onClick={() => {
@@ -161,7 +163,7 @@ const SearchResults = () => {
                           </h3>
                           <div className="flex items-center gap-3">
                             <span className="bg-primary/20 text-primary px-3 py-1 rounded-full text-label-sm font-bold tracking-widest uppercase">
-                              {topResult.role ? 'Nghệ sĩ' : 'Bài hát'}
+                              {topResult.role ? t('Nghệ sĩ') : t('Bài hát')}
                             </span>
                             {topResult.email && (
                               <span className="text-on-surface-variant font-label-md">{topResult.email}</span>
@@ -170,14 +172,14 @@ const SearchResults = () => {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-on-surface-variant">Không tìm thấy kết quả phù hợp</p>
+                      <p className="text-on-surface-variant">{t("Không tìm thấy kết quả phù hợp")}</p>
                     )}
                   </section>
 
                   {/* Songs list */}
                   <section className="lg:col-span-7 space-y-6">
                     <div className="flex justify-between items-center">
-                      <h2 className="font-headline-lg text-headline-lg text-white font-bold">Bài hát</h2>
+                      <h2 className="font-headline-lg text-headline-lg text-white font-bold">{t("Bài hát")}</h2>
                     </div>
                     <div className="space-y-2 bg-white/5 p-4 rounded-3xl border border-white/5 max-h-[360px] overflow-y-auto custom-scrollbar">
                       {songs.slice(0, 5).map(song => (
@@ -219,7 +221,7 @@ const SearchResults = () => {
               {/* Filtering sections */}
               {(filter === 'all' || filter === 'songs') && songs.length > 0 && filter !== 'all' && (
                 <section className="space-y-6">
-                  <h2 className="font-headline-lg text-headline-lg text-white font-bold">Bài hát khớp tìm kiếm</h2>
+                  <h2 className="font-headline-lg text-headline-lg text-white font-bold">{t("Bài hát khớp tìm kiếm")}</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {songs.map(song => (
                       <div 
@@ -256,7 +258,7 @@ const SearchResults = () => {
 
               {(filter === 'all' || filter === 'artists') && artists.length > 0 && (
                 <section className="space-y-8">
-                  <h2 className="font-headline-lg text-headline-lg text-white font-bold">Nghệ sĩ liên quan</h2>
+                  <h2 className="font-headline-lg text-headline-lg text-white font-bold">{t("Nghệ sĩ liên quan")}</h2>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-8">
                     {artists.map(artist => {
                       const followingList = user?.following || [];
@@ -274,14 +276,14 @@ const SearchResults = () => {
                           </div>
                           <div>
                             <h4 className="text-white font-body-md font-bold group-hover:text-primary transition-colors">{artist.name}</h4>
-                            <p className="text-on-surface-variant text-[10px] uppercase tracking-wider font-semibold mt-1">Nghệ sĩ</p>
+                            <p className="text-on-surface-variant text-[10px] uppercase tracking-wider font-semibold mt-1">{t("Nghệ sĩ")}</p>
                           </div>
                           
                           <button 
                             onClick={(e) => handleFollowToggle(e, artist._id)}
                             className={`px-4 py-1.5 rounded-full font-label-sm text-label-sm font-bold border transition-all cursor-pointer ${followed ? 'bg-primary/25 text-primary border-primary/40' : 'bg-primary text-on-primary border-transparent hover:scale-105'}`}
                           >
-                            {followed ? 'Đang Follow' : 'Follow'}
+                            {followed ? t('Đang Follow') : t('Follow')}
                           </button>
                         </div>
                       );
@@ -292,7 +294,7 @@ const SearchResults = () => {
 
               {(filter === 'all' || filter === 'albums') && albums.length > 0 && (
                 <section className="space-y-8">
-                  <h2 className="font-headline-lg text-headline-lg text-white font-bold">Album</h2>
+                  <h2 className="font-headline-lg text-headline-lg text-white font-bold">{t("Album")}</h2>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8">
                     {albums.map(album => (
                       <div 
@@ -324,8 +326,8 @@ const SearchResults = () => {
               {!topResult && (
                 <div className="text-center py-24 text-on-surface-variant">
                   <span className="material-symbols-outlined text-6xl mb-4">search_off</span>
-                  <p className="font-body-lg">Không tìm thấy bất kỳ kết quả nào khớp với "{searchQuery}"</p>
-                  <p className="text-label-md mt-1">Hãy thử kiểm tra lỗi chính tả hoặc tìm kiếm bằng từ khóa khác.</p>
+                  <p className="font-body-lg">{t("Không tìm thấy bất kỳ kết quả nào khớp với")} "{searchQuery}"</p>
+                  <p className="text-label-md mt-1">{t("Hãy thử kiểm tra lỗi chính tả hoặc tìm kiếm bằng từ khóa khác.")}</p>
                 </div>
               )}
             </div>

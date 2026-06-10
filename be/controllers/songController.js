@@ -13,9 +13,11 @@ export async function getAllSongs(req, res) {
     if (req.user) {
       if (req.user.role === 'admin') {
         // Admins can see everything
+        query = { isDeleted: { $ne: true } };
       } else {
         // Listeners & Artists can see public approved tracks, or artists can see their own tracks (pending/private/blocked)
         query = {
+          isDeleted: { $ne: true },
           $or: [
             { visibility: 'public', moderationState: 'approved' },
             { artistId: req.user._id }
@@ -23,7 +25,7 @@ export async function getAllSongs(req, res) {
         };
       }
     } else {
-      query = { visibility: 'public', moderationState: 'approved' };
+      query = { visibility: 'public', moderationState: 'approved', isDeleted: { $ne: true } };
     }
 
     if (search) {
@@ -55,7 +57,7 @@ export async function getAllSongs(req, res) {
 export async function getTopSongs(req, res) {
   try {
     // Top charts sorted by views descending
-    const songs = await Song.find({ visibility: 'public', moderationState: 'approved' })
+    const songs = await Song.find({ visibility: 'public', moderationState: 'approved', isDeleted: { $ne: true } })
       .sort({ views: -1 })
       .limit(10);
     return res.status(200).json({ songs });
@@ -94,8 +96,28 @@ export async function createSong(req, res) {
 
     await song.save();
 
-    // Notify followers if song is immediately approved (e.g. uploaded by admin)
-    if (song.moderationState === 'approved') {
+    // Notify admins if song is pending approval
+    if (song.moderationState === 'pending') {
+      try {
+        const admins = await User.find({ role: 'admin' });
+        for (const admin of admins) {
+          const notification = new Notification({
+            userId: admin._id,
+            senderId: req.user._id,
+            title: 'Bài hát mới chờ duyệt',
+            message: `Nghệ sĩ ${req.user.name} vừa tải lên bài hát mới "${song.title}" cần kiểm duyệt.`,
+            type: 'system',
+            link: '/admin-dashboard'
+          });
+          await notification.save();
+        }
+      } catch (err) {
+        console.error('Failed to send pending approval notifications to admin:', err);
+      }
+    }
+
+    // Notify followers if song is immediately approved (e.g. uploaded by admin) and visibility is public
+    if (song.moderationState === 'approved' && song.visibility === 'public') {
       try {
         const followers = await User.find({ following: req.user._id });
         for (const follower of followers) {
@@ -127,7 +149,7 @@ export async function deleteSong(req, res) {
   try {
     const { id } = req.params;
     const song = await Song.findById(id);
-    if (!song) {
+    if (!song || song.isDeleted === true) {
       return res.status(404).json({ message: 'Song not found' });
     }
 
@@ -136,7 +158,8 @@ export async function deleteSong(req, res) {
       return res.status(403).json({ message: 'Forbidden: You do not own this song' });
     }
 
-    await Song.findByIdAndDelete(id);
+    song.isDeleted = true;
+    await song.save();
 
     // Business rule: Khi một bài hát bị xóa, gỡ bài hát đó ra khỏi các danh sách phát (playlist) hiện có
     await Playlist.updateMany(
@@ -164,7 +187,7 @@ export async function incrementPlayCount(req, res) {
   try {
     const { id } = req.params;
     const song = await Song.findById(id);
-    if (!song) {
+    if (!song || song.isDeleted === true) {
       return res.status(404).json({ message: 'Song not found' });
     }
 
@@ -184,5 +207,32 @@ export async function incrementPlayCount(req, res) {
     return res.status(200).json({ message: 'Playback tracked successfully', views: song.views });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to track playback', error: err.message });
+  }
+}
+
+export async function updateSong(req, res) {
+  try {
+    const { id } = req.params;
+    const { title, genre, lyrics, visibility } = req.body;
+
+    const song = await Song.findById(id);
+    if (!song || song.isDeleted === true) {
+      return res.status(404).json({ message: 'Song not found' });
+    }
+
+    // Authorize: Admin or original artist creator
+    if (req.user.role !== 'admin' && song.artistId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Forbidden: You do not own this song' });
+    }
+
+    if (title) song.title = title;
+    if (genre) song.genre = genre;
+    if (lyrics !== undefined) song.lyrics = lyrics;
+    if (visibility) song.visibility = visibility;
+
+    await song.save();
+    return res.status(200).json({ message: 'Song updated successfully', song });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to update song', error: err.message });
   }
 }

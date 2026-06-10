@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { api } from '../utils/api.js';
 import { usePlayer } from '../context/PlayerContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import Header from '../components/Header.jsx';
 import MusicPlayer from '../components/MusicPlayer.jsx';
@@ -15,6 +16,7 @@ const PlaylistDetail = () => {
   const navigate = useNavigate();
   const { play, currentSong, isPlaying, toggleShuffle, shuffle } = usePlayer();
   const { user, toggleLikeSong, toggleLikePlaylist } = useAuth();
+  const { t } = useLanguage();
 
   // Dropdown & Edit Modal states
   const [showDropdown, setShowDropdown] = useState(false);
@@ -89,7 +91,7 @@ const PlaylistDetail = () => {
       await fetchPlaylistData();
     } catch (err) {
       console.error('Failed to remove song:', err);
-      alert('Không thể xóa bài hát khỏi playlist.');
+      alert(t('Không thể xóa bài hát khỏi playlist.'));
     }
   };
 
@@ -100,7 +102,7 @@ const PlaylistDetail = () => {
       await fetchPlaylistData();
     } catch (err) {
       console.error('Failed to add song:', err);
-      alert('Không thể thêm bài hát vào playlist.');
+      alert(t('Không thể thêm bài hát vào playlist.'));
     }
   };
 
@@ -115,7 +117,7 @@ const PlaylistDetail = () => {
       navigate('/library-playlists');
     } catch (err) {
       console.error('Failed to delete playlist:', err);
-      alert('Không thể xóa danh sách phát.');
+      alert(t('Không thể xóa danh sách phát.'));
     } finally {
       setShowDeleteConfirmModal(false);
     }
@@ -167,7 +169,7 @@ const PlaylistDetail = () => {
       await fetchPlaylistData();
     } catch (err) {
       console.error(err);
-      alert('Cập nhật playlist thất bại.');
+      alert(t('Cập nhật playlist thất bại.'));
     } finally {
       setUpdating(false);
     }
@@ -190,23 +192,23 @@ const PlaylistDetail = () => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'Chưa rõ';
+    if (!dateString) return t('Chưa rõ');
     const date = new Date(dateString);
     const day = date.getDate();
     const month = date.getMonth() + 1;
     const year = date.getFullYear();
-    return `${day} thg ${month}, ${year}`;
+    return `${day} ${t('thg ' + month)}, ${year}`;
   };
 
   const formatPlaylistDuration = (songsList) => {
-    if (!songsList || songsList.length === 0) return '0 phút';
+    if (!songsList || songsList.length === 0) return t('0 phút');
     const totalSeconds = songsList.length * 210;
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     if (hours > 0) {
-      return `Khoảng ${hours} giờ ${minutes} phút`;
+      return `${t('Khoảng ')}${hours} ${t('giờ')} ${minutes} ${t('phút')}`;
     }
-    return `Khoảng ${minutes} phút`;
+    return `${t('Khoảng ')}${minutes} ${t('phút')}`;
   };
 
   // Find songs that are NOT already in the playlist
@@ -224,10 +226,10 @@ const PlaylistDetail = () => {
       <>
         <Sidebar />
         <main className="md:ml-sidebar-width min-h-screen bg-background">
-          <Header />
+          <Header placeholder={t("Tìm kiếm trong danh sách phát...")} />
           <div className="flex items-center justify-center h-[calc(100vh-64px)] text-primary">
             <span className="material-symbols-outlined text-4xl animate-spin mr-2">sync</span>
-            <span>Đang tải danh sách phát...</span>
+            <span>{t("Đang tải danh sách phát...")}</span>
           </div>
         </main>
         <MusicPlayer />
@@ -240,15 +242,15 @@ const PlaylistDetail = () => {
       <>
         <Sidebar />
         <main className="md:ml-sidebar-width min-h-screen bg-background p-8">
-          <Header />
+          <Header placeholder={t("Tìm kiếm trong danh sách phát...")} />
           <div className="glass-panel p-12 rounded-3xl text-center text-on-surface-variant max-w-lg mx-auto mt-20">
             <span className="material-symbols-outlined text-5xl mb-4 opacity-50">playlist_remove</span>
-            <p className="font-body-lg text-body-lg">Không tìm thấy danh sách phát này hoặc bạn không có quyền xem.</p>
+            <p className="font-body-lg text-body-lg">{t("Không tìm thấy danh sách phát này hoặc bạn không có quyền xem.")}</p>
             <button 
               onClick={() => navigate('/library-playlists')}
               className="mt-6 px-6 py-2 rounded-full bg-primary text-on-primary font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer"
             >
-              Quay lại thư viện
+              {t("Quay lại thư viện")}
             </button>
           </div>
         </main>
@@ -262,7 +264,7 @@ const PlaylistDetail = () => {
       <Sidebar />
 
       <main className="md:ml-sidebar-width pb-[120px] bg-background min-h-screen">
-        <Header placeholder="Tìm kiếm trong danh sách phát..." />
+        <Header placeholder={t("Tìm kiếm trong danh sách phát...")} />
 
         <div className="max-w-7xl mx-auto px-margin-page pt-12">
           
@@ -284,16 +286,16 @@ const PlaylistDetail = () => {
                   <span className="material-symbols-outlined text-[14px]">
                     {playlist.visibility === 'public' ? 'public' : 'lock'}
                   </span> 
-                  {playlist.visibility === 'public' ? 'Công khai' : 'Riêng tư'}
+                  {playlist.visibility === 'public' ? t('Công khai') : t('Riêng tư')}
                 </span>
               </div>
               <h2 className="font-headline-xl text-headline-xl text-on-surface leading-tight font-bold">{playlist.title}</h2>
-              <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl">{playlist.description || 'Không có mô tả cho danh sách phát này.'}</p>
+              <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl">{playlist.description || t('Không có mô tả cho danh sách phát này.')}</p>
               
               <div className="flex items-center justify-center md:justify-start gap-2 font-body-md text-on-surface-variant">
                 <span className="text-on-surface font-semibold font-bold">{user?.name || 'Wesley Listener'}</span>
                 <span className="opacity-40">•</span>
-                <span>{playlist.songs?.length || 0} bài hát</span>
+                <span>{playlist.songs?.length || 0} {t('bài hát')}</span>
                 <span className="opacity-40">•</span>
                 <span>{formatPlaylistDuration(playlist.songs)}</span>
               </div>
@@ -308,7 +310,7 @@ const PlaylistDetail = () => {
               className="bg-primary text-on-primary px-8 py-3 rounded-full font-headline-md text-label-md flex items-center gap-2 neon-glow hover:brightness-110 active:scale-95 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
-              Phát ngay
+              {t("Phát ngay")}
             </button>
             <button 
               onClick={handleShufflePlay}
@@ -316,7 +318,7 @@ const PlaylistDetail = () => {
               className="bg-surface-container-high text-on-surface px-6 py-3 rounded-full font-headline-md text-label-md flex items-center gap-2 border border-outline-variant/30 hover:bg-surface-variant transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="material-symbols-outlined">shuffle</span>
-              Trộn bài
+              {t("Trộn bài")}
             </button>
             <button 
               onClick={async (e) => {
@@ -339,7 +341,7 @@ const PlaylistDetail = () => {
               className="bg-surface-container-high text-on-surface px-6 py-3 rounded-full font-headline-md text-label-md flex items-center gap-2 border border-outline-variant/30 hover:bg-surface-variant transition-all cursor-pointer"
             >
               <span className="material-symbols-outlined">add</span>
-              Thêm bài hát
+              {t("Thêm bài hát")}
             </button>
 
             <div className="relative ml-auto">
@@ -360,7 +362,7 @@ const PlaylistDetail = () => {
                     className="w-full text-left px-4 py-3 hover:bg-white/5 text-label-md text-white font-bold flex items-center gap-2 transition-colors cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-sm">edit</span>
-                    Chỉnh sửa
+                    {t("Chỉnh sửa")}
                   </button>
                   <button 
                     onClick={() => {
@@ -370,7 +372,7 @@ const PlaylistDetail = () => {
                     className="w-full text-left px-4 py-3 hover:bg-error/10 text-label-md text-error font-bold flex items-center gap-2 transition-colors cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-sm">delete</span>
-                    Xóa playlist
+                    {t("Xóa playlist")}
                   </button>
                 </div>
               )}
@@ -385,9 +387,9 @@ const PlaylistDetail = () => {
                   <thead>
                     <tr className="text-on-surface-variant border-b border-outline-variant/20 font-label-sm text-label-sm uppercase tracking-widest">
                       <th className="py-4 px-4 w-12 text-center">#</th>
-                      <th className="py-4 px-4">Tiêu đề</th>
-                      <th className="py-4 px-4">Album</th>
-                      <th className="py-4 px-4">Ngày thêm</th>
+                      <th className="py-4 px-4">{t("Tiêu đề")}</th>
+                      <th className="py-4 px-4">{t("Album")}</th>
+                      <th className="py-4 px-4">{t("Ngày thêm")}</th>
                       <th className="py-4 px-4 text-right pr-12">
                         <span className="material-symbols-outlined text-sm">schedule</span>
                       </th>
@@ -430,7 +432,7 @@ const PlaylistDetail = () => {
                             </div>
                           </td>
                           <td className="py-3 px-4 text-on-surface-variant">
-                            {song.albumId?.title || 'Single'}
+                            {song.albumId?.title || t('Single')}
                           </td>
                           <td className="py-3 px-4 text-on-surface-variant">
                             {formatDate(song.createdAt)}
@@ -440,7 +442,7 @@ const PlaylistDetail = () => {
                               <button 
                                 onClick={(e) => handleRemoveSong(e, song._id)}
                                 className="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors p-1 cursor-pointer"
-                                title="Xóa khỏi playlist"
+                                title={t("Xóa khỏi playlist")}
                               >
                                 delete
                               </button>
@@ -461,7 +463,7 @@ const PlaylistDetail = () => {
               ) : (
                 <div className="text-center py-12 text-on-surface-variant">
                   <span className="material-symbols-outlined text-5xl mb-3">playlist_play</span>
-                  <p className="font-body-md">Chưa có bài hát nào trong playlist này.</p>
+                  <p className="font-body-md">{t("Chưa có bài hát nào trong playlist này.")}</p>
                 </div>
               )}
             </div>
@@ -470,7 +472,7 @@ const PlaylistDetail = () => {
           {/* Add Songs to Playlist Section */}
           <section id="add-songs-section" className="scroll-mt-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <h3 className="font-headline-md text-headline-md text-white font-bold">Thêm bài hát mới</h3>
+              <h3 className="font-headline-md text-headline-md text-white font-bold">{t("Thêm bài hát mới")}</h3>
               
               <div className="relative w-full sm:w-72">
                 <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
@@ -479,7 +481,7 @@ const PlaylistDetail = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-white/5 border border-white/5 rounded-full pl-12 pr-6 py-2 text-label-md text-white placeholder-on-surface-variant/50 focus:bg-white/10 focus:border-primary transition-all outline-none"
-                  placeholder="Tìm kiếm bài hát..."
+                  placeholder={t("Tìm kiếm bài hát...")}
                 />
               </div>
             </div>
@@ -489,9 +491,9 @@ const PlaylistDetail = () => {
                 <table className="w-full text-left border-separate border-spacing-y-2">
                   <thead>
                     <tr className="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider border-b border-white/5">
-                      <th className="px-6 py-4 font-normal">Tiêu đề</th>
-                      <th className="px-6 py-4 font-normal">Thể loại</th>
-                      <th className="px-6 py-4 font-normal text-right">Thêm vào</th>
+                      <th className="px-6 py-4 font-normal">{t("Tiêu đề")}</th>
+                      <th className="px-6 py-4 font-normal">{t("Thể loại")}</th>
+                      <th className="px-6 py-4 font-normal text-right">{t("Thêm vào")}</th>
                     </tr>
                   </thead>
                   <tbody className="space-y-4">
@@ -522,7 +524,7 @@ const PlaylistDetail = () => {
                             className="bg-primary/20 text-primary hover:bg-primary hover:text-on-primary rounded-lg p-2 transition-all cursor-pointer font-bold inline-flex items-center justify-center gap-1 text-label-md"
                           >
                             <span className="material-symbols-outlined text-base">add</span>
-                            Thêm
+                            {t("Thêm")}
                           </button>
                         </td>
                       </tr>
@@ -531,7 +533,7 @@ const PlaylistDetail = () => {
                 </table>
               ) : (
                 <div className="text-center py-8 text-on-surface-variant">
-                  <p className="font-body-md">Không có bài hát nào phù hợp để thêm.</p>
+                  <p className="font-body-md">{t("Không có bài hát nào phù hợp để thêm.")}</p>
                 </div>
               )}
             </div>
@@ -549,46 +551,46 @@ const PlaylistDetail = () => {
             >
               <span className="material-symbols-outlined">close</span>
             </button>
-            <h3 className="font-headline-md text-headline-md text-white mb-6 font-bold">Chỉnh sửa Playlist</h3>
+            <h3 className="font-headline-md text-headline-md text-white mb-6 font-bold">{t("Chỉnh sửa Playlist")}</h3>
             
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div>
-                <label className="block text-label-sm text-on-surface-variant mb-2">Tên Playlist</label>
+                <label className="block text-label-sm text-on-surface-variant mb-2">{t("Tên Playlist")}</label>
                 <input 
                   type="text" 
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                   className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md text-white focus:border-primary transition-all outline-none"
-                  placeholder="Nhập tên playlist..."
+                  placeholder={t("Nhập tên playlist...")}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-label-sm text-on-surface-variant mb-2">Mô tả</label>
+                <label className="block text-label-sm text-on-surface-variant mb-2">{t("Mô tả")}</label>
                 <textarea 
                   value={editDesc}
                   onChange={(e) => setEditDesc(e.target.value)}
                   rows="3"
                   className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md text-white focus:border-primary transition-all outline-none resize-none"
-                  placeholder="Nhập mô tả ngắn..."
+                  placeholder={t("Nhập mô tả ngắn...")}
                 />
               </div>
 
               <div>
-                <label className="block text-label-sm text-on-surface-variant mb-2">Quyền truy cập</label>
+                <label className="block text-label-sm text-on-surface-variant mb-2">{t("Quyền truy cập")}</label>
                 <select 
                   value={editVisibility}
                   onChange={(e) => setEditVisibility(e.target.value)}
                   className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md text-white focus:border-primary transition-all outline-none"
                 >
-                  <option value="private">Riêng tư (Private)</option>
-                  <option value="public">Công khai (Public)</option>
+                  <option value="private">{t("Riêng tư")} (Private)</option>
+                  <option value="public">{t("Công khai")} (Public)</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-label-sm text-on-surface-variant mb-2">Ảnh bìa mới (Tùy chọn)</label>
+                <label className="block text-label-sm text-on-surface-variant mb-2">{t("Ảnh bìa mới (Tùy chọn)")}</label>
                 <input 
                   type="file" 
                   accept="image/*"
@@ -602,7 +604,7 @@ const PlaylistDetail = () => {
                 disabled={updating}
                 className="w-full py-3 bg-primary text-on-primary rounded-xl font-bold hover:brightness-110 transition-all cursor-pointer flex justify-center items-center mt-6"
               >
-                {updating ? 'Đang cập nhật...' : 'Lưu thay đổi'}
+                {updating ? t('Đang cập nhật...') : t('Lưu thay đổi')}
               </button>
             </form>
           </div>
@@ -616,9 +618,9 @@ const PlaylistDetail = () => {
           <div className="glass-panel p-8 rounded-3xl w-full max-w-sm border border-error/20 relative shadow-2xl">
             <div className="flex flex-col items-center text-center">
               <span className="material-symbols-outlined text-error text-6xl mb-4 select-none">warning</span>
-              <h3 className="font-headline-md text-headline-md text-white mb-2 font-bold">Cảnh Báo Xóa</h3>
+              <h3 className="font-headline-md text-headline-md text-white mb-2 font-bold">{t("Cảnh Báo Xóa")}</h3>
               <p className="text-on-surface-variant font-body-md text-body-md mb-6">
-                Bạn có chắc chắn muốn xóa danh sách phát <span className="text-white font-bold">"{playlist?.title}"</span> không? Hành động này không thể hoàn tác.
+                {t("Bạn có chắc chắn muốn xóa danh sách phát")} <span className="text-white font-bold">"{playlist?.title}"</span> {t("không? Hành động này không thể hoàn tác.")}
               </p>
               
               <div className="flex gap-4 w-full">
@@ -626,13 +628,13 @@ const PlaylistDetail = () => {
                   onClick={() => setShowDeleteConfirmModal(false)}
                   className="flex-1 py-3 bg-white/5 text-white border border-white/10 rounded-xl font-bold hover:bg-white/10 transition-all cursor-pointer"
                 >
-                  Hủy bỏ
+                  {t("Hủy bỏ")}
                 </button>
                 <button 
                   onClick={executeDeletePlaylist}
                   className="flex-1 py-3 bg-error text-on-error rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-lg"
                 >
-                  Xác nhận xóa
+                  {t("Xác nhận xóa")}
                 </button>
               </div>
             </div>

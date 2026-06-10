@@ -24,11 +24,7 @@ export async function register(req, res) {
       email: email.toLowerCase(),
       password: hashedPassword,
       role: userRole,
-      avatarUrl: "",
-      paymentMethods: [
-        { brand: 'Visa', last4: '4242', expiry: '12/2026', isDefault: true },
-        { brand: 'Mastercard', last4: '8899', expiry: '05/2025', isDefault: false }
-      ]
+      paymentMethods: []
     });
 
     await user.save();
@@ -318,11 +314,12 @@ export async function deleteOwnAccount(req, res) {
 
     // Cleanup artist songs if the user was an artist
     if (req.user.role === 'artist') {
-      const songs = await Song.find({ artistId: userId });
+      const songs = await Song.find({ artistId: userId, isDeleted: { $ne: true } });
       for (const song of songs) {
         await Playlist.updateMany({ songs: song._id }, { $pull: { songs: song._id } });
         await User.updateMany({ likedSongs: song._id }, { $pull: { likedSongs: song._id } });
-        await Song.findByIdAndDelete(song._id);
+        song.isDeleted = true;
+        await song.save();
       }
     }
 

@@ -6,10 +6,10 @@ import Notification from '../models/Notification.js';
 export async function getSystemStats(req, res) {
   try {
     const totalUsers = await User.countDocuments({});
-    const totalSongs = await Song.countDocuments({});
+    const totalSongs = await Song.countDocuments({ isDeleted: { $ne: true } });
     const totalAlbums = await Album.countDocuments({});
 
-    const songs = await Song.find({});
+    const songs = await Song.find({ isDeleted: { $ne: true } });
     const totalStreams = songs.reduce((sum, s) => sum + (s.views || 0), 0);
 
     // Mock logs / events
@@ -38,7 +38,7 @@ export async function getSystemStats(req, res) {
 
 export async function getPendingSongs(req, res) {
   try {
-    const songs = await Song.find({ moderationState: 'pending' })
+    const songs = await Song.find({ moderationState: 'pending', isDeleted: { $ne: true } })
       .populate('artistId', 'name email');
     return res.status(200).json({ songs });
   } catch (err) {
@@ -50,28 +50,30 @@ export async function approveSong(req, res) {
   try {
     const { id } = req.params;
     const song = await Song.findById(id);
-    if (!song) {
+    if (!song || song.isDeleted === true) {
       return res.status(404).json({ message: 'Song not found' });
     }
     song.moderationState = 'approved';
     await song.save();
 
-    // Notify followers
-    try {
-      const followers = await User.find({ following: song.artistId });
-      for (const follower of followers) {
-        const notification = new Notification({
-          userId: follower._id,
-          senderId: song.artistId,
-          title: 'Bài hát mới',
-          message: `${song.artist} vừa phát hành bài hát mới: "${song.title}"`,
-          type: 'new_track',
-          link: `/player?songId=${song._id}`
-        });
-        await notification.save();
+    // Notify followers if song visibility is public
+    if (song.visibility === 'public') {
+      try {
+        const followers = await User.find({ following: song.artistId });
+        for (const follower of followers) {
+          const notification = new Notification({
+            userId: follower._id,
+            senderId: song.artistId,
+            title: 'Bài hát mới',
+            message: `${song.artist} vừa phát hành bài hát mới: "${song.title}"`,
+            type: 'new_track',
+            link: `/player?songId=${song._id}`
+          });
+          await notification.save();
+        }
+      } catch (err) {
+        console.error('Failed to send notifications on song approval:', err);
       }
-    } catch (err) {
-      console.error('Failed to send notifications on song approval:', err);
     }
 
     return res.status(200).json({ message: 'Song approved successfully', song });
@@ -84,7 +86,7 @@ export async function blockSong(req, res) {
   try {
     const { id } = req.params;
     const song = await Song.findById(id);
-    if (!song) {
+    if (!song || song.isDeleted === true) {
       return res.status(404).json({ message: 'Song not found' });
     }
     song.moderationState = 'blocked';
@@ -92,5 +94,43 @@ export async function blockSong(req, res) {
     return res.status(200).json({ message: 'Song blocked successfully', song });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to block song', error: err.message });
+  }
+}
+
+export async function getPaginatedSongs(req, res) {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || '';
+
+    let query = { isDeleted: { $ne: true } };
+
+    if (search) {
+      const regex = new RegExp(search, 'i');
+      query.$or = [
+        { title: regex },
+        { artist: regex }
+      ];
+    }
+
+    const totalSongs = await Song.countDocuments(query);
+    const totalPages = Math.ceil(totalSongs / limit);
+    const skip = (page - 1) * limit;
+
+    const songs = await Song.find(query)
+      .populate('artistId', 'name email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    return res.status(200).json({
+      songs,
+      totalSongs,
+      page,
+      limit,
+      totalPages
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to retrieve paginated songs', error: err.message });
   }
 }

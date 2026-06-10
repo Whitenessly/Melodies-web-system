@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { api } from '../utils/api.js';
 
 const AuthContext = createContext(null);
@@ -6,27 +6,53 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasUnread, setHasUnread] = useState(false);
 
-  const fetchProfile = async (token) => {
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    setUser(null);
+  }, []);
+
+  const checkUnreadNotifications = async () => {
+    if (!localStorage.getItem('token')) return;
     try {
-      const data = await api.get('/auth/profile');
-      setUser(data.user);
+      const data = await api.get('/notifications');
+      const unread = (data.notifications || []).some(n => !n.read);
+      setHasUnread(unread);
     } catch (err) {
-      console.error('Failed to fetch profile:', err);
-      logout();
-    } finally {
-      setLoading(false);
+      console.error('Failed to check notifications:', err);
     }
   };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      fetchProfile(token);
+      const fetchProfile = async () => {
+        try {
+          const data = await api.get('/auth/profile');
+          setUser(data.user);
+        } catch (err) {
+          console.error('Failed to fetch profile:', err);
+          logout();
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchProfile();
     } else {
-      setLoading(false);
+      Promise.resolve().then(() => setLoading(false));
     }
-  }, []);
+  }, [logout]);
+
+  useEffect(() => {
+    if (user) {
+      Promise.resolve().then(() => checkUnreadNotifications());
+      const interval = setInterval(checkUnreadNotifications, 15000);
+      return () => clearInterval(interval);
+    } else {
+      Promise.resolve().then(() => setHasUnread(false));
+    }
+  }, [user]);
 
   const login = async (email, password) => {
     const data = await api.post('/auth/login', { email, password });
@@ -42,10 +68,7 @@ export const AuthProvider = ({ children }) => {
     return data.user;
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
-  };
+
 
   const toggleLikeSong = async (songId) => {
     const data = await api.post('/users/likes', { songId });
@@ -102,7 +125,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, register, logout, updateProfile, toggleLikeSong, toggleFollowArtist, toggleLikePlaylist }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, register, logout, updateProfile, toggleLikeSong, toggleFollowArtist, toggleLikePlaylist, hasUnread, setHasUnread, checkUnreadNotifications }}>
       {children}
     </AuthContext.Provider>
   );

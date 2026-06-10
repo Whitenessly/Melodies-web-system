@@ -114,15 +114,19 @@ function AppRoutes() {
   );
 }
 
+import { LanguageProvider } from './context/LanguageContext.jsx';
+
 function App() {
   return (
-    <AuthProvider>
-      <PlayerProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </PlayerProvider>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <PlayerProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </PlayerProvider>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import { api } from '../utils/api.js';
 import { usePlayer } from '../context/PlayerContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import Header from '../components/Header.jsx';
 import MusicPlayer from '../components/MusicPlayer.jsx';
@@ -11,6 +12,7 @@ const Home = () => {
   const navigate = useNavigate();
   const { play } = usePlayer();
   const { user } = useAuth();
+  const { t } = useLanguage();
   
   const [songs, setSongs] = useState([]);
   const [charts, setCharts] = useState([]);
@@ -46,12 +48,12 @@ const Home = () => {
       <Sidebar />
       
       <main className="md:ml-sidebar-width pb-[120px] min-h-screen bg-background">
-        <Header placeholder="Tìm kiếm bài hát, nghệ sĩ..." />
+        <Header placeholder={t("Tìm kiếm bài hát, nghệ sĩ...")} />
 
         {loading ? (
           <div className="flex items-center justify-center h-[calc(100vh-64px)] text-primary">
             <span className="material-symbols-outlined text-4xl animate-spin mr-2">sync</span>
-            <span>Đang tải giai điệu...</span>
+            <span>{t("Đang tải giai điệu...")}</span>
           </div>
         ) : (
           <>
@@ -69,22 +71,22 @@ const Home = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent"></div>
                 <div className="absolute bottom-12 left-12 max-w-2xl z-10">
                   <span className="inline-block px-4 py-1 rounded-full bg-primary/20 text-primary border border-primary/30 backdrop-blur-md font-label-sm text-label-sm mb-4">
-                    MỚI PHÁT HÀNH
+                    {t("MỚI PHÁT HÀNH")}
                   </span>
-                  <h2 className="font-headline-xl text-headline-xl text-white mb-4">Âm Thanh Của Tương Lai</h2>
+                  <h2 className="font-headline-xl text-headline-xl text-white mb-4">{t("Âm Thanh Của Tương Lai")}</h2>
                   <p className="font-body-lg text-body-lg text-on-surface-variant mb-8 line-clamp-2">
-                    Khám phá album mới nhất từ nhóm nhạc indie-electronic "Ethereal Echoes". Một hành trình âm nhạc xuyên không gian và thời gian.
+                    {t('Khám phá album mới nhất từ nhóm nhạc indie-electronic "Ethereal Echoes". Một hành trình âm nhạc xuyên không gian và thời gian.')}
                   </p>
                   <div className="flex gap-4">
                     <button className="px-8 py-3 rounded-full bg-primary text-on-primary font-label-md text-label-md flex items-center gap-2 hover:scale-105 transition-transform cursor-pointer font-bold">
                       <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
-                      Nghe Ngay
+                      {t("Nghe Ngay")}
                     </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); navigate('/library-playlists'); }}
                       className="px-8 py-3 rounded-full glass-panel text-white font-label-md text-label-md hover:bg-white/10 transition-all cursor-pointer"
                     >
-                      Xem Thư Viện
+                      {t("Xem Thư Viện")}
                     </button>
                   </div>
                 </div>
@@ -94,8 +96,8 @@ const Home = () => {
             {/* Suggestions list */}
             <section className="px-gutter-desktop mt-margin-page">
               <div className="flex justify-between items-end mb-6">
-                <h3 className="font-headline-lg text-headline-lg text-white font-bold">Gợi Ý Cho Bạn</h3>
-                <span className="text-primary font-label-md text-label-md hover:underline cursor-default">Phù hợp sở thích</span>
+                <h3 className="font-headline-lg text-headline-lg text-white font-bold">{t("Gợi Ý Cho Bạn")}</h3>
+                <span className="text-primary font-label-md text-label-md hover:underline cursor-default">{t("Phù hợp sở thích")}</span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
                 {songs.slice(0, 5).map(song => (
@@ -136,8 +138,8 @@ const Home = () => {
               {/* Top Charts */}
               <div className="lg:col-span-6">
                 <div className="flex justify-between items-end mb-6">
-                  <h3 className="font-headline-lg text-headline-lg text-white font-bold">Bảng Xếp Hạng</h3>
-                  <span className="text-primary font-label-md text-label-md cursor-default">Top Lượt Nghe</span>
+                  <h3 className="font-headline-lg text-headline-lg text-white font-bold">{t("Bảng Xếp Hạng")}</h3>
+                  <span className="text-primary font-label-md text-label-md cursor-default">{t("Top Lượt Nghe")}</span>
                 </div>
                 <div className="space-y-2 bg-white/5 p-4 rounded-3xl border border-white/5">
                   {charts.map((song, i) => (
@@ -165,7 +167,7 @@ const Home = () => {
                         </p>
                       </div>
                       <span className="text-on-surface-variant font-label-sm text-label-sm hidden sm:block">
-                        {song.views.toLocaleString()} lượt nghe
+                        {song.views.toLocaleString()} {t("lượt nghe")}
                       </span>
                       <button className="text-primary hover:text-white transition-colors">
                         <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
@@ -178,8 +180,8 @@ const Home = () => {
               {/* Newly Released list */}
               <div className="lg:col-span-6">
                 <div className="flex justify-between items-end mb-6">
-                  <h3 className="font-headline-lg text-headline-lg text-white font-bold">Mới Cập Nhật</h3>
-                  <span className="text-primary font-label-md text-label-md cursor-default">Mới Nhất</span>
+                  <h3 className="font-headline-lg text-headline-lg text-white font-bold">{t("Mới Cập Nhật")}</h3>
+                  <span className="text-primary font-label-md text-label-md cursor-default">{t("Mới Nhất")}</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {songs.slice(0, 6).map(song => (
@@ -220,15 +222,15 @@ const Home = () => {
               <div className="glass-panel rounded-3xl p-8 overflow-hidden relative">
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
                   <div className="max-w-md">
-                    <h3 className="font-headline-lg text-headline-lg text-white mb-2 font-bold">Chào mừng trở lại, {user?.name}!</h3>
+                    <h3 className="font-headline-lg text-headline-lg text-white mb-2 font-bold">{t("Chào mừng trở lại,")} {user?.name}!</h3>
                     <p className="font-body-md text-body-md text-on-surface-variant">
-                      Bạn đã đăng nhập hệ thống với vai trò <span className="text-primary font-bold uppercase">{user?.role}</span>. Khám phá hàng ngàn giai điệu và quản lý trải nghiệm cá nhân của mình ngay hôm nay.
+                      {t("Bạn đã đăng nhập hệ thống với vai trò")} <span className="text-primary font-bold uppercase">{user?.role}</span>. {t("Khám phá hàng ngàn giai điệu và quản lý trải nghiệm cá nhân của mình ngay hôm nay.")}
                     </p>
                     <button 
                       onClick={() => navigate('/library-playlists')}
                       className="mt-6 px-6 py-2 rounded-full border border-primary text-primary font-label-md text-label-md hover:bg-primary/10 transition-all cursor-pointer"
                     >
-                      Xem danh sách phát của tôi
+                      {t("Xem danh sách phát của tôi")}
                     </button>
                   </div>
                   <div className="flex gap-4">

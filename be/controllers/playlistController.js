@@ -17,6 +17,7 @@ export async function getPlaylistById(req, res) {
     const { id } = req.params;
     const playlist = await Playlist.findById(id).populate({
       path: 'songs',
+      match: { isDeleted: { $ne: true } },
       populate: {
         path: 'albumId',
         model: 'Album'
@@ -88,7 +89,7 @@ export async function addSongToPlaylist(req, res) {
     }
 
     const song = await Song.findById(songId);
-    if (!song) {
+    if (!song || song.isDeleted === true) {
       return res.status(404).json({ message: 'Song not found' });
     }
 

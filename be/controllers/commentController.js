@@ -23,7 +23,7 @@ export async function addComment(req, res) {
     }
 
     const song = await Song.findById(songId);
-    if (!song) {
+    if (!song || song.isDeleted === true) {
       return res.status(404).json({ message: 'Song not found' });
     }
 

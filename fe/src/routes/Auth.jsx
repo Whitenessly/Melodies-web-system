@@ -16,14 +16,25 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const handleModeChange = (newMode) => {
+    setMode(newMode);
+    setName('');
+    setEmail('');
+    setPassword('');
+    setIsArtist(false);
+    setRememberMe(false);
+    setErrorMsg('');
+    setShowPassword(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
-      setErrorMsg('Vui lòng điền email và mật khẩu');
+      setErrorMsg('Please enter email and password');
       return;
     }
     if (mode === 'signup' && !name) {
-      setErrorMsg('Vui lòng điền họ và tên');
+      setErrorMsg('Please enter full name');
       return;
     }
 
@@ -40,7 +51,7 @@ const Auth = () => {
       navigate('/home');
     } catch (err) {
       console.error(err);
-      setErrorMsg(err.message || 'Xác thực thất bại. Vui lòng kiểm tra lại thông tin.');
+      setErrorMsg(err.message || 'Authentication failed. Please verify your credentials.');
     } finally {
       setLoading(false);
     }
@@ -73,18 +84,18 @@ const Auth = () => {
                 <span className="text-primary italic">Sound Experience</span>
               </h1>
               <p className="font-body-lg text-body-lg text-on-surface-variant/80 max-w-lg">
-                Khám phá không gian âm nhạc đỉnh cao với chất lượng âm thanh lossless và những bản phối độc quyền dành riêng cho tâm hồn nghệ sĩ của bạn.
+                Explore the ultimate sound space with lossless audio quality and exclusive mixes crafted for your artistic soul.
               </p>
             </div>
             
             <div className="flex gap-8 items-center font-label-md text-label-md text-on-surface-variant">
               <span className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-secondary">verified</span>
-                Nghệ sĩ xác thực
+                Verified Artist
               </span>
               <span className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-secondary">graphic_eq</span>
-                Âm thanh Ethereal
+                Ethereal Sound
               </span>
             </div>
           </div>
@@ -97,7 +108,7 @@ const Auth = () => {
               <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center mb-4">
                 <span className="material-symbols-outlined text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>music_note</span>
               </div>
-              <h2 className="font-headline-lg-mobile text-headline-lg-mobile text-white">Chào mừng bạn</h2>
+              <h2 className="font-headline-lg-mobile text-headline-lg-mobile text-white">Welcome</h2>
             </div>
 
             {/* Tab switchers */}
@@ -105,16 +116,16 @@ const Auth = () => {
               <button 
                 type="button"
                 className={`flex-1 py-3 px-4 rounded-lg font-label-md text-label-md transition-all duration-300 cursor-pointer ${mode === 'signin' ? 'bg-primary text-on-primary shadow-lg font-bold' : 'text-on-surface-variant hover:text-white'}`}
-                onClick={() => { setMode('signin'); setErrorMsg(''); }}
+                onClick={() => handleModeChange('signin')}
               >
-                Đăng nhập
+                Sign In
               </button>
               <button 
                 type="button"
                 className={`flex-1 py-3 px-4 rounded-lg font-label-md text-label-md transition-all duration-300 cursor-pointer ${mode === 'signup' ? 'bg-primary text-on-primary shadow-lg font-bold' : 'text-on-surface-variant hover:text-white'}`}
-                onClick={() => { setMode('signup'); setErrorMsg(''); }}
+                onClick={() => handleModeChange('signup')}
               >
-                Đăng ký
+                Sign Up
               </button>
             </div>
 
@@ -123,12 +134,12 @@ const Auth = () => {
               <form className="space-y-5" onSubmit={handleSubmit}>
                 {mode === 'signup' && (
                   <div className="space-y-2">
-                    <label className="font-label-md text-label-md text-on-surface-variant ml-1">Họ và tên</label>
+                    <label className="font-label-md text-label-md text-on-surface-variant ml-1">Full name</label>
                     <div className="relative group">
                       <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">person</span>
                       <input 
                         className="w-full bg-surface-container border border-outline-variant/30 rounded-xl py-4 pl-12 pr-4 text-on-surface placeholder:text-outline/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none" 
-                        placeholder="Nguyễn Văn A" 
+                        placeholder="John Doe" 
                         type="text" 
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -154,7 +165,7 @@ const Auth = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="font-label-md text-label-md text-on-surface-variant ml-1">Mật khẩu</label>
+                  <label className="font-label-md text-label-md text-on-surface-variant ml-1">Password</label>
                   <div className="relative group">
                     <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">lock</span>
                     <input 
@@ -180,8 +191,8 @@ const Auth = () => {
                     <div className="flex items-center gap-3">
                       <span className="material-symbols-outlined text-secondary">mic</span>
                       <div>
-                        <p className="font-label-md text-label-md text-white">Đăng ký làm Nghệ sĩ</p>
-                        <p className="text-[11px] text-on-surface-variant">Phân phối nhạc & xem Analytics</p>
+                        <p className="font-label-md text-label-md text-white">Register as Artist</p>
+                        <p className="text-[11px] text-on-surface-variant">Distribute music & view Analytics</p>
                       </div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -208,9 +219,9 @@ const Auth = () => {
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
                     />
-                    <span className="font-label-sm text-label-sm text-on-surface-variant group-hover:text-white transition-colors">Ghi nhớ tôi</span>
+                    <span className="font-label-sm text-label-sm text-on-surface-variant group-hover:text-white transition-colors">Remember me</span>
                   </label>
-                  <Link className="font-label-sm text-label-sm text-primary hover:text-primary-fixed-dim transition-colors" to="#">Quên mật khẩu?</Link>
+                  <Link className="font-label-sm text-label-sm text-primary hover:text-primary-fixed-dim transition-colors" to="#">Forgot password?</Link>
                 </div>
 
                 <button 
@@ -218,7 +229,7 @@ const Auth = () => {
                   type="submit"
                   disabled={loading}
                 >
-                  {loading ? 'Đang xử lý...' : (mode === 'signin' ? 'Đăng nhập' : 'Đăng ký tài khoản')}
+                  {loading ? 'Processing...' : (mode === 'signin' ? 'Sign In' : 'Create Account')}
                 </button>
               </form>
             </div>
@@ -228,7 +239,7 @@ const Auth = () => {
                 <div className="w-full border-t border-outline-variant/20"></div>
               </div>
               <div className="relative flex justify-center text-label-sm uppercase">
-                <span className="bg-surface-container-lowest px-4 text-outline">Hoặc tiếp tục với</span>
+                <span className="bg-surface-container-lowest px-4 text-outline">Or continue with</span>
               </div>
             </div>
 
@@ -251,7 +262,7 @@ const Auth = () => {
             </div>
 
             <p className="text-center font-label-sm text-label-sm text-on-surface-variant pt-8">
-              Bằng cách tiếp tục, bạn đồng ý với <Link className="text-primary hover:underline" to="#">Điều khoản Dịch vụ</Link> và <Link className="text-primary hover:underline" to="#">Chính sách Bảo mật</Link> của Melodies.
+              By continuing, you agree to Melodies' <Link className="text-primary hover:underline" to="#">Terms of Service</Link> and <Link className="text-primary hover:underline" to="#">Privacy Policy</Link>.
             </p>
           </div>
         </section>

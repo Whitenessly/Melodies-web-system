@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
 import { api } from '../utils/api.js';
 import Sidebar from '../components/Sidebar.jsx';
 import Header from '../components/Header.jsx';
@@ -10,6 +11,7 @@ import { createPortal } from 'react-dom';
 const Settings = () => {
   const { user, setUser, updateProfile, logout } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   // Form states
   const [name, setName] = useState(user?.name || '');
@@ -58,7 +60,7 @@ const Settings = () => {
         await updateProfile({ avatar: reader.result });
       } catch (err) {
         console.error(err);
-        alert('Cập nhật ảnh đại diện thất bại.');
+        alert(t('Cập nhật ảnh đại diện thất bại.'));
       }
     };
     reader.readAsDataURL(file);
@@ -66,29 +68,29 @@ const Settings = () => {
 
   const handleRemoveAvatar = async () => {
     if (!user?.avatarUrl) return;
-    if (!window.confirm('Bạn có chắc chắn muốn gỡ ảnh đại diện không?')) return;
+    if (!window.confirm(t('Bạn có chắc chắn muốn gỡ ảnh đại diện không?'))) return;
     try {
       await updateProfile({ removeAvatar: true });
     } catch (err) {
       console.error(err);
-      alert('Gỡ ảnh đại diện thất bại.');
+      alert(t('Gỡ ảnh đại diện thất bại.'));
     }
   };
 
   const handleUpdateInfo = async (e) => {
     e.preventDefault();
     if (!name.trim()) {
-      setInfoMessage('Họ và tên không được để trống.');
+      setInfoMessage(t('Họ và tên không được để trống.'));
       return;
     }
     setInfoLoading(true);
     setInfoMessage('');
     try {
       await updateProfile({ name: name.trim(), email: email.trim() });
-      setInfoMessage('Cập nhật thông tin thành công!');
+      setInfoMessage(t('Cập nhật thông tin thành công!'));
     } catch (err) {
       console.error(err);
-      setInfoMessage(err.message || 'Cập nhật thông tin thất bại.');
+      setInfoMessage(err.message || t('Cập nhật thông tin thất bại.'));
     } finally {
       setInfoLoading(false);
     }
@@ -97,23 +99,23 @@ const Settings = () => {
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
     if (!currentPassword || !newPassword) {
-      setPasswordMessage('Mật khẩu hiện tại và mật khẩu mới là bắt buộc.');
+      setPasswordMessage(t('Mật khẩu hiện tại và mật khẩu mới là bắt buộc.'));
       return;
     }
     if (newPassword.length < 8) {
-      setPasswordMessage('Mật khẩu mới phải tối thiểu 8 ký tự.');
+      setPasswordMessage(t('Mật khẩu mới phải tối thiểu 8 ký tự.'));
       return;
     }
     setPasswordLoading(true);
     setPasswordMessage('');
     try {
       await api.put('/auth/password', { currentPassword, newPassword });
-      setPasswordMessage('Đổi mật khẩu thành công!');
+      setPasswordMessage(t('Đổi mật khẩu thành công!'));
       setCurrentPassword('');
       setNewPassword('');
     } catch (err) {
       console.error(err);
-      setPasswordMessage(err.message || 'Thay đổi mật khẩu thất bại.');
+      setPasswordMessage(err.message || t('Thay đổi mật khẩu thất bại.'));
     } finally {
       setPasswordLoading(false);
     }
@@ -123,19 +125,19 @@ const Settings = () => {
     e.preventDefault();
     const cleanNumber = cardNumber.replace(/\s+/g, '');
     if (!/^\d{15,16}$/.test(cleanNumber)) {
-      setCardMessage('Số thẻ phải chứa 15 hoặc 16 chữ số.');
+      setCardMessage(t('Số thẻ phải chứa 15 hoặc 16 chữ số.'));
       return;
     }
     if (!cardholderName.trim()) {
-      setCardMessage('Vui lòng nhập tên chủ thẻ.');
+      setCardMessage(t('Vui lòng nhập tên chủ thẻ.'));
       return;
     }
     if (!/^\d{3,4}$/.test(cardCvv)) {
-      setCardMessage('Mã CVV phải chứa 3 hoặc 4 chữ số.');
+      setCardMessage(t('Mã CVV phải chứa 3 hoặc 4 chữ số.'));
       return;
     }
     if (!/^(0[1-9]|1[0-2])\/\d{4}$/.test(cardExpiry)) {
-      setCardMessage('Hạn sử dụng phải có định dạng MM/YYYY (Ví dụ: 12/2026).');
+      setCardMessage(t('Hạn sử dụng phải có định dạng MM/YYYY (Ví dụ: 12/2026).'));
       return;
     }
     setCardLoading(true);
@@ -157,7 +159,7 @@ const Settings = () => {
       setCardIsDefault(false);
     } catch (err) {
       console.error(err);
-      setCardMessage(err.message || 'Thêm thẻ thất bại.');
+      setCardMessage(err.message || t('Thêm thẻ thất bại.'));
     } finally {
       setCardLoading(false);
     }
@@ -169,18 +171,18 @@ const Settings = () => {
       setUser(res.user);
     } catch (err) {
       console.error(err);
-      alert('Đặt thẻ mặc định thất bại.');
+      alert(t('Đặt thẻ mặc định thất bại.'));
     }
   };
 
   const handleDeleteCard = async (cardId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa phương thức thanh toán này không?')) return;
+    if (!window.confirm(t('Bạn có chắc chắn muốn xóa phương thức thanh toán này không?'))) return;
     try {
       const res = await api.delete(`/auth/payment-methods/${cardId}`);
       setUser(res.user);
     } catch (err) {
       console.error(err);
-      alert('Xóa thẻ thất bại.');
+      alert(t('Xóa thẻ thất bại.'));
     }
   };
 
@@ -191,7 +193,7 @@ const Settings = () => {
       navigate('/auth');
     } catch (err) {
       console.error(err);
-      alert('Xóa tài khoản thất bại.');
+      alert(t('Xóa tài khoản thất bại.'));
     } finally {
       setShowDeleteAccountConfirm(false);
     }
@@ -208,7 +210,7 @@ const Settings = () => {
         <div className="max-w-5xl mx-auto px-margin-page py-12 space-y-12">
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <h2 className="font-headline-xl text-headline-xl font-bold text-white leading-tight">Cài đặt tài khoản</h2>
+            <h2 className="font-headline-xl text-headline-xl font-bold text-white leading-tight">{t("Cài đặt tài khoản")}</h2>
           </div>
 
           {/* Profile Card Section */}
@@ -245,7 +247,7 @@ const Settings = () => {
               <p className="text-on-surface-variant font-body-md pb-4">{user?.email}</p>
               <div className="flex flex-wrap gap-3 justify-center md:justify-start">
                 <label className="px-6 py-2 bg-primary/10 border border-primary/20 text-primary rounded-full font-label-md hover:bg-primary/20 transition-all cursor-pointer">
-                  Đổi ảnh đại diện
+                  {t("Đổi ảnh đại diện")}
                   <input 
                     type="file" 
                     accept="image/*" 
@@ -258,7 +260,7 @@ const Settings = () => {
                   disabled={!user?.avatarUrl}
                   className="px-6 py-2 bg-surface-variant/50 text-on-surface-variant rounded-full font-label-md hover:bg-surface-variant transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  Gỡ ảnh
+                  {t("Gỡ ảnh")}
                 </button>
               </div>
             </div>
@@ -271,12 +273,12 @@ const Settings = () => {
             <div className="space-y-6">
               <h4 className="font-headline-md text-headline-md text-on-surface flex items-center gap-3 font-bold">
                 <span className="material-symbols-outlined text-secondary">person_edit</span>
-                Thông tin tài khoản
+                {t("Thông tin tài khoản")}
               </h4>
               <div className="glass-panel p-8 rounded-3xl space-y-6">
                 <form onSubmit={handleUpdateInfo} className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-on-surface-variant font-label-sm ml-1">Họ và tên</label>
+                    <label className="text-on-surface-variant font-label-sm ml-1">{t("Họ và tên")}</label>
                     <input 
                       type="text" 
                       value={name}
@@ -287,7 +289,7 @@ const Settings = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-on-surface-variant font-label-sm ml-1">Địa chỉ Email</label>
+                    <label className="text-on-surface-variant font-label-sm ml-1">{t("Địa chỉ Email")}</label>
                     <input 
                       type="email" 
                       value={email}
@@ -299,7 +301,7 @@ const Settings = () => {
                   </div>
 
                   {infoMessage && (
-                    <p className={`text-label-sm font-semibold ml-1 ${infoMessage.includes('thành công') ? 'text-secondary' : 'text-error'}`}>
+                    <p className={`text-label-sm font-semibold ml-1 ${infoMessage.includes('thành công') || infoMessage.includes('successful') ? 'text-secondary' : 'text-error'}`}>
                       {infoMessage}
                     </p>
                   )}
@@ -309,7 +311,7 @@ const Settings = () => {
                     disabled={infoLoading}
                     className="w-full py-3 bg-primary text-on-primary-container font-label-md font-bold rounded-xl hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer flex justify-center items-center"
                   >
-                    {infoLoading ? 'Đang cập nhật...' : 'Cập nhật thông tin'}
+                    {infoLoading ? t('Đang cập nhật...') : t('Cập nhật thông tin')}
                   </button>
                 </form>
               </div>
@@ -319,12 +321,12 @@ const Settings = () => {
             <div className="space-y-6">
               <h4 className="font-headline-md text-headline-md text-on-surface flex items-center gap-3 font-bold">
                 <span className="material-symbols-outlined text-secondary">security</span>
-                Đổi mật khẩu
+                {t("Đổi mật khẩu")}
               </h4>
               <div className="glass-panel p-8 rounded-3xl space-y-6">
                 <form onSubmit={handleUpdatePassword} className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-on-surface-variant font-label-sm ml-1">Mật khẩu hiện tại</label>
+                    <label className="text-on-surface-variant font-label-sm ml-1">{t("Mật khẩu hiện tại")}</label>
                     <input 
                       type="password" 
                       value={currentPassword}
@@ -335,19 +337,19 @@ const Settings = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-on-surface-variant font-label-sm ml-1">Mật khẩu mới</label>
+                    <label className="text-on-surface-variant font-label-sm ml-1">{t("Mật khẩu mới")}</label>
                     <input 
                       type="password" 
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="w-full bg-surface-container border border-white/10 rounded-xl px-4 py-3 text-on-surface focus:outline-none focus:border-primary transition-colors font-body-md"
-                      placeholder="Mật khẩu tối thiểu 8 ký tự"
+                      placeholder={t("Mật khẩu tối thiểu 8 ký tự")}
                       required
                     />
                   </div>
 
                   {passwordMessage && (
-                    <p className={`text-label-sm font-semibold ml-1 ${passwordMessage.includes('thành công') ? 'text-secondary' : 'text-error'}`}>
+                    <p className={`text-label-sm font-semibold ml-1 ${passwordMessage.includes('thành công') || passwordMessage.includes('successful') ? 'text-secondary' : 'text-error'}`}>
                       {passwordMessage}
                     </p>
                   )}
@@ -357,7 +359,7 @@ const Settings = () => {
                     disabled={passwordLoading}
                     className="w-full py-3 bg-surface-variant text-on-surface font-label-md font-bold rounded-xl hover:bg-surface-container-highest active:scale-[0.98] transition-all cursor-pointer flex justify-center items-center"
                   >
-                    {passwordLoading ? 'Đang xác nhận...' : 'Xác nhận thay đổi'}
+                    {passwordLoading ? t('Đang xác nhận...') : t('Xác nhận thay đổi')}
                   </button>
                 </form>
               </div>
@@ -370,7 +372,7 @@ const Settings = () => {
             <div className="flex items-center justify-between">
               <h4 className="font-headline-md text-headline-md text-on-surface flex items-center gap-3 font-bold">
                 <span className="material-symbols-outlined text-secondary">credit_card</span>
-                Thông tin thanh toán
+                {t("Thông tin thanh toán")}
               </h4>
               <button 
                 onClick={() => {
@@ -380,14 +382,16 @@ const Settings = () => {
                 className="text-primary font-label-md font-bold flex items-center gap-2 border border-transparent hover:border-primary px-3 py-1.5 rounded-full transition-all cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[18px]">add</span>
-                Thêm phương thức
+                {t("Thêm phương thức")}
               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {user?.paymentMethods && user.paymentMethods.length > 0 ? (
-                user.paymentMethods.map((card) => (
-                  <div key={card._id} className="glass-panel p-6 rounded-2xl flex items-center justify-between group accent-glow transition-all">
+                [...user.paymentMethods]
+                  .sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0))
+                  .map((card) => (
+                    <div key={card._id} className="glass-panel p-6 rounded-2xl flex items-center justify-between group accent-glow transition-all">
                     <div className="flex items-center gap-4">
                       <div className="w-14 h-10 bg-white/5 rounded flex items-center justify-center p-2 flex-shrink-0">
                         {card.brand.toLowerCase() === 'visa' ? (
@@ -408,28 +412,28 @@ const Settings = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       {card.isDefault ? (
-                        <span className="px-2 py-1 bg-secondary/10 text-secondary text-[10px] rounded border border-secondary/20 font-bold uppercase select-none">Mặc định</span>
+                        <span className="px-2 py-1 bg-secondary/10 text-secondary text-[10px] rounded border border-secondary/20 font-bold uppercase select-none">{t("Mặc định")}</span>
                       ) : (
                         <button 
                           onClick={() => handleSetDefaultCard(card._id)}
                           className="px-2 py-1 bg-white/5 text-on-surface-variant hover:bg-white/10 hover:text-white text-[10px] rounded border border-white/10 font-bold uppercase cursor-pointer transition-colors"
                         >
-                          Đặt mặc định
+                          {t("Đặt mặc định")}
                         </button>
                       )}
                       <button 
                         onClick={() => handleDeleteCard(card._id)}
                         className="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors p-1 cursor-pointer"
-                        title="Xóa thẻ"
+                        title={t("Xóa thẻ")}
                       >
                         delete
                       </button>
                     </div>
-                  </div>
-                ))
+                    </div>
+                  ))
               ) : (
                 <div className="col-span-2 glass-panel p-8 rounded-2xl text-center text-on-surface-variant">
-                  <p className="font-body-md">Chưa có phương thức thanh toán nào.</p>
+                  <p className="font-body-md">{t("Chưa có phương thức thanh toán nào.")}</p>
                 </div>
               )}
             </div>
@@ -443,16 +447,16 @@ const Settings = () => {
             <div className="relative z-10">
               <h4 className="font-headline-md text-headline-md text-error flex items-center gap-3 mb-4 font-bold">
                 <span className="material-symbols-outlined">report</span>
-                Xóa tài khoản
+                {t("Xóa tài khoản")}
               </h4>
               <p className="text-on-surface-variant font-body-md mb-6 max-w-2xl">
-                Việc xóa tài khoản sẽ gỡ bỏ vĩnh viễn tất cả danh sách phát, bài hát đã tải lên và lịch sử nghe nhạc của bạn. Hành động này không thể hoàn tác.
+                {t("Việc xóa tài khoản sẽ gỡ bỏ vĩnh viễn tất cả danh sách phát, bài hát đã tải lên và lịch sử nghe nhạc của bạn. Hành động này không thể hoàn tác.")}
               </p>
               <button 
                 onClick={() => setShowDeleteAccountConfirm(true)}
                 className="px-8 py-3 bg-error text-on-error font-bold rounded-xl hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer shadow-lg shadow-error/20"
               >
-                Tiếp tục xóa tài khoản
+                {t("Tiếp tục xóa tài khoản")}
               </button>
             </div>
           </section>
@@ -471,11 +475,11 @@ const Settings = () => {
               <span className="material-symbols-outlined">close</span>
             </button>
             
-            <h3 className="font-headline-md text-headline-md text-white mb-6 font-bold">Thêm phương thức thanh toán</h3>
+            <h3 className="font-headline-md text-headline-md text-white mb-6 font-bold">{t("Thêm phương thức thanh toán")}</h3>
             
             <form onSubmit={handleAddCard} className="space-y-4">
               <div>
-                <label className="block text-label-sm text-on-surface-variant mb-2">Số thẻ</label>
+                <label className="block text-label-sm text-on-surface-variant mb-2">{t("Số thẻ")}</label>
                 <input 
                   type="text" 
                   value={cardNumber}
@@ -488,7 +492,7 @@ const Settings = () => {
               </div>
 
               <div>
-                <label className="block text-label-sm text-on-surface-variant mb-2">Tên chủ thẻ</label>
+                <label className="block text-label-sm text-on-surface-variant mb-2">{t("Tên chủ thẻ")}</label>
                 <input 
                   type="text" 
                   value={cardholderName}
@@ -501,7 +505,7 @@ const Settings = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-label-sm text-on-surface-variant mb-2">Mã bảo mật (CVV)</label>
+                  <label className="block text-label-sm text-on-surface-variant mb-2">{t("Mã bảo mật (CVV)")}</label>
                   <input 
                     type="password" 
                     value={cardCvv}
@@ -514,7 +518,7 @@ const Settings = () => {
                 </div>
 
                 <div>
-                  <label className="block text-label-sm text-on-surface-variant mb-2">Hạn sử dụng</label>
+                  <label className="block text-label-sm text-on-surface-variant mb-2">{t("Hạn sử dụng")}</label>
                   <input 
                     type="text" 
                     value={cardExpiry}
@@ -534,7 +538,7 @@ const Settings = () => {
                   onChange={(e) => setCardIsDefault(e.target.checked)}
                   className="rounded border-outline-variant text-primary focus:ring-primary bg-surface-container"
                 />
-                <label htmlFor="cardIsDefault" className="text-body-md text-on-surface-variant cursor-pointer select-none">Đặt làm phương thức thanh toán mặc định</label>
+                <label htmlFor="cardIsDefault" className="text-body-md text-on-surface-variant cursor-pointer select-none">{t("Đặt làm phương thức thanh toán mặc định")}</label>
               </div>
 
               {cardMessage && (
@@ -548,7 +552,7 @@ const Settings = () => {
                 disabled={cardLoading}
                 className="w-full py-3 bg-primary text-on-primary-container rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer flex justify-center items-center mt-6"
               >
-                {cardLoading ? 'Đang thêm...' : 'Thêm thẻ'}
+                {cardLoading ? t('Đang thêm...') : t('Thêm thẻ')}
               </button>
             </form>
           </div>
@@ -562,9 +566,9 @@ const Settings = () => {
           <div className="glass-panel p-8 rounded-3xl w-full max-w-sm border border-error/20 relative shadow-2xl">
             <div className="flex flex-col items-center text-center">
               <span className="material-symbols-outlined text-error text-6xl mb-4 select-none animate-bounce">warning</span>
-              <h3 className="font-headline-md text-headline-md text-white mb-2 font-bold">Cảnh Báo Xóa Tài Khoản</h3>
+              <h3 className="font-headline-md text-headline-md text-white mb-2 font-bold">{t("Cảnh Báo Xóa Tài Khoản")}</h3>
               <p className="text-on-surface-variant font-body-md text-body-md mb-6">
-                Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản này không? Hành động này sẽ xóa toàn bộ danh sách phát, bài hát đã tải lên và không thể hoàn tác.
+                {t("Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản này không? Hành động này sẽ xóa toàn bộ danh sách phát, bài hát đã tải lên và không thể hoàn tác.")}
               </p>
               
               <div className="flex gap-4 w-full">
@@ -572,13 +576,13 @@ const Settings = () => {
                   onClick={() => setShowDeleteAccountConfirm(false)}
                   className="flex-1 py-3 bg-white/5 text-white border border-white/10 rounded-xl font-bold hover:bg-white/10 transition-all cursor-pointer"
                 >
-                  Hủy bỏ
+                  {t("Hủy bỏ")}
                 </button>
                 <button 
                   onClick={handleDeleteAccount}
                   className="flex-1 py-3 bg-error text-on-error rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-lg"
                 >
-                  Xác nhận xóa
+                  {t("Xác nhận xóa")}
                 </button>
               </div>
             </div>

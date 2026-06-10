@@ -2,9 +2,11 @@ import React, { useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { usePlayer } from '../context/PlayerContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const MusicPlayer = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const { 
     currentSong, 
     isPlaying, 
@@ -68,8 +70,8 @@ const MusicPlayer = () => {
             <span className="material-symbols-outlined">music_note</span>
           </div>
           <div>
-            <h5 className="text-label-md font-label-md text-on-surface-variant">Không có bài hát</h5>
-            <p className="text-label-sm font-label-sm text-on-surface-variant/50">Chọn nhạc để phát</p>
+            <h5 className="text-label-md font-label-md text-on-surface-variant">{t('Không có bài hát')}</h5>
+            <p className="text-label-sm font-label-sm text-on-surface-variant/50">{t('Chọn nhạc để phát')}</p>
           </div>
         </div>
 

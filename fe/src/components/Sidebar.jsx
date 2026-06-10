@@ -1,9 +1,10 @@
-import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const Sidebar = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, hasUnread } = useAuth();
+  const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -23,7 +24,7 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="fixed left-6 top-6 bottom-[144px] w-[280px] flex flex-col z-40 bg-surface-container-low/50 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl hidden md:flex">
+    <aside className="fixed left-6 top-6 bottom-[144px] w-[280px] flex flex-col z-40 bg-surface-container-low/50 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl hidden md:flex overflow-y-auto custom-scrollbar">
       {/* Brand Header */}
       <div className="p-gutter-desktop flex items-center gap-3">
         <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-on-primary shadow-lg">
@@ -39,15 +40,15 @@ const Sidebar = () => {
       <nav className="mt-8 px-4 flex-grow space-y-2">
         <Link className={getLinkClass('/home')} to="/home">
           <span className="material-symbols-outlined">home</span>
-          <span>Home</span>
+          <span>{t("Trang chủ")}</span>
         </Link>
         <Link className={getLinkClass('/search-results')} to="/search-results">
           <span className="material-symbols-outlined">search</span>
-          <span>Search</span>
+          <span>{t("Tìm kiếm")}</span>
         </Link>
         <Link className={getLinkClass('/library-playlists')} to="/library-playlists">
           <span className="material-symbols-outlined">library_music</span>
-          <span>Library</span>
+          <span>{t("Thư viện")}</span>
         </Link>
 
         {/* Artist Analytics & Upload - only for Artists/Admins */}
@@ -55,11 +56,11 @@ const Sidebar = () => {
           <>
             <Link className={getLinkClass('/artist-dashboard')} to="/artist-dashboard">
               <span className="material-symbols-outlined">insights</span>
-              <span>Analytics</span>
+              <span>{t("Phân tích")}</span>
             </Link>
             <Link className={getLinkClass('/upload-manage')} to="/upload-manage">
               <span className="material-symbols-outlined">cloud_upload</span>
-              <span>Upload Manage</span>
+              <span>{t("Quản lý tải nhạc")}</span>
             </Link>
           </>
         )}
@@ -68,14 +69,20 @@ const Sidebar = () => {
         {user && user.role === 'admin' && (
           <Link className={getLinkClass('/admin-dashboard')} to="/admin-dashboard">
             <span className="material-symbols-outlined">admin_panel_settings</span>
-            <span>Admin Control</span>
+            <span>{t("Quản trị")}</span>
           </Link>
         )}
 
         {/* Social notifications */}
-        <Link className={getLinkClass('/notifications-social')} to="/notifications-social">
+        <Link className={`${getLinkClass('/notifications-social')} relative`} to="/notifications-social">
           <span className="material-symbols-outlined">notifications</span>
-          <span>Notifications</span>
+          <span>{t("Thông báo")}</span>
+          {hasUnread && (
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-error"></span>
+            </span>
+          )}
         </Link>
       </nav>
 
@@ -86,7 +93,7 @@ const Sidebar = () => {
             onClick={() => navigate('/upload-manage')}
             className="w-full py-3 rounded-full bg-primary text-on-primary font-label-md text-label-md hover:scale-105 active:scale-95 transition-transform shadow-xl cursor-pointer"
           >
-            Upload Music
+            {t("Tải nhạc lên")}
           </button>
         </div>
       )}
@@ -117,7 +124,7 @@ const Sidebar = () => {
               className="flex items-center gap-4 px-4 py-2 w-full text-left rounded-lg text-error hover:bg-error/10 transition-all cursor-pointer"
             >
               <span className="material-symbols-outlined">logout</span>
-              <span className="font-label-md text-label-md">Logout</span>
+              <span className="font-label-md text-label-md">{t("Đăng xuất")}</span>
             </button>
           </>
         ) : (
@@ -126,7 +133,7 @@ const Sidebar = () => {
             to="/auth"
           >
             <span className="material-symbols-outlined">login</span>
-            <span className="font-label-md text-label-md">Sign In</span>
+            <span className="font-label-md text-label-md">{t("Đăng nhập")}</span>
           </Link>
         )}
       </footer>

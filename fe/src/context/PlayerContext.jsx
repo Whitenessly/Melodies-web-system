@@ -1,4 +1,5 @@
-import React, { createContext, useState, useEffect, useRef, useContext } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useState, useEffect, useRef, useContext } from 'react';
 import { api } from '../utils/api.js';
 
 const PlayerContext = createContext(null);
@@ -18,7 +19,6 @@ export const PlayerProvider = ({ children }) => {
   const [repeat, setRepeat] = useState('all'); // 'none' | 'all' | 'one'
 
   const audioRef = useRef(new Audio());
-  const trackTimerRef = useRef(null);
   const isTrackedRef = useRef(false);
 
   // Set audio volume
@@ -32,14 +32,6 @@ export const PlayerProvider = ({ children }) => {
 
     const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
-      
-      // Track play count if played > 30 seconds
-      if (currentSong && !isTrackedRef.current && audio.currentTime >= 30) {
-        isTrackedRef.current = true;
-        api.post(`/songs/${currentSong._id}/play`).catch(err => 
-          console.error('Failed to log song view:', err)
-        );
-      }
     };
 
     const handleLoadedMetadata = () => {
@@ -59,6 +51,7 @@ export const PlayerProvider = ({ children }) => {
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('ended', handleEnded);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSong, queue, queueIndex, shuffle, repeat]);
 
   // Handle playing changes
@@ -78,8 +71,18 @@ export const PlayerProvider = ({ children }) => {
           console.error('Audio playback failed:', err);
           setIsPlaying(false);
         });
+
+        // Track play count instantly on play click
+        if (!isTrackedRef.current) {
+          isTrackedRef.current = true;
+          api.post(`/songs/${currentSong._id}/play`).catch(err => 
+            console.error('Failed to log song view:', err)
+          );
+        }
       } else {
         audioRef.current.pause();
+        // Reset tracking so clicking play again will increment the count
+        isTrackedRef.current = false;
       }
     } else {
       audioRef.current.pause();
@@ -112,7 +115,7 @@ export const PlayerProvider = ({ children }) => {
     setIsPlaying(!isPlaying);
   };
 
-  const handleNext = () => {
+  function handleNext() {
     if (queue.length === 0) return;
 
     if (repeat === 'one') {
@@ -147,9 +150,9 @@ export const PlayerProvider = ({ children }) => {
         setIsPlaying(false);
       }
     }
-  };
+  }
 
-  const handlePrev = () => {
+  function handlePrev() {
     if (queue.length === 0) return;
 
     if (audioRef.current.currentTime > 3) {
@@ -176,7 +179,7 @@ export const PlayerProvider = ({ children }) => {
         setCurrentTime(0);
       }
     }
-  };
+  }
 
   const seek = (time) => {
     audioRef.current.currentTime = time;
