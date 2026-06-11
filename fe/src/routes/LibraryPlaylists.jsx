@@ -185,6 +185,16 @@ const LibraryPlaylists = () => {
                       onClick={() => navigate(`/playlist-detail?id=${pl._id}`)}
                       className="glass-panel rounded-2xl p-6 flex flex-col group relative overflow-hidden h-72 justify-between cursor-pointer hover:bg-white/10 transition-colors border border-white/5"
                     >
+                      {pl.thumbnailUrl && (
+                        <>
+                          <img 
+                            src={getFullUrl(pl.thumbnailUrl)} 
+                            alt={pl.title} 
+                            className="absolute inset-0 w-full h-full object-cover z-0 transition-transform duration-500 group-hover:scale-105 pointer-events-none" 
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-0 pointer-events-none"></div>
+                        </>
+                      )}
                       <div className="flex items-center justify-between mb-6 relative z-10">
                         <span className={`px-3 py-1 rounded-full text-label-sm font-label-sm border ${pl.visibility === 'public' ? 'bg-secondary/25 text-secondary border-secondary/30' : 'bg-surface-container-highest text-on-surface-variant border-white/5'}`}>
                           {pl.visibility === 'public' ? t('Công khai') : t('Riêng tư')}

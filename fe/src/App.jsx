@@ -1,6 +1,6 @@
 import './App.css';
-import React from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router';
+import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { PlayerProvider } from './context/PlayerContext.jsx';
 import Home from './routes/Home';
@@ -116,12 +116,27 @@ function AppRoutes() {
 
 import { LanguageProvider } from './context/LanguageContext.jsx';
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    const mains = document.querySelectorAll('main');
+    mains.forEach(el => {
+      el.scrollTop = 0;
+    });
+  }, [pathname]);
+
+  return null;
+}
+
 function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
         <PlayerProvider>
           <BrowserRouter>
+            <ScrollToTop />
             <AppRoutes />
           </BrowserRouter>
         </PlayerProvider>

@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { usePlayer } from '../context/PlayerContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -8,7 +8,7 @@ import { api } from '../utils/api.js';
 const FullscreenPlayer = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const { 
     currentSong, 
     isPlaying, 
@@ -29,8 +29,44 @@ const FullscreenPlayer = () => {
     play
   } = usePlayer();
 
-  const { user, toggleLikeSong, hasUnread } = useAuth();
+  const { user, toggleLikeSong, hasUnread, logout } = useAuth();
   const progressBarRef = useRef(null);
+  const activeItemRef = useRef(null);
+
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showLangSubmenu, setShowLangSubmenu] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowUserDropdown(false);
+        setShowLangSubmenu(false);
+      }
+    };
+
+    if (showUserDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserDropdown]);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
+  };
+
+  useEffect(() => {
+    if (activeItemRef.current) {
+      activeItemRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      });
+    }
+  }, [queueIndex]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -90,6 +126,13 @@ const FullscreenPlayer = () => {
     return url.startsWith('http') ? url : `http://localhost:8080${url}`;
   };
 
+  const getAvatarUrl = () => {
+    if (user?.avatarUrl) {
+      return getFullUrl(user.avatarUrl);
+    }
+    return null;
+  };
+
   if (!currentSong) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-on-surface-variant gap-4 relative overflow-hidden">
@@ -123,7 +166,7 @@ const FullscreenPlayer = () => {
     : [];
 
   return (
-    <div className="min-h-screen bg-background text-on-background relative overflow-hidden flex flex-col">
+    <div className="h-screen bg-background text-on-background relative overflow-hidden flex flex-col">
       {/* Glow background effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 blur-[150px] rounded-full"></div>
@@ -131,7 +174,7 @@ const FullscreenPlayer = () => {
       </div>
 
       {/* Header */}
-      <header className="relative z-10 flex justify-between items-center w-full px-gutter-desktop h-16 bg-background/40 backdrop-blur-md border-b border-white/5">
+      <header className="relative z-30 flex justify-between items-center w-full px-gutter-desktop h-16 bg-background/40 backdrop-blur-md border-b border-white/5">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => navigate(-1)} 
@@ -163,8 +206,110 @@ const FullscreenPlayer = () => {
             home
           </span>
           {user && (
-            <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-sm border border-white/10">
-              {user.name[0].toUpperCase()}
+            <div ref={dropdownRef} className="relative">
+              {/* User Avatar Clickable */}
+              <div 
+                onClick={() => {
+                  setShowUserDropdown(!showUserDropdown);
+                  setShowLangSubmenu(false);
+                }}
+                className="h-10 w-10 rounded-full overflow-hidden bg-surface-container-high border border-white/10 flex items-center justify-center text-primary font-bold cursor-pointer hover:border-primary active:scale-95 transition-all"
+              >
+                {getAvatarUrl() ? (
+                  <img 
+                    src={getAvatarUrl()} 
+                    alt={user.name} 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : (
+                  user.name ? user.name[0].toUpperCase() : 'U'
+                )}
+              </div>
+
+              {/* Dropdown Menu */}
+              {showUserDropdown && (
+                <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-surface-container border border-white/10 shadow-2xl py-2 z-40">
+                  <div className="px-4 py-2 border-b border-white/5">
+                    <p className="text-on-surface font-semibold font-bold text-label-md truncate">{user.name}</p>
+                    <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">{user.role}</p>
+                  </div>
+                  
+                  <button 
+                    onClick={() => {
+                      setShowUserDropdown(false);
+                      setShowLangSubmenu(false);
+                      navigate('/settings');
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-white/5 text-label-md text-white font-bold flex items-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm">settings</span>
+                    {t("Cài đặt tài khoản")}
+                  </button>
+
+                  <div className="relative">
+                    <button 
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowLangSubmenu(!showLangSubmenu);
+                      }}
+                      className="w-full text-left px-4 py-3 hover:bg-white/5 text-label-md text-white font-bold flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-sm">language</span>
+                        {t("Ngôn ngữ")}
+                      </div>
+                      <span className="material-symbols-outlined text-xs">arrow_back_ios</span>
+                    </button>
+                    
+                    {/* Language Submenu to the left */}
+                    {showLangSubmenu && (
+                      <div className="absolute right-full top-0 mr-2 w-48 rounded-2xl bg-surface-container border border-white/10 shadow-2xl py-2 z-50">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (language !== 'en') {
+                              setLanguage('en');
+                            }
+                          }}
+                          className="w-full text-left px-4 py-2.5 hover:bg-white/5 text-label-md text-white font-bold flex items-center justify-between transition-colors cursor-pointer"
+                        >
+                          <span>English</span>
+                          {language === 'en' && (
+                            <span className="material-symbols-outlined text-primary text-sm font-bold">check</span>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (language !== 'vi') {
+                              setLanguage('vi');
+                            }
+                          }}
+                          className="w-full text-left px-4 py-2.5 hover:bg-white/5 text-label-md text-white font-bold flex items-center justify-between transition-colors cursor-pointer"
+                        >
+                          <span>Tiếng Việt</span>
+                          {language === 'vi' && (
+                            <span className="material-symbols-outlined text-primary text-sm font-bold">check</span>
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <button 
+                    onClick={() => {
+                      setShowUserDropdown(false);
+                      setShowLangSubmenu(false);
+                      handleLogout();
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-error/10 text-label-md text-error font-bold flex items-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm">logout</span>
+                    {t("Đăng xuất")}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -174,7 +319,7 @@ const FullscreenPlayer = () => {
       <main className="relative z-10 flex-1 grid grid-cols-12 overflow-hidden h-[calc(100vh-64px)] bg-background/20">
         
         {/* Left column: Play Queue */}
-        <aside className="col-span-3 h-full border-r border-white/5 bg-surface-container-low/30 backdrop-blur-xl p-6 hidden md:flex flex-col gap-6">
+        <aside className="col-span-3 h-full max-h-full overflow-hidden border-r border-white/5 bg-surface-container-low/30 backdrop-blur-xl p-6 hidden md:flex flex-col gap-6 min-h-0">
           <div className="flex justify-between items-center">
             <h3 className="font-headline-md text-headline-md text-on-surface font-bold">{t("Danh sách phát")}</h3>
             <span className="text-[11px] bg-white/10 text-on-surface-variant px-2 py-0.5 rounded font-mono">
@@ -188,11 +333,17 @@ const FullscreenPlayer = () => {
               return (
                 <div 
                   key={song._id}
+                  ref={isCurrent ? activeItemRef : null}
                   onClick={() => play(song, queue)}
                   className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer group ${
                     isCurrent ? 'bg-primary/15 border border-primary/20' : 'hover:bg-white/5 border border-transparent'
                   }`}
                 >
+                  {/* Song index indicator */}
+                  <span className="text-[12px] font-mono text-on-surface-variant/60 shrink-0 w-6 text-right mr-1">
+                    {idx + 1}
+                  </span>
+
                   <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 shadow-md">
                     <img className="w-full h-full object-cover" src={getFullUrl(song.thumbnailUrl)} alt={song.title} />
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -204,13 +355,7 @@ const FullscreenPlayer = () => {
                     <span className={`block font-label-md text-label-md truncate font-bold ${isCurrent ? 'text-primary' : 'text-white'}`}>
                       {song.title}
                     </span>
-                    <span 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (song.artistId) navigate(`/artist-detail?id=${song.artistId}`);
-                      }}
-                      className="block font-label-sm text-label-sm text-on-surface-variant truncate hover:text-primary transition-colors cursor-pointer"
-                    >
+                    <span className="block font-label-sm text-label-sm text-on-surface-variant truncate">
                       {song.artist}
                     </span>
                   </div>
@@ -225,35 +370,37 @@ const FullscreenPlayer = () => {
         </aside>
 
         {/* Center column: Album Cover and Primary Controls */}
-        <section className="col-span-12 md:col-span-6 flex flex-col items-center justify-center p-8 relative">
-          <div className="w-full max-w-[420px] flex flex-col gap-8 items-center">
+        <section className="col-span-12 md:col-span-6 flex flex-col items-center justify-between pt-4 pb-8 px-4 md:px-8 relative h-full min-h-0 overflow-hidden bg-background/20">
+          <div className="h-full flex flex-col justify-between items-center w-full max-w-[420px] py-1.5 min-h-0">
             
             {/* Visual Cover */}
-            <div className="relative w-full aspect-square group">
+            <div className="w-[32vh] sm:w-[36vh] md:w-[40vh] max-w-full aspect-square group shrink-0 relative">
               <div className="absolute inset-0 bg-primary/30 blur-3xl opacity-40 group-hover:opacity-60 transition-opacity duration-700 rounded-full"></div>
               <div className="relative z-10 w-full h-full rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/5 transition-transform duration-500 group-hover:scale-[1.02]">
                 <img className="w-full h-full object-cover" src={thumbnailSrc} alt={currentSong.title} />
               </div>
             </div>
 
-            {/* Song Metadata */}
-            <div className="w-full flex flex-col gap-6">
+            {/* Song Metadata and Controls Container */}
+            <div className="w-full flex-1 flex flex-col justify-between mt-4 min-h-0">
+              
+              {/* Song Metadata */}
               <div className="text-center">
-                <h2 className="font-headline-xl text-headline-xl text-white font-bold tracking-tight mb-2 line-clamp-1">
+                <h2 className="font-headline-lg text-headline-lg text-white font-bold tracking-tight mb-1 line-clamp-1">
                   {currentSong.title}
                 </h2>
                 <p 
                   onClick={() => {
                     if (currentSong.artistId) navigate(`/artist-detail?id=${currentSong.artistId}`);
                   }}
-                  className="font-body-lg text-body-lg text-secondary font-medium hover:text-primary transition-colors cursor-pointer inline-block"
+                  className="font-body-md text-body-md text-secondary font-medium hover:text-primary transition-colors cursor-pointer inline-block"
                 >
                   {currentSong.artist}
                 </p>
               </div>
 
               {/* Seek scrub bar */}
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5">
                 <div 
                   ref={progressBarRef}
                   onClick={handleProgressBarClick}
@@ -265,7 +412,7 @@ const FullscreenPlayer = () => {
                   ></div>
                   <div 
                     style={{ left: `${progressPercent}%` }}
-                    className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity border-4 border-primary"
+                    className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity border-4 border-primary"
                   ></div>
                 </div>
                 
@@ -276,10 +423,10 @@ const FullscreenPlayer = () => {
               </div>
 
               {/* Playback Button Controls */}
-              <div className="flex items-center justify-center gap-8">
+              <div className="flex items-center justify-center gap-6">
                 <button 
                   onClick={toggleShuffle}
-                  className={`material-symbols-outlined transition-colors cursor-pointer text-[26px] ${
+                  className={`material-symbols-outlined transition-colors cursor-pointer text-[22px] ${
                     shuffle ? 'text-primary' : 'text-on-surface-variant hover:text-white'
                   }`}
                 >
@@ -287,27 +434,27 @@ const FullscreenPlayer = () => {
                 </button>
                 <button 
                   onClick={prev}
-                  className="material-symbols-outlined text-white hover:text-primary transition-all text-[36px] active:scale-90 cursor-pointer"
+                  className="material-symbols-outlined text-white hover:text-primary transition-all text-[30px] active:scale-90 cursor-pointer"
                 >
                   skip_previous
                 </button>
                 <button 
                   onClick={togglePlay}
-                  className="w-18 h-18 bg-white text-background rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  className="w-14 h-14 bg-white text-background rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-[36px] text-background" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <span className="material-symbols-outlined text-[30px] text-background" style={{ fontVariationSettings: "'FILL' 1" }}>
                     {isPlaying ? 'pause' : 'play_arrow'}
                   </span>
                 </button>
                 <button 
                   onClick={next}
-                  className="material-symbols-outlined text-white hover:text-primary transition-all text-[36px] active:scale-90 cursor-pointer"
+                  className="material-symbols-outlined text-white hover:text-primary transition-all text-[30px] active:scale-90 cursor-pointer"
                 >
                   skip_next
                 </button>
                 <button 
                   onClick={toggleRepeat}
-                  className={`material-symbols-outlined transition-colors cursor-pointer text-[26px] ${
+                  className={`material-symbols-outlined transition-colors cursor-pointer text-[22px] ${
                     repeat !== 'none' ? 'text-primary' : 'text-on-surface-variant hover:text-white'
                   }`}
                 >
@@ -319,12 +466,16 @@ const FullscreenPlayer = () => {
               <div className="flex justify-between items-center px-4 pt-2 border-t border-white/5">
                 <button 
                   onClick={handleLikeToggle}
-                  className={`material-symbols-outlined cursor-pointer text-2xl transition-colors ${
+                  className={`cursor-pointer transition-colors p-1 flex items-center justify-center rounded-full ${
                     isLiked ? 'text-primary' : 'text-on-surface-variant hover:text-white'
                   }`}
-                  style={{ fontVariationSettings: isLiked ? "'FILL' 1" : "'FILL' 0" }}
                 >
-                  favorite
+                  <span 
+                    className="material-symbols-outlined text-2xl"
+                    style={{ fontVariationSettings: isLiked ? "'FILL' 1" : "'FILL' 0" }}
+                  >
+                    favorite
+                  </span>
                 </button>
 
                 {/* Volume slider */}
@@ -349,7 +500,7 @@ const FullscreenPlayer = () => {
         </section>
 
         {/* Right column: Lyrics Section */}
-        <aside className="col-span-3 h-full border-l border-white/5 bg-surface-container-low/10 backdrop-blur-xl p-6 hidden lg:flex flex-col gap-6">
+        <aside className="col-span-3 h-full max-h-full overflow-hidden border-l border-white/5 bg-surface-container-low/10 backdrop-blur-xl p-6 hidden lg:flex flex-col gap-6 min-h-0">
           <h3 className="font-headline-md text-headline-md text-on-surface font-bold">{t("Lời bài hát")}</h3>
           
           <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4 pb-12 select-none">

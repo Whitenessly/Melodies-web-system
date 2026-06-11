@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { api } from '../utils/api.js';
 import { usePlayer } from '../context/PlayerContext.jsx';
@@ -12,7 +12,7 @@ const SearchResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { play } = usePlayer();
-  const { user } = useAuth();
+  const { user, toggleFollowArtist } = useAuth();
   const { t } = useLanguage();
   
   const [filter, setFilter] = useState('all'); // 'all' | 'songs' | 'artists' | 'albums'
@@ -25,32 +25,47 @@ const SearchResults = () => {
   const queryParams = new URLSearchParams(location.search);
   const searchQuery = queryParams.get('q') || '';
 
-  const fetchResults = async () => {
-    setLoading(true);
-    try {
-      // 1. Fetch matching songs
-      const songsData = await api.get(`/songs?search=${encodeURIComponent(searchQuery)}`);
-      setSongs(songsData.songs || []);
-
-      // 2. Fetch matching albums
-      const albumsData = await api.get(`/albums?search=${encodeURIComponent(searchQuery)}`);
-      setAlbums(albumsData.albums || []);
-
-      // 3. Fetch public artists matching search name
-      const artistsData = await api.get('/users/artists');
-      const filteredArtists = (artistsData.artists || []).filter(u => 
-        searchQuery === '' || u.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setArtists(filteredArtists);
-    } catch (err) {
-      console.error('Failed to execute search:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    let active = true;
+
+    const fetchResults = async () => {
+      // Yield to avoid setState synchronously inside useEffect
+      await Promise.resolve();
+      if (!active) return;
+      setLoading(true);
+
+      try {
+        // 1. Fetch matching songs
+        const songsData = await api.get(`/songs?search=${encodeURIComponent(searchQuery)}`);
+        if (!active) return;
+        setSongs(songsData.songs || []);
+
+        // 2. Fetch matching albums
+        const albumsData = await api.get(`/albums?search=${encodeURIComponent(searchQuery)}`);
+        if (!active) return;
+        setAlbums(albumsData.albums || []);
+
+        // 3. Fetch public artists matching search name
+        const artistsData = await api.get('/users/artists');
+        if (!active) return;
+        const filteredArtists = (artistsData.artists || []).filter(u => 
+          searchQuery === '' || u.name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setArtists(filteredArtists);
+      } catch (err) {
+        console.error('Failed to execute search:', err);
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchResults();
+
+    return () => {
+      active = false;
+    };
   }, [searchQuery]);
 
   const handlePlaySong = (song, list) => {
@@ -60,13 +75,9 @@ const SearchResults = () => {
   const handleFollowToggle = async (e, artistId) => {
     e.stopPropagation();
     try {
-      await api.post('/users/follow', { artistId });
-      // Refresh
-      fetchResults();
-      // Wait, we also want user profile updated to reflect the new following list!
-      // In AuthContext, profile will update automatically on refresh, but let's refresh page or reload profile if needed.
+      await toggleFollowArtist(artistId);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to toggle follow status:', err);
     }
   };
 
@@ -281,9 +292,13 @@ const SearchResults = () => {
                           
                           <button 
                             onClick={(e) => handleFollowToggle(e, artist._id)}
-                            className={`px-4 py-1.5 rounded-full font-label-sm text-label-sm font-bold border transition-all cursor-pointer ${followed ? 'bg-primary/25 text-primary border-primary/40' : 'bg-primary text-on-primary border-transparent hover:scale-105'}`}
+                            className={`px-4 py-1.5 rounded-full font-label-sm text-label-sm font-bold border transition-all active:scale-95 cursor-pointer ${
+                              followed 
+                                ? 'bg-primary/10 border-primary text-primary hover:bg-primary/20' 
+                                : 'border-white/20 hover:border-white/50 text-white'
+                            }`}
                           >
-                            {followed ? t('Đang Follow') : t('Follow')}
+                            {followed ? t('ĐANG THEO DÕI') : t('THEO DÕI')}
                           </button>
                         </div>
                       );

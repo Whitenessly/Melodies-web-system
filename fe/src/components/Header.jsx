@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
@@ -12,6 +12,23 @@ const Header = ({ placeholder, showSearch = true }) => {
   const currentPlaceholder = placeholder || defaultPlaceholder;
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowUserDropdown(false);
+        setShowLangSubmenu(false);
+      }
+    };
+
+    if (showUserDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserDropdown]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -71,7 +88,7 @@ const Header = ({ placeholder, showSearch = true }) => {
         </div>
 
         {user && (
-          <div className="relative">
+          <div ref={dropdownRef} className="relative">
             {/* User Avatar Clickable */}
             <div 
               onClick={() => {
