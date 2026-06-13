@@ -278,3 +278,41 @@ export async function toggleLikePlaylist(req, res) {
     return res.status(500).json({ message: 'Failed to like/unlike playlist', error: err.message });
   }
 }
+
+export async function getLikedSongs(req, res) {
+  try {
+    const { page, limit } = req.query;
+    const likedIds = req.user.likedSongs || [];
+
+    const query = {
+      _id: { $in: likedIds },
+      isDeleted: { $ne: true }
+    };
+
+    let songsQuery = Song.find(query).populate('albumId', 'title');
+
+    if (page && limit) {
+      const pageNum = parseInt(page, 10) || 1;
+      const limitNum = parseInt(limit, 10) || 10;
+      const skipNum = (pageNum - 1) * limitNum;
+
+      const totalSongs = await Song.countDocuments(query);
+      const songs = await songsQuery.skip(skipNum).limit(limitNum);
+
+      return res.status(200).json({
+        songs,
+        pagination: {
+          total: totalSongs,
+          page: pageNum,
+          limit: limitNum,
+          pages: Math.ceil(totalSongs / limitNum)
+        }
+      });
+    }
+
+    const songs = await songsQuery;
+    return res.status(200).json({ songs });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to retrieve liked songs', error: err.message });
+  }
+}

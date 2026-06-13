@@ -16,7 +16,9 @@ const LibraryPlaylists = () => {
   const { t } = useLanguage();
   
   const [playlists, setPlaylists] = useState([]);
-  const [songs, setSongs] = useState([]);
+  const [likedSongs, setLikedSongs] = useState([]);
+  const [likedSongsPage, setLikedSongsPage] = useState(1);
+  const [likedSongsTotalPages, setLikedSongsTotalPages] = useState(1);
   const [followedArtists, setFollowedArtists] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -31,7 +33,6 @@ const LibraryPlaylists = () => {
   const fetchLibraryData = async () => {
     try {
       const playlistsData = await api.get('/playlists');
-      const songsData = await api.get('/songs');
       
       // Fetch public artists to find followed ones
       const artistsData = await api.get('/users/artists');
@@ -49,12 +50,25 @@ const LibraryPlaylists = () => {
       });
 
       setPlaylists(sortedPlaylists);
-      setSongs(songsData.songs || []);
       setFollowedArtists(artists);
     } catch (err) {
       console.error('Failed to load library data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLikedSongs = async (page) => {
+    try {
+      const data = await api.get(`/users/likes/songs?page=${page}&limit=10`);
+      setLikedSongs(data.songs || []);
+      if (data.pagination) {
+        setLikedSongsTotalPages(data.pagination.pages || 1);
+      } else {
+        setLikedSongsTotalPages(1);
+      }
+    } catch (err) {
+      console.error('Failed to load liked songs:', err);
     }
   };
 
@@ -64,6 +78,12 @@ const LibraryPlaylists = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (user) {
+      fetchLikedSongs(likedSongsPage);
+    }
+  }, [user, likedSongsPage]);
+
   const handlePlaySong = (song, list) => {
     play(song, list);
   };
@@ -72,8 +92,11 @@ const LibraryPlaylists = () => {
     e.stopPropagation();
     try {
       await toggleLikeSong(songId);
-      // Refresh list
-      fetchLibraryData();
+      if (likedSongs.length === 1 && likedSongsPage > 1) {
+        setLikedSongsPage(prev => prev - 1);
+      } else {
+        fetchLikedSongs(likedSongsPage);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -115,7 +138,6 @@ const LibraryPlaylists = () => {
     }
   };
 
-  const likedSongs = songs.filter(s => user?.likedSongs && user.likedSongs.includes(s._id));
   const myPlaylists = playlists.filter(pl => pl.userId === user?._id || String(pl.userId) === String(user?._id));
   const favouritePlaylists = playlists.filter(pl => user?.likedPlaylists?.includes(pl._id));
 
@@ -211,19 +233,19 @@ const LibraryPlaylists = () => {
                         </div>
                       </div>
                       
-                      <div className="relative z-10 mt-auto">
+                      <div className="relative z-10 mt-auto pr-14">
                         <h4 className="font-headline-md text-headline-md text-white mb-1 font-bold truncate">{pl.title}</h4>
                         <p className="text-on-surface-variant font-label-md text-label-md mb-2 truncate">{pl.description || t('Không có mô tả')}</p>
                         <p className="text-on-surface-variant text-[11px] font-semibold">{pl.songs?.length || 0} {t('bài hát')}</p>
                       </div>
 
                       {pl.songs && pl.songs.length > 0 && (
-                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                        <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                           <button 
                             onClick={(e) => { e.stopPropagation(); play(pl.songs[0], pl.songs); }}
-                            className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                            className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer animate-fade-in"
                           >
-                            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+                            <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
                           </button>
                         </div>
                       )}
@@ -279,19 +301,19 @@ const LibraryPlaylists = () => {
                         </div>
                       </div>
                       
-                      <div className="relative z-10 mt-auto">
+                      <div className="relative z-10 mt-auto pr-14">
                         <h4 className="font-headline-md text-headline-md text-white mb-1 font-bold truncate">{pl.title}</h4>
                         <p className="text-on-surface-variant font-label-md text-label-md mb-2 truncate">{pl.description || t('Không có mô tả')}</p>
                         <p className="text-on-surface-variant text-[11px] font-semibold">{pl.songs?.length || 0} {t('bài hát')}</p>
                       </div>
 
                       {pl.songs && pl.songs.length > 0 && (
-                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                        <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                           <button 
                             onClick={(e) => { e.stopPropagation(); play(pl.songs[0], pl.songs); }}
-                            className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                            className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer animate-fade-in"
                           >
-                            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+                            <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
                           </button>
                         </div>
                       )}
@@ -311,63 +333,112 @@ const LibraryPlaylists = () => {
               <h3 className="font-headline-md text-headline-md text-white mb-6 font-bold">{t("Bài hát yêu thích")}</h3>
               <div className="glass-panel rounded-3xl p-6 border border-white/5 overflow-hidden">
                 {likedSongs.length > 0 ? (
-                  <table className="w-full text-left border-separate border-spacing-y-2">
-                    <thead>
-                      <tr className="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider border-b border-white/5">
-                        <th className="px-6 py-4 font-normal">{t("# Tiêu đề")}</th>
-                        <th className="px-6 py-4 font-normal">{t("Thể loại")}</th>
-                        <th className="px-6 py-4 font-normal text-right">{t("Thao tác")}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="space-y-4">
-                      {likedSongs.map((song, i) => (
-                        <tr 
-                          key={song._id}
-                          onClick={() => handlePlaySong(song, likedSongs)}
-                          className="group hover:bg-white/5 transition-colors cursor-pointer rounded-xl"
-                        >
-                          <td className="px-6 py-4 first:rounded-l-xl">
-                            <div className="flex items-center gap-4">
-                              <span className="w-4 text-on-surface-variant font-label-md text-label-md group-hover:hidden font-bold">
-                                {i + 1}
-                              </span>
-                              <span className="w-4 text-primary group-hover:inline-block hidden material-symbols-outlined">
-                                play_arrow
-                              </span>
-                              <img className="w-12 h-12 rounded-lg object-cover" src={getFullUrl(song.thumbnailUrl)} alt={song.title} />
-                              <div className="min-w-0 overflow-hidden">
-                                <p className="font-label-md text-label-md text-white group-hover:text-primary transition-colors font-bold truncate">
-                                  {song.title}
-                                </p>
-                                <p 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (song.artistId) navigate(`/artist-detail?id=${song.artistId}`);
-                                  }}
-                                  className="font-label-sm text-label-sm text-on-surface-variant truncate hover:text-primary transition-colors cursor-pointer"
-                                >
-                                  {song.artist}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 font-label-md text-label-md text-on-surface-variant">
-                            {song.genre}
-                          </td>
-                          <td className="px-6 py-4 last:rounded-r-xl text-right">
-                            <div className="flex items-center justify-end gap-4">
-                              <button 
-                                onClick={(e) => handleUnlike(e, song._id)}
-                                className="material-symbols-outlined filled text-primary cursor-pointer hover:scale-110 transition-transform" 
-                              >
-                                favorite
-                              </button>
-                            </div>
-                          </td>
+                  <>
+                    <table className="w-full text-left border-separate border-spacing-y-2">
+                      <thead>
+                        <tr className="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider border-b border-white/5">
+                          <th className="px-6 py-4 font-normal">{t("# Tiêu đề")}</th>
+                          <th className="px-6 py-4 font-normal">{t("Thể loại")}</th>
+                          <th className="px-6 py-4 font-normal text-right">{t("Thao tác")}</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="space-y-4">
+                        {likedSongs.map((song, i) => (
+                          <tr 
+                            key={song._id}
+                            onClick={() => handlePlaySong(song, likedSongs)}
+                            className="group hover:bg-white/5 transition-colors cursor-pointer rounded-xl"
+                          >
+                            <td className="px-6 py-4 first:rounded-l-xl">
+                              <div className="flex items-center gap-4">
+                                <div className="w-6 flex items-center justify-center flex-shrink-0">
+                                  <span className="group-hover:hidden font-bold text-on-surface-variant font-label-md text-label-md">
+                                    {(likedSongsPage - 1) * 10 + i + 1}
+                                  </span>
+                                  <span className="hidden group-hover:block text-primary">
+                                    <span className="material-symbols-outlined block select-none">
+                                      play_arrow
+                                    </span>
+                                  </span>
+                                </div>
+                                <img className="w-12 h-12 rounded-lg object-cover" src={getFullUrl(song.thumbnailUrl)} alt={song.title} />
+                                <div className="min-w-0 overflow-hidden">
+                                  <p className="font-label-md text-label-md text-white group-hover:text-primary transition-colors font-bold truncate">
+                                    {song.title}
+                                  </p>
+                                  <p 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (song.artistId) navigate(`/artist-detail?id=${song.artistId}`);
+                                    }}
+                                    className="font-label-sm text-label-sm text-on-surface-variant truncate hover:text-primary transition-colors cursor-pointer"
+                                  >
+                                    {song.artist}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 font-label-md text-label-md text-on-surface-variant">
+                              {song.genre}
+                            </td>
+                            <td className="px-6 py-4 last:rounded-r-xl text-right">
+                              <div className="flex items-center justify-end gap-4">
+                                <button 
+                                  onClick={(e) => handleUnlike(e, song._id)}
+                                  className="material-symbols-outlined filled text-primary cursor-pointer hover:scale-110 transition-transform" 
+                                >
+                                  favorite
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    {/* Pagination Controls */}
+                    {likedSongsTotalPages > 1 && (
+                      <div className="flex justify-center items-center gap-2 mt-8">
+                        <button
+                          disabled={likedSongsPage <= 1}
+                          onClick={() => setLikedSongsPage(prev => Math.max(prev - 1, 1))}
+                          className={`flex items-center justify-center w-10 h-10 rounded-full border border-white/10 transition-all cursor-pointer ${
+                            likedSongsPage <= 1 
+                              ? 'opacity-40 cursor-not-allowed text-white/40' 
+                              : 'hover:bg-primary/20 hover:border-primary text-white hover:text-primary active:scale-95'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined">navigate_before</span>
+                        </button>
+
+                        {Array.from({ length: likedSongsTotalPages }, (_, i) => i + 1).map(page => (
+                          <button
+                            key={page}
+                            onClick={() => setLikedSongsPage(page)}
+                            className={`w-10 h-10 rounded-full font-bold transition-all cursor-pointer ${
+                              likedSongsPage === page
+                                ? 'bg-primary text-on-primary shadow-lg'
+                                : 'border border-white/10 hover:bg-white/5 text-white active:scale-95'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+
+                        <button
+                          disabled={likedSongsPage >= likedSongsTotalPages}
+                          onClick={() => setLikedSongsPage(prev => Math.min(prev + 1, likedSongsTotalPages))}
+                          className={`flex items-center justify-center w-10 h-10 rounded-full border border-white/10 transition-all cursor-pointer ${
+                            likedSongsPage >= likedSongsTotalPages 
+                              ? 'opacity-40 cursor-not-allowed text-white/40' 
+                              : 'hover:bg-primary/20 hover:border-primary text-white hover:text-primary active:scale-95'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined">navigate_next</span>
+                        </button>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="text-center py-12 text-on-surface-variant">
                     <span className="material-symbols-outlined text-5xl mb-3">favorite_border</span>

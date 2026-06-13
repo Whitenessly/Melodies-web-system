@@ -11,7 +11,12 @@ export async function getUserPlaylists(req, res) {
         { userId: req.user._id },
         { _id: { $in: likedIds }, visibility: 'public' }
       ]
-    }).sort({ createdAt: -1 });
+    })
+    .populate({
+      path: 'songs',
+      match: { isDeleted: { $ne: true } }
+    })
+    .sort({ createdAt: -1 });
     return res.status(200).json({ playlists });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to retrieve playlists', error: err.message });
