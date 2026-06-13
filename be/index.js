@@ -16,6 +16,8 @@ import categoryRoutes from './routes/categoryRoutes.js';
 import supportRoutes from './routes/supportRoutes.js';
 import promotionRoutes from './routes/promotionRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+import webhookRoutes from './routes/webhookRoutes.js';
 
 dotenv.config();
 const PORT = process.env.PORT || 8080;
@@ -27,6 +29,10 @@ mongoose.connect('mongodb://localhost:27017/melodies')
 const app = express();
 
 app.use(cors());
+
+// Webhook route MUST be before body parser as it needs raw body
+app.use('/webhooks', webhookRoutes);
+
 // Configure body limit to allow base64 uploads (up to 50MB)
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -46,6 +52,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/promotions', promotionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Root message
 app.get('/', (req, res) => {

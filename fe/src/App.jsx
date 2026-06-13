@@ -15,6 +15,9 @@ import LibraryPlaylists from './routes/LibraryPlaylists';
 import NotificationsSocial from './routes/NotificationsSocial';
 import PlaylistDetail from './routes/PlaylistDetail';
 import Settings from './routes/Settings';
+import SubscriptionPlans from './routes/SubscriptionPlans';
+import PaymentConfirm from './routes/PaymentConfirm';
+import PaymentHistory from './routes/PaymentHistory';
 
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -85,6 +88,23 @@ function AppRoutes() {
       <Route path="/settings" element={
         <ProtectedRoute>
           <Settings />
+        </ProtectedRoute>
+      } />
+
+      {/* Subscription & Payment */}
+      <Route path="/subscription-plans" element={
+        <ProtectedRoute>
+          <SubscriptionPlans />
+        </ProtectedRoute>
+      } />
+      <Route path="/payment-confirm" element={
+        <ProtectedRoute>
+          <PaymentConfirm />
+        </ProtectedRoute>
+      } />
+      <Route path="/payment-history" element={
+        <ProtectedRoute>
+          <PaymentHistory />
         </ProtectedRoute>
       } />
 
