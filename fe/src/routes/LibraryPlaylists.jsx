@@ -116,6 +116,8 @@ const LibraryPlaylists = () => {
   };
 
   const likedSongs = songs.filter(s => user?.likedSongs && user.likedSongs.includes(s._id));
+  const myPlaylists = playlists.filter(pl => pl.userId === user?._id || String(pl.userId) === String(user?._id));
+  const favouritePlaylists = playlists.filter(pl => user?.likedPlaylists?.includes(pl._id));
 
   const getFullUrl = (url) => {
     if (!url) return '';
@@ -177,9 +179,9 @@ const LibraryPlaylists = () => {
             {/* My Playlists list */}
             <section className="mb-16">
               <h3 className="font-headline-md text-headline-md text-white mb-6 font-bold">{t("Danh sách phát của tôi")}</h3>
-              {playlists.length > 0 ? (
+              {myPlaylists.length > 0 ? (
                 <div className="flex gap-6 overflow-x-auto pb-4 custom-scrollbar snap-x snap-mandatory">
-                  {playlists.map(pl => (
+                  {myPlaylists.map(pl => (
                     <div 
                       key={pl._id}
                       onClick={() => navigate(`/playlist-detail?id=${pl._id}`)}
@@ -238,6 +240,68 @@ const LibraryPlaylists = () => {
                   >
                     {t("Tạo ngay playlist đầu tiên")}
                   </button>
+                </div>
+              )}
+            </section>
+
+            {/* Favorite Playlists Section */}
+            <section className="mb-16">
+              <h3 className="font-headline-md text-headline-md text-white mb-6 font-bold">{t("Danh sách phát yêu thích")}</h3>
+              {favouritePlaylists.length > 0 ? (
+                <div className="flex gap-6 overflow-x-auto pb-4 custom-scrollbar snap-x snap-mandatory">
+                  {favouritePlaylists.map(pl => (
+                    <div 
+                      key={pl._id}
+                      onClick={() => navigate(`/playlist-detail?id=${pl._id}`)}
+                      className="glass-panel rounded-2xl p-6 flex flex-col group relative overflow-hidden h-72 w-72 md:w-80 flex-shrink-0 snap-start justify-between cursor-pointer hover:bg-white/10 transition-colors border border-white/5"
+                    >
+                      {pl.thumbnailUrl && (
+                        <>
+                          <img 
+                            src={getFullUrl(pl.thumbnailUrl)} 
+                            alt={pl.title} 
+                            className="absolute inset-0 w-full h-full object-cover z-0 transition-transform duration-500 group-hover:scale-105 pointer-events-none" 
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-0 pointer-events-none"></div>
+                        </>
+                      )}
+                      <div className="flex items-center justify-between mb-6 relative z-10">
+                        <span className={`px-3 py-1 rounded-full text-label-sm font-label-sm border ${pl.visibility === 'public' ? 'bg-secondary/25 text-secondary border-secondary/30' : 'bg-surface-container-highest text-on-surface-variant border-white/5'}`}>
+                          {pl.visibility === 'public' ? t('Công khai') : t('Riêng tư')}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {user?.likedPlaylists?.includes(pl._id) && (
+                            <span className="material-symbols-outlined filled text-primary select-none">favorite</span>
+                          )}
+                          <span className="material-symbols-outlined text-on-surface-variant select-none">
+                            {pl.visibility === 'public' ? 'public' : 'lock'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="relative z-10 mt-auto">
+                        <h4 className="font-headline-md text-headline-md text-white mb-1 font-bold truncate">{pl.title}</h4>
+                        <p className="text-on-surface-variant font-label-md text-label-md mb-2 truncate">{pl.description || t('Không có mô tả')}</p>
+                        <p className="text-on-surface-variant text-[11px] font-semibold">{pl.songs?.length || 0} {t('bài hát')}</p>
+                      </div>
+
+                      {pl.songs && pl.songs.length > 0 && (
+                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); play(pl.songs[0], pl.songs); }}
+                            className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="glass-panel p-8 rounded-2xl text-center border border-dashed border-white/10">
+                  <span className="material-symbols-outlined text-5xl text-on-surface-variant/50 mb-3">favorite_border</span>
+                  <p className="text-on-surface-variant font-body-md">{t("Bạn chưa thích danh sách phát nào.")}</p>
                 </div>
               )}
             </section>
