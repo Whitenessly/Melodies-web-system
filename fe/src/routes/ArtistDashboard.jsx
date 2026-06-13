@@ -170,7 +170,7 @@ const ArtistDashboard = () => {
               <div className="glass-panel p-6 rounded-3xl flex flex-col justify-between border border-white/5 bg-white/2">
                 <div className="flex justify-between items-start mb-4">
                   <div className="w-12 h-12 rounded-2xl bg-error/20 flex items-center justify-center text-error">
-                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
+                    <span className="material-symbols-outlined filled">favorite</span>
                   </div>
                   <span className="text-secondary font-bold text-label-sm">+15%</span>
                 </div>

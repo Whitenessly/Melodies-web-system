@@ -177,13 +177,13 @@ const LibraryPlaylists = () => {
             {/* My Playlists list */}
             <section className="mb-16">
               <h3 className="font-headline-md text-headline-md text-white mb-6 font-bold">{t("Danh sách phát của tôi")}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {playlists.length > 0 ? (
-                  playlists.map(pl => (
+              {playlists.length > 0 ? (
+                <div className="flex gap-6 overflow-x-auto pb-4 custom-scrollbar snap-x snap-mandatory">
+                  {playlists.map(pl => (
                     <div 
                       key={pl._id}
                       onClick={() => navigate(`/playlist-detail?id=${pl._id}`)}
-                      className="glass-panel rounded-2xl p-6 flex flex-col group relative overflow-hidden h-72 justify-between cursor-pointer hover:bg-white/10 transition-colors border border-white/5"
+                      className="glass-panel rounded-2xl p-6 flex flex-col group relative overflow-hidden h-72 w-72 md:w-80 flex-shrink-0 snap-start justify-between cursor-pointer hover:bg-white/10 transition-colors border border-white/5"
                     >
                       {pl.thumbnailUrl && (
                         <>
@@ -201,7 +201,7 @@ const LibraryPlaylists = () => {
                         </span>
                         <div className="flex items-center gap-2">
                           {user?.likedPlaylists?.includes(pl._id) && (
-                            <span className="material-symbols-outlined text-primary select-none" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
+                            <span className="material-symbols-outlined filled text-primary select-none">favorite</span>
                           )}
                           <span className="material-symbols-outlined text-on-surface-variant select-none">
                             {pl.visibility === 'public' ? 'public' : 'lock'}
@@ -226,20 +226,20 @@ const LibraryPlaylists = () => {
                         </div>
                       )}
                     </div>
-                  ))
-                ) : (
-                  <div className="col-span-3 glass-panel p-8 rounded-2xl text-center border border-dashed border-white/10">
-                    <span className="material-symbols-outlined text-5xl text-on-surface-variant/50 mb-3">playlist_play</span>
-                    <p className="text-on-surface-variant font-body-md mb-4">{t("Bạn chưa tạo danh sách phát nào.")}</p>
-                    <button 
-                      onClick={() => setShowCreateModal(true)}
-                      className="px-6 py-2 rounded-full bg-primary text-on-primary font-bold hover:brightness-110 cursor-pointer"
-                    >
-                      {t("Tạo ngay playlist đầu tiên")}
-                    </button>
-                  </div>
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="glass-panel p-8 rounded-2xl text-center border border-dashed border-white/10">
+                  <span className="material-symbols-outlined text-5xl text-on-surface-variant/50 mb-3">playlist_play</span>
+                  <p className="text-on-surface-variant font-body-md mb-4">{t("Bạn chưa tạo danh sách phát nào.")}</p>
+                  <button 
+                    onClick={() => setShowCreateModal(true)}
+                    className="px-6 py-2 rounded-full bg-primary text-on-primary font-bold hover:brightness-110 cursor-pointer"
+                  >
+                    {t("Tạo ngay playlist đầu tiên")}
+                  </button>
+                </div>
+              )}
             </section>
 
             {/* Liked songs list */}
@@ -294,8 +294,7 @@ const LibraryPlaylists = () => {
                             <div className="flex items-center justify-end gap-4">
                               <button 
                                 onClick={(e) => handleUnlike(e, song._id)}
-                                className="material-symbols-outlined text-primary cursor-pointer hover:scale-110 transition-transform" 
-                                style={{ fontVariationSettings: "'FILL' 1" }}
+                                className="material-symbols-outlined filled text-primary cursor-pointer hover:scale-110 transition-transform" 
                               >
                                 favorite
                               </button>

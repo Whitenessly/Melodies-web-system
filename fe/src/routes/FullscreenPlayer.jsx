@@ -471,8 +471,7 @@ const FullscreenPlayer = () => {
                   }`}
                 >
                   <span 
-                    className="material-symbols-outlined text-2xl"
-                    style={{ fontVariationSettings: isLiked ? "'FILL' 1" : "'FILL' 0" }}
+                    className={`material-symbols-outlined text-2xl ${isLiked ? 'filled' : ''}`}
                   >
                     favorite
                   </span>

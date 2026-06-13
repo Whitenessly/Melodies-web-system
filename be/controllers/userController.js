@@ -194,6 +194,7 @@ export async function getArtistPublicProfile(req, res) {
         _id: artist._id,
         name: artist.name,
         email: artist.email,
+        avatarUrl: artist.avatarUrl,
         followersCount,
         isFollowing
       },
@@ -206,7 +207,35 @@ export async function getArtistPublicProfile(req, res) {
 
 export async function getPublicArtists(req, res) {
   try {
-    const artists = await User.find({ role: 'artist' }).select('name email role');
+    const { search, page, limit } = req.query;
+    let query = { role: 'artist' };
+    
+    if (search) {
+      query.name = new RegExp(search, 'i');
+    }
+
+    let artistsQuery = User.find(query).select('name email role avatarUrl');
+
+    if (page && limit) {
+      const pageNum = parseInt(page, 10) || 1;
+      const limitNum = parseInt(limit, 10) || 10;
+      const skipNum = (pageNum - 1) * limitNum;
+      
+      const totalArtists = await User.countDocuments(query);
+      const artists = await artistsQuery.skip(skipNum).limit(limitNum);
+      
+      return res.status(200).json({
+        artists,
+        pagination: {
+          total: totalArtists,
+          page: pageNum,
+          limit: limitNum,
+          pages: Math.ceil(totalArtists / limitNum)
+        }
+      });
+    }
+
+    const artists = await artistsQuery;
     return res.status(200).json({ artists });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to retrieve artists', error: err.message });

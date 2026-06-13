@@ -137,7 +137,7 @@ const MusicPlayer = () => {
           onClick={handleLikeToggle}
           className={`ml-2 transition-colors cursor-pointer ${isLiked ? 'text-primary' : 'text-on-surface-variant hover:text-white'}`}
         >
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: isLiked ? "'FILL' 1" : "'FILL' 0" }}>favorite</span>
+          <span className={`material-symbols-outlined ${isLiked ? 'filled' : ''}`}>favorite</span>
         </button>
       </div>
 

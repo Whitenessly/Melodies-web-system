@@ -184,6 +184,8 @@ const PlaylistDetail = () => {
 
   const isPlaylistLiked = user?.likedPlaylists?.includes(playlistId) || false;
 
+  const isOwner = user && playlist && String(playlist.userId) === String(user._id);
+
   const getPlaylistCover = () => {
     if (playlist && playlist.thumbnailUrl) {
       return getFullUrl(playlist.thumbnailUrl);
@@ -329,54 +331,58 @@ const PlaylistDetail = () => {
               }}
               className={`w-12 h-12 flex items-center justify-center rounded-full hover:bg-surface-variant transition-all cursor-pointer ${isPlaylistLiked ? 'text-primary' : 'text-on-surface-variant'}`}
             >
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: isPlaylistLiked ? "'FILL' 1" : "'FILL' 0" }}>
-                {isPlaylistLiked ? 'favorite' : 'favorite_border'}
+              <span className={`material-symbols-outlined ${isPlaylistLiked ? 'filled' : ''}`}>
+                favorite
               </span>
             </button>
-            <button 
-              onClick={() => {
-                const el = document.getElementById('add-songs-section');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="bg-surface-container-high text-on-surface px-6 py-3 rounded-full font-headline-md text-label-md flex items-center gap-2 border border-outline-variant/30 hover:bg-surface-variant transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined">add</span>
-              {t("Thêm bài hát")}
-            </button>
-
-            <div className="relative ml-auto">
+            {isOwner && (
               <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowDropdown(!showDropdown);
+                onClick={() => {
+                  const el = document.getElementById('add-songs-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className={`w-12 h-12 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors cursor-pointer ${showDropdown ? 'text-primary bg-surface-variant/30' : 'text-on-surface-variant'}`}
+                className="bg-surface-container-high text-on-surface px-6 py-3 rounded-full font-headline-md text-label-md flex items-center gap-2 border border-outline-variant/30 hover:bg-surface-variant transition-all cursor-pointer"
               >
-                <span className="material-symbols-outlined">more_horiz</span>
+                <span className="material-symbols-outlined">add</span>
+                {t("Thêm bài hát")}
               </button>
-              
-              {showDropdown && (
-                <div className="absolute right-0 mt-2 w-48 rounded-2xl bg-surface-container border border-white/10 shadow-2xl py-2 z-30">
-                  <button 
-                    onClick={handleOpenEdit}
-                    className="w-full text-left px-4 py-3 hover:bg-white/5 text-label-md text-white font-bold flex items-center gap-2 transition-colors cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-sm">edit</span>
-                    {t("Chỉnh sửa")}
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setShowDropdown(false);
-                      handleDeletePlaylist();
-                    }}
-                    className="w-full text-left px-4 py-3 hover:bg-error/10 text-label-md text-error font-bold flex items-center gap-2 transition-colors cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-sm">delete</span>
-                    {t("Xóa playlist")}
-                  </button>
-                </div>
-              )}
-            </div>
+            )}
+
+            {isOwner && (
+              <div className="relative ml-auto">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDropdown(!showDropdown);
+                  }}
+                  className={`w-12 h-12 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors cursor-pointer ${showDropdown ? 'text-primary bg-surface-variant/30' : 'text-on-surface-variant'}`}
+                >
+                  <span className="material-symbols-outlined">more_horiz</span>
+                </button>
+                
+                {showDropdown && (
+                  <div className="absolute right-0 mt-2 w-48 rounded-2xl bg-surface-container border border-white/10 shadow-2xl py-2 z-30">
+                    <button 
+                      onClick={handleOpenEdit}
+                      className="w-full text-left px-4 py-3 hover:bg-white/5 text-label-md text-white font-bold flex items-center gap-2 transition-colors cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-sm">edit</span>
+                      {t("Chỉnh sửa")}
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setShowDropdown(false);
+                        handleDeletePlaylist();
+                      }}
+                      className="w-full text-left px-4 py-3 hover:bg-error/10 text-label-md text-error font-bold flex items-center gap-2 transition-colors cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-sm">delete</span>
+                      {t("Xóa playlist")}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
 
           {/* Song list in Playlist (Stitch Template Design) */}
@@ -405,12 +411,22 @@ const PlaylistDetail = () => {
                           className="group hover:bg-surface-variant/30 transition-colors rounded-lg cursor-pointer"
                         >
                           <td className="py-3 px-4 text-center text-on-surface-variant group-hover:text-primary">
-                            <span className={isCurrent ? "hidden" : "group-hover:hidden font-bold"}>
-                              {i + 1}
-                            </span>
-                            <span className={`material-symbols-outlined ${isCurrent ? "block text-primary" : "hidden group-hover:block text-primary"}`}>
-                              {isCurrent && isPlaying ? "volume_up" : "play_arrow"}
-                            </span>
+                             {isCurrent ? (
+                               <span className="material-symbols-outlined text-primary block">
+                                 {isPlaying ? "volume_up" : "play_arrow"}
+                               </span>
+                             ) : (
+                               <>
+                                 <span className="group-hover:hidden font-bold">
+                                   {i + 1}
+                                 </span>
+                                 <span className="hidden group-hover:block text-primary">
+                                   <span className="material-symbols-outlined block">
+                                     play_arrow
+                                   </span>
+                                 </span>
+                               </>
+                             )}
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-4">
@@ -439,18 +455,20 @@ const PlaylistDetail = () => {
                           </td>
                           <td className="py-3 px-4 text-right pr-8">
                             <div className="flex items-center justify-end gap-6">
-                              <button 
-                                onClick={(e) => handleRemoveSong(e, song._id)}
-                                className="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors p-1 cursor-pointer"
-                                title={t("Xóa khỏi playlist")}
-                              >
-                                delete
-                              </button>
+                              {isOwner && (
+                                <button 
+                                  onClick={(e) => handleRemoveSong(e, song._id)}
+                                  className="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors p-1 cursor-pointer"
+                                  title={t("Xóa khỏi playlist")}
+                                >
+                                  delete
+                                </button>
+                              )}
                               <button 
                                 onClick={(e) => handleLikeSong(e, song._id)}
-                                className={`material-symbols-outlined hover:scale-110 transition-transform cursor-pointer ${isLiked(song._id) ? 'text-primary' : 'text-on-surface-variant group-hover:visible invisible'}`}
+                                className={`material-symbols-outlined hover:scale-110 transition-transform cursor-pointer ${isLiked(song._id) ? 'filled text-primary' : 'text-on-surface-variant group-hover:visible invisible'}`}
                               >
-                                {isLiked(song._id) ? 'favorite' : 'favorite_border'}
+                                favorite
                               </button>
                               <span className="text-on-surface-variant text-sm font-mono w-10">3:30</span>
                             </div>
@@ -470,74 +488,76 @@ const PlaylistDetail = () => {
           </section>
 
           {/* Add Songs to Playlist Section */}
-          <section id="add-songs-section" className="scroll-mt-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <h3 className="font-headline-md text-headline-md text-white font-bold">{t("Thêm bài hát mới")}</h3>
-              
-              <div className="relative w-full sm:w-72">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-                <input 
-                  type="text" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white/5 border border-white/5 rounded-full pl-12 pr-6 py-2 text-label-md text-white placeholder-on-surface-variant/50 focus:bg-white/10 focus:border-primary transition-all outline-none"
-                  placeholder={t("Tìm kiếm bài hát...")}
-                />
-              </div>
-            </div>
-
-            <div className="glass-panel rounded-3xl p-6 border border-white/5 overflow-hidden">
-              {addableSongs.length > 0 ? (
-                <table className="w-full text-left border-separate border-spacing-y-2">
-                  <thead>
-                    <tr className="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider border-b border-white/5">
-                      <th className="px-6 py-4 font-normal">{t("Tiêu đề")}</th>
-                      <th className="px-6 py-4 font-normal">{t("Thể loại")}</th>
-                      <th className="px-6 py-4 font-normal text-right">{t("Thêm vào")}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="space-y-4">
-                    {addableSongs.map((song) => (
-                      <tr 
-                        key={song._id}
-                        className="group hover:bg-white/5 transition-colors rounded-xl"
-                      >
-                        <td className="px-6 py-4 first:rounded-l-xl">
-                          <div className="flex items-center gap-4">
-                            <img className="w-10 h-10 rounded-lg object-cover" src={getFullUrl(song.thumbnailUrl)} alt={song.title} />
-                            <div className="min-w-0 overflow-hidden">
-                              <p className="font-label-md text-label-md text-white font-bold truncate">
-                                {song.title}
-                              </p>
-                              <p className="font-label-sm text-label-sm text-on-surface-variant truncate">
-                                {song.artist}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 font-label-md text-label-md text-on-surface-variant">
-                          {song.genre}
-                        </td>
-                        <td className="px-6 py-4 last:rounded-r-xl text-right">
-                          <button 
-                            onClick={() => handleAddSong(song._id)}
-                            className="bg-primary/20 text-primary hover:bg-primary hover:text-on-primary rounded-lg p-2 transition-all cursor-pointer font-bold inline-flex items-center justify-center gap-1 text-label-md"
-                          >
-                            <span className="material-symbols-outlined text-base">add</span>
-                            {t("Thêm")}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div className="text-center py-8 text-on-surface-variant">
-                  <p className="font-body-md">{t("Không có bài hát nào phù hợp để thêm.")}</p>
+          {isOwner && (
+            <section id="add-songs-section" className="scroll-mt-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <h3 className="font-headline-md text-headline-md text-white font-bold">{t("Thêm bài hát mới")}</h3>
+                
+                <div className="relative w-full sm:w-72">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+                  <input 
+                    type="text" 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-white/5 border border-white/5 rounded-full pl-12 pr-6 py-2 text-label-md text-white placeholder-on-surface-variant/50 focus:bg-white/10 focus:border-primary transition-all outline-none"
+                    placeholder={t("Tìm kiếm bài hát...")}
+                  />
                 </div>
-              )}
-            </div>
-          </section>
+              </div>
+
+              <div className="glass-panel rounded-3xl p-6 border border-white/5 overflow-hidden">
+                {addableSongs.length > 0 ? (
+                  <table className="w-full text-left border-separate border-spacing-y-2">
+                    <thead>
+                      <tr className="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider border-b border-white/5">
+                        <th className="px-6 py-4 font-normal">{t("Tiêu đề")}</th>
+                        <th className="px-6 py-4 font-normal">{t("Thể loại")}</th>
+                        <th className="px-6 py-4 font-normal text-right">{t("Thêm vào")}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="space-y-4">
+                      {addableSongs.map((song) => (
+                        <tr 
+                          key={song._id}
+                          className="group hover:bg-white/5 transition-colors rounded-xl"
+                        >
+                          <td className="px-6 py-4 first:rounded-l-xl">
+                            <div className="flex items-center gap-4">
+                              <img className="w-10 h-10 rounded-lg object-cover" src={getFullUrl(song.thumbnailUrl)} alt={song.title} />
+                              <div className="min-w-0 overflow-hidden">
+                                <p className="font-label-md text-label-md text-white font-bold truncate">
+                                  {song.title}
+                                </p>
+                                <p className="font-label-sm text-label-sm text-on-surface-variant truncate">
+                                  {song.artist}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 font-label-md text-label-md text-on-surface-variant">
+                            {song.genre}
+                          </td>
+                          <td className="px-6 py-4 last:rounded-r-xl text-right">
+                            <button 
+                              onClick={() => handleAddSong(song._id)}
+                              className="bg-primary/20 text-primary hover:bg-primary hover:text-on-primary rounded-lg p-2 transition-all cursor-pointer font-bold inline-flex items-center justify-center gap-1 text-label-md"
+                            >
+                              <span className="material-symbols-outlined text-base">add</span>
+                              {t("Thêm")}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="text-center py-8 text-on-surface-variant">
+                    <p className="font-body-md">{t("Không có bài hát nào phù hợp để thêm.")}</p>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
         </div>
       </main>
 

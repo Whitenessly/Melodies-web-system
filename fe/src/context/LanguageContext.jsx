@@ -215,6 +215,7 @@ const dictionary = {
   'Nghệ sĩ': 'Artists',
   'Chưa tìm thấy nghệ sĩ nào phù hợp.': 'No matching artists found.',
   'Không tìm thấy kết quả phù hợp.': 'No matching results found.',
+  'Xem thêm': 'See more',
 
   // NotificationsSocial
   'Đang tải thông báo...': 'Loading notifications...',
