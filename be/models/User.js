@@ -20,6 +20,7 @@ const userSchema = new mongoose.Schema({
     isDefault: { type: Boolean, default: false }
   }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  followersCount: { type: Number, default: 0 },
   likedSongs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Song' }],
   likedPlaylists: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Playlist' }],
   recentlyPlayed: [recentlyPlayedSchema]

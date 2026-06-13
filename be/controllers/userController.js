@@ -59,11 +59,14 @@ export async function toggleFollowArtist(req, res) {
     if (index === -1) {
       req.user.following.push(artistId);
       followed = true;
+      artist.followersCount = (artist.followersCount || 0) + 1;
     } else {
       req.user.following.splice(index, 1);
+      artist.followersCount = Math.max(0, (artist.followersCount || 0) - 1);
     }
 
     await req.user.save();
+    await artist.save();
 
     return res.status(200).json({
       message: followed ? 'Artist followed' : 'Artist unfollowed',
@@ -113,8 +116,9 @@ export async function getArtistStats(req, res) {
     // Total likes
     const totalLikes = songs.reduce((sum, song) => sum + (song.likes || 0), 0);
 
-    // Follower count (users who follow this artistId)
-    const followersCount = await User.countDocuments({ following: artistId });
+    // Follower count (read from the new stored field)
+    const artist = await User.findById(artistId);
+    const followersCount = artist ? (artist.followersCount || 0) : 0;
 
     // Compute fake channel storage usage: each song is ~8MB
     const storageUsed = (songs.length * 8.4 / 10).toFixed(1); // GB format out of 10GB limit
@@ -183,7 +187,7 @@ export async function getArtistPublicProfile(req, res) {
       return res.status(404).json({ message: 'Artist not found' });
     }
 
-    const followersCount = await User.countDocuments({ following: id });
+    const followersCount = artist.followersCount || 0;
     const songs = await Song.find({ artistId: id, visibility: 'public', moderationState: 'approved', isDeleted: { $ne: true } });
 
     // Check if the current user is following this artist
