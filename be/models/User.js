@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: { type: String, enum: ['listener', 'artist', 'admin'], default: 'listener' },
   avatarUrl: { type: String, default: "" },
+  stripeCustomerId: { type: String },
   paymentMethods: [{
     brand: { type: String },
     cardholderName: { type: String },
