@@ -4,8 +4,19 @@ import { saveBase64File } from '../utils/file.js';
 
 export async function getUserPlaylists(req, res) {
   try {
-    // Return playlists owned by user, or public playlists if requested
-    const playlists = await Playlist.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    // Return playlists owned by user, or liked by user (if public)
+    const likedIds = req.user.likedPlaylists || [];
+    const playlists = await Playlist.find({
+      $or: [
+        { userId: req.user._id },
+        { _id: { $in: likedIds }, visibility: 'public' }
+      ]
+    })
+    .populate({
+      path: 'songs',
+      match: { isDeleted: { $ne: true } }
+    })
+    .sort({ createdAt: -1 });
     return res.status(200).json({ playlists });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to retrieve playlists', error: err.message });

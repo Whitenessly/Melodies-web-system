@@ -164,9 +164,11 @@ const dictionary = {
   'Nghệ sĩ đang theo dõi': 'Following Artists',
   'Bạn chưa theo dõi nghệ sĩ nào.': 'You are not following any artists yet.',
   'Danh sách phát của tôi': 'My Playlists',
+  'Danh sách phát yêu thích': 'Favorite Playlists',
   'Không có mô tả': 'No description',
   'Bạn chưa tạo danh sách phát nào.': 'You haven\'t created any playlists yet.',
   'Tạo ngay playlist đầu tiên': 'Create your first playlist',
+  'Bạn chưa thích danh sách phát nào.': 'You haven\'t liked any playlists yet.',
   'Bài hát yêu thích': 'Favorite Songs',
   '# Tiêu đề': '# Title',
   'Thao tác': 'Action',
@@ -215,6 +217,7 @@ const dictionary = {
   'Nghệ sĩ': 'Artists',
   'Chưa tìm thấy nghệ sĩ nào phù hợp.': 'No matching artists found.',
   'Không tìm thấy kết quả phù hợp.': 'No matching results found.',
+  'Xem thêm': 'See more',
 
   // NotificationsSocial
   'Đang tải thông báo...': 'Loading notifications...',

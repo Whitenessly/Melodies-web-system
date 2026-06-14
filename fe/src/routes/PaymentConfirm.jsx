@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
+<<<<<<< HEAD
+=======
+import { loadStripe } from '@stripe/stripe-js';
+import { CardElement, Elements, useStripe, useElements } from '@stripe/react-stripe-js';
+>>>>>>> 952f71af0c19d88428b0aa3e944463524f0c3742
 import { api } from '../utils/api.js';
 
 const PaymentForm = ({ subscription, onSuccess }) => {

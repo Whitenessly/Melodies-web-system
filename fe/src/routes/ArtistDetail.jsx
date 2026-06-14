@@ -145,6 +145,7 @@ const ArtistDetail = () => {
 
   // Cover image based on artist name or fallback
   const artistBannerImg = "https://lh3.googleusercontent.com/aida-public/AB6AXuCGGVOrVCJVyMIf41e6-hbfr_BMtC5t7rqp5ns9EX7i7DogTlVDWukAErtDRtblo0BgbYJghWRW5_rityqe2Dz9joyc4LYH6RxaG0vkZTPHSlmVxYVE3HOjjbWqtX5qjcB6h8FFo2mwcGiLDW95HLbUg2dCw96gBGQqK27vnbzHm9AGHGqAcbY3V75SJj7xJLXDd3UofWFpzlTRJGEpdcu81zJkK3BNzPXLVhFukMOf6OU2EU8wMbCEogViDeBhPFz91TBp9JuwokI";
+  const bannerSrc = artist.avatarUrl ? getFullUrl(artist.avatarUrl) : artistBannerImg;
 
   return (
     <>
@@ -157,7 +158,7 @@ const ArtistDetail = () => {
           <img 
             alt="Artist Banner" 
             className="absolute inset-0 w-full h-full object-cover brightness-60" 
-            src={artistBannerImg} 
+            src={bannerSrc} 
           />
           {/* Dark gradient overlap */}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-black/30"></div>
@@ -266,9 +267,8 @@ const ArtistDetail = () => {
                         <button 
                           onClick={(e) => handleLikeClick(e, song._id)}
                           className={`material-symbols-outlined transition-colors cursor-pointer ${
-                            isLiked(song._id) ? 'text-primary' : 'text-on-surface-variant hover:text-white'
+                            isLiked(song._id) ? 'filled text-primary' : 'text-on-surface-variant hover:text-white'
                           }`}
-                          style={{ fontVariationSettings: isLiked(song._id) ? "'FILL' 1" : "'FILL' 0" }}
                         >
                           favorite
                         </button>
@@ -318,8 +318,12 @@ const ArtistDetail = () => {
                       onClick={() => navigate(`/artist-detail?id=${other._id}`)}
                       className="flex items-center gap-4 group cursor-pointer p-2 hover:bg-white/5 rounded-xl transition-all"
                     >
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-primary-container flex items-center justify-center font-bold text-sm text-primary">
-                        {other.name[0].toUpperCase()}
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-primary-container flex items-center justify-center font-bold text-sm text-primary shrink-0 shadow-md">
+                        {other.avatarUrl ? (
+                          <img className="w-full h-full object-cover" src={getFullUrl(other.avatarUrl)} alt={other.name} />
+                        ) : (
+                          other.name[0].toUpperCase()
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h5 className="font-body-md text-body-md font-bold text-white group-hover:text-primary transition-colors truncate">

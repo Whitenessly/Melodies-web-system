@@ -6,7 +6,7 @@ import { saveBase64File } from '../utils/file.js';
 
 export async function getAllSongs(req, res) {
   try {
-    const { search, genre, artist } = req.query;
+    const { search, genre, artist, page, limit } = req.query;
     let query = {};
     
     // Default visibility is public, unless fetching own tracks
@@ -47,7 +47,28 @@ export async function getAllSongs(req, res) {
       query.artist = new RegExp(artist, 'i');
     }
 
-    const songs = await Song.find(query).sort({ createdAt: -1 });
+    let songsQuery = Song.find(query).sort({ createdAt: -1 });
+
+    if (page && limit) {
+      const pageNum = parseInt(page, 10) || 1;
+      const limitNum = parseInt(limit, 10) || 10;
+      const skipNum = (pageNum - 1) * limitNum;
+      
+      const totalSongs = await Song.countDocuments(query);
+      const songs = await songsQuery.skip(skipNum).limit(limitNum);
+      
+      return res.status(200).json({ 
+        songs, 
+        pagination: {
+          total: totalSongs,
+          page: pageNum,
+          limit: limitNum,
+          pages: Math.ceil(totalSongs / limitNum)
+        }
+      });
+    }
+
+    const songs = await songsQuery;
     return res.status(200).json({ songs });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to retrieve songs', error: err.message });

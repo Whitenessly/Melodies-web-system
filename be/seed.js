@@ -169,6 +169,8 @@ async function seed() {
     // Setup follow relationship: Wesley Listener follows Alex Rivers (artist)
     listener.following.push(artist._id);
     await listener.save();
+    artist.followersCount = 1;
+    await artist.save();
     console.log('Setup Wesley Listener following Alex Rivers.');
 
     // Create an Album and link songs
