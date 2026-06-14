@@ -53,7 +53,7 @@ const Header = ({ placeholder, showSearch = true }) => {
     <header className="flex justify-between items-center w-full px-gutter-desktop h-16 sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-white/10">
       {/* Search Input Bar */}
       {showSearch ? (
-        <form onSubmit={handleSearchSubmit} className="flex items-center gap-4 flex-grow max-w-xl">
+        <form onSubmit={handleSearchSubmit} className="flex items-center gap-4 grow max-w-xl">
           <div className="relative w-full">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
             <input 
@@ -66,7 +66,7 @@ const Header = ({ placeholder, showSearch = true }) => {
           </div>
         </form>
       ) : (
-        <div className="flex-grow"></div>
+        <div className="grow"></div>
       )}
 
       {/* Account actions & notifications */}
@@ -120,7 +120,7 @@ const Header = ({ placeholder, showSearch = true }) => {
             {showUserDropdown && (
               <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-surface-container border border-white/10 shadow-2xl py-2 z-40">
                 <div className="px-4 py-2 border-b border-white/5">
-                  <p className="text-on-surface font-semibold font-bold text-label-md truncate">{user.name}</p>
+                  <p className="text-on-surface font-bold text-label-md truncate">{user.name}</p>
                   <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">{user.role}</p>
                 </div>
                 

@@ -167,7 +167,7 @@ const SubscriptionPlans = () => {
                   <ul className="mb-6 space-y-2">
                     {plan.features.map((feature, idx) => (
                       <li key={idx} className="flex items-start gap-2 text-sm text-on-surface-variant">
-                        <span className="material-symbols-outlined text-primary text-lg flex-shrink-0">
+                        <span className="material-symbols-outlined text-primary text-lg shrink-0">
                           check_circle
                         </span>
                         <span>{feature}</span>

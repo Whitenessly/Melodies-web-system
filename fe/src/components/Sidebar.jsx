@@ -24,7 +24,7 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="fixed left-6 top-6 bottom-[144px] w-[280px] flex flex-col z-40 bg-surface-container-low/50 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl hidden md:flex overflow-y-auto custom-scrollbar">
+    <aside className="fixed left-6 top-6 bottom-36 w-[280px] flex flex-col z-40 bg-surface-container-low/50 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl hidden md:flex overflow-y-auto custom-scrollbar">
       {/* Brand Header */}
       <div className="p-gutter-desktop flex items-center gap-3">
         <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-on-primary shadow-lg">
@@ -37,7 +37,7 @@ const Sidebar = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="mt-8 px-4 flex-grow space-y-2">
+      <nav className="mt-8 px-4 grow space-y-2">
         <Link className={getLinkClass('/home')} to="/home">
           <span className="material-symbols-outlined">home</span>
           <span>{t("Trang chủ")}</span>

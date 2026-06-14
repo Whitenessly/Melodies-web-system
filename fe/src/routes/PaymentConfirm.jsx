@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-<<<<<<< HEAD
-=======
 import { loadStripe } from '@stripe/stripe-js';
 import { CardElement, Elements, useStripe, useElements } from '@stripe/react-stripe-js';
->>>>>>> 952f71af0c19d88428b0aa3e944463524f0c3742
 import { api } from '../utils/api.js';
 
 const PaymentForm = ({ subscription, onSuccess }) => {
@@ -152,7 +149,7 @@ const PaymentConfirm = () => {
             <p className="text-on-surface-variant mb-4">
               Welcome to {subscription?.planName} plan!
             </p>
-            <p className="text-on-surface text-sm text-primary">
+            <p className="text-on-surface-variant text-sm">
               (Demo Mode - No payment required)
             </p>
             <button
@@ -177,7 +174,7 @@ const PaymentConfirm = () => {
           <p className="text-on-surface-variant mb-2">
             Subscribe to {subscription?.planName}
           </p>
-          <p className="text-on-surface text-xs text-primary mb-6">
+          <p className="text-on-surface-variant text-xs mb-6">
             Use test card: 4242 4242 4242 4242 | 12/26 | 123
           </p>
 
