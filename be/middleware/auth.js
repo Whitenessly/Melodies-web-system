@@ -3,8 +3,12 @@ import User from '../models/User.js';
 
 export async function authenticate(req, res, next) {
   try {
+    console.log('🔐 AUTH MIDDLEWARE - Path:', req.path);
     const authHeader = req.headers.authorization;
+    console.log('🔐 Authorization header:', authHeader ? 'present' : 'MISSING');
+    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('🔐 AUTH FAILED: Missing or malformed Authorization header');
       return res.status(401).json({ message: 'Missing or malformed Authorization header' });
     }
     

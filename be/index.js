@@ -62,6 +62,17 @@ app.get('/', (req, res) => {
     });
 });
 
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error('❌ GLOBAL ERROR HANDLER:', err);
+    console.error('Error message:', err.message);
+    console.error('Error stack:', err.stack);
+    return res.status(500).json({ 
+        message: 'Server error',
+        error: err.message 
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running at http://localhost:${PORT}`);
 });

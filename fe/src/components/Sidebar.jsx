@@ -84,6 +84,18 @@ const Sidebar = () => {
             </span>
           )}
         </Link>
+
+        {/* Subscription Plans */}
+        <Link className={getLinkClass('/subscription-plans')} to="/subscription-plans">
+          <span className="material-symbols-outlined">card_membership</span>
+          <span>{t("Gói nâng cấp")}</span>
+        </Link>
+
+        {/* Settings */}
+        <Link className={getLinkClass('/settings')} to="/settings">
+          <span className="material-symbols-outlined">settings</span>
+          <span>{t("Cài đặt")}</span>
+        </Link>
       </nav>
 
       {/* Upload Button */}

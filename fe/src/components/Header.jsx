@@ -87,6 +87,14 @@ const Header = ({ placeholder, showSearch = true }) => {
           </button>
         </div>
 
+        {/* Upgrade Button */}
+        <button
+          onClick={() => navigate('/subscription-plans')}
+          className="px-4 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md hover:scale-105 active:scale-95 transition-transform text-sm cursor-pointer"
+        >
+          {t("Nâng cấp")}
+        </button>
+
         {user && (
           <div ref={dropdownRef} className="relative">
             {/* User Avatar Clickable */}

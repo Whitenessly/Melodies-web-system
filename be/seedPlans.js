@@ -33,7 +33,7 @@ const plans = [
     price: 499, // $4.99
     currency: 'usd',
     interval: 'month',
-    stripePriceId: 'price_1Q4Z0nFY2V7XxABCDEF123', // Replace with actual Stripe price ID
+    stripePriceId: 'price_1Ti4Ye0SjyAWtpfMAcafrbFp', // Replace with actual Stripe price ID
     features: [
       'Ad-free music streaming',
       'Offline downloads (up to 3000 songs)',
@@ -51,7 +51,7 @@ const plans = [
     price: 799, // $7.99
     currency: 'usd',
     interval: 'month',
-    stripePriceId: 'price_1Q4Z0nFY2V7XxABCDEF456', // Replace with actual Stripe price ID
+    stripePriceId: 'price_1Ti4dQ0SjyAWtpfMFyeFSm4v',
     features: [
       'Ad-free music streaming',
       'Offline downloads (up to 5000 songs)',
@@ -71,7 +71,7 @@ const plans = [
     price: 1199, // $11.99
     currency: 'usd',
     interval: 'month',
-    stripePriceId: 'price_1Q4Z0nFY2V7XxABCDEF789', // Replace with actual Stripe price ID
+    stripePriceId: 'price_1Ti4dw0SjyAWtpfMvI5I0LoJ', // Replace with actual Stripe price ID
     features: [
       'Ad-free music streaming',
       'Offline downloads (unlimited)',

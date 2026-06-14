@@ -46,6 +46,11 @@ const SubscriptionPlans = () => {
         planId: plan.planId
       });
 
+      // Always update current subscription after successful subscribe
+      if (response.subscription) {
+        setCurrentSubscription(response.subscription);
+      }
+
       // If payment is required, redirect to payment confirmation page
       if (response.clientSecret) {
         // Store subscription data in session
@@ -58,8 +63,9 @@ const SubscriptionPlans = () => {
 
         navigate('/payment-confirm');
       } else {
-        // Free plan - subscription created successfully
+        // Demo mode or free plan - subscription created successfully
         alert(`Successfully subscribed to ${plan.name} plan!`);
+        // Reload to ensure fresh data
         window.location.reload();
       }
     } catch (err) {
