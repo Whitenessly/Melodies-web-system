@@ -1,11 +1,17 @@
 import express from 'express';
-import { getCommentsBySong, addComment, deleteComment } from '../controllers/commentController.js';
+import { getCommentsForSong, addComment } from '../controllers/commentController.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.get('/songs/:songId', getCommentsBySong);
-router.post('/songs/:songId', authenticate, addComment);
-router.delete('/:id', authenticate, deleteComment);
+// Optional authentication to fetch comments (so admins can see hidden ones)
+router.get('/', (req, res, next) => {
+  if (req.headers.authorization) {
+    return authenticate(req, res, next);
+  }
+  next();
+}, getCommentsForSong);
+
+router.post('/', authenticate, addComment);
 
 export default router;

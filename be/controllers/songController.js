@@ -1,259 +1,259 @@
 import Song from '../models/Song.js';
-import Playlist from '../models/Playlist.js';
 import User from '../models/User.js';
-import Notification from '../models/Notification.js';
 import { saveBase64File } from '../utils/file.js';
+import crypto from 'crypto';
+
+// Helper to remove Vietnamese tones for fuzzy search
+function removeVietnameseTones(str) {
+  if (!str) return '';
+  str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+  str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+  str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+  str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+  str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+  str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+  str = str.replace(/đ/g, "d");
+  str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+  str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+  str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+  str = str.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+  str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+  str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+  str = str.replace(/Đ/g, "D");
+  str = str.replace(/\u0300|\u0301|\u0309|\u0303|\u0323/g, ""); // diacritics
+  str = str.replace(/\u02C6|\u0306|\u031B/g, ""); // hats
+  return str.trim();
+}
 
 export async function getAllSongs(req, res) {
   try {
-    const { search, genre, artist, page, limit } = req.query;
-    let query = {};
-    
-    // Default visibility is public, unless fetching own tracks
-    if (req.user) {
-      if (req.user.role === 'admin') {
-        // Admins can see everything
-        query = { isDeleted: { $ne: true } };
-      } else {
-        // Listeners & Artists can see public approved tracks, or artists can see their own tracks (pending/private/blocked)
-        query = {
-          isDeleted: { $ne: true },
-          $or: [
-            { visibility: 'public', moderationState: 'approved' },
-            { artistId: req.user._id }
-          ]
-        };
-      }
-    } else {
-      query = { visibility: 'public', moderationState: 'approved', isDeleted: { $ne: true } };
+    const { q, genre, artistId, isApproved } = req.query;
+    let query = { deleted_at: null };
+
+    if (isApproved === 'true') {
+      query.status = 'approved';
     }
 
-    if (search) {
-      const regex = new RegExp(search, 'i');
-      query.$and = query.$and || [];
-      query.$and.push({
-        $or: [
-          { title: regex },
-          { artist: regex }
-        ]
-      });
+    if (artistId) {
+      query.artistId = artistId;
     }
 
     if (genre) {
-      query.genre = new RegExp(`^${genre}$`, 'i');
+      query.genre = new RegExp(genre, 'i');
     }
 
-    if (artist) {
-      query.artist = new RegExp(artist, 'i');
-    }
+    let songs = await Song.find(query).populate('artistId', 'name avatarUrl');
 
-    let songsQuery = Song.find(query).sort({ createdAt: -1 });
-
-    if (page && limit) {
-      const pageNum = parseInt(page, 10) || 1;
-      const limitNum = parseInt(limit, 10) || 10;
-      const skipNum = (pageNum - 1) * limitNum;
-      
-      const totalSongs = await Song.countDocuments(query);
-      const songs = await songsQuery.skip(skipNum).limit(limitNum);
-      
-      return res.status(200).json({ 
-        songs, 
-        pagination: {
-          total: totalSongs,
-          page: pageNum,
-          limit: limitNum,
-          pages: Math.ceil(totalSongs / limitNum)
-        }
+    if (q) {
+      const cleanSearch = removeVietnameseTones(q).toLowerCase();
+      // Simple fuzzy search filter on results using Regex or diacritic-free matches
+      songs = songs.filter(song => {
+        const cleanTitle = removeVietnameseTones(song.title).toLowerCase();
+        const cleanArtistName = removeVietnameseTones(song.artist).toLowerCase();
+        return cleanTitle.includes(cleanSearch) || cleanArtistName.includes(cleanSearch);
       });
     }
 
-    const songs = await songsQuery;
-    return res.status(200).json({ songs });
+    // Recommendation logic if search yielded nothing
+    if (q && songs.length === 0) {
+      const recommendations = await Song.find({ status: 'approved', deleted_at: null })
+        .limit(5)
+        .populate('artistId', 'name avatarUrl');
+      return res.json({ songs: [], recommendations, wasFuzzy: true });
+    }
+
+    return res.json(songs);
   } catch (err) {
-    return res.status(500).json({ message: 'Failed to retrieve songs', error: err.message });
+    return res.status(500).json({ message: 'Failed to fetch songs', error: err.message });
   }
 }
 
-export async function getTopSongs(req, res) {
+export async function getSongById(req, res) {
   try {
-    // Top charts sorted by views descending
-    const songs = await Song.find({ visibility: 'public', moderationState: 'approved', isDeleted: { $ne: true } })
-      .sort({ views: -1 })
-      .limit(10);
-    return res.status(200).json({ songs });
+    const song = await Song.findOne({ _id: req.params.id, deleted_at: null })
+      .populate('artistId', 'name avatarUrl following followersCount');
+    if (!song) {
+      return res.status(404).json({ message: 'Song not found' });
+    }
+    return res.json(song);
   } catch (err) {
-    return res.status(500).json({ message: 'Failed to retrieve charts', error: err.message });
+    return res.status(500).json({ message: 'Error retrieving song', error: err.message });
   }
 }
 
 export async function createSong(req, res) {
   try {
-    const { title, genre, lyrics, visibility, audio, image } = req.body;
-    
-    if (!title || !genre || !audio || !image) {
-      return res.status(400).json({ message: 'Missing required song metadata or media' });
+    const { title, genre, lyrics, audioData, imageData, duration } = req.body;
+
+    if (!title || !genre || !audioData) {
+      return res.status(400).json({ message: 'Title, genre, and audio file are required' });
     }
 
-    // Save media files
-    const audioUrl = saveBase64File(audio, 'songs', 'mp3');
-    const thumbnailUrl = saveBase64File(image, 'images', 'png');
-
-    if (!audioUrl || !thumbnailUrl) {
-      return res.status(500).json({ message: 'Failed to save media files on server' });
+    // Save audio file
+    const audioUrl = saveBase64File(audioData, 'audio', 'mp3');
+    if (!audioUrl) {
+      return res.status(500).json({ message: 'Failed to process audio upload' });
     }
+
+    // Save cover image
+    let thumbnailUrl = 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500';
+    if (imageData) {
+      const savedImage = saveBase64File(imageData, 'images', 'png');
+      if (savedImage) thumbnailUrl = savedImage;
+    }
+
+    // Generate simulated waveform data (e.g. 80 points)
+    const waveform_data = [];
+    for (let i = 0; i < 80; i++) {
+      waveform_data.push(parseFloat((Math.random() * 0.8 + 0.2).toFixed(2)));
+    }
+
+    // Simulate Transcoding Pipeline urls
+    const audio_source = {
+      original_file_url: audioUrl,
+      stream_128kbps_url: audioUrl, // In mock, both point to same or can append quality suffixes
+      stream_320kbps_url: audioUrl
+    };
+
+    // Users who are artists or admins upload approved or pending songs
+    const artist = await User.findById(req.user._id);
+    const initialStatus = req.user.role === 'admin' ? 'approved' : 'pending';
 
     const song = new Song({
       title,
-      artist: req.user.name,
+      artist: artist ? artist.name : 'Unknown Artist',
       artistId: req.user._id,
+      duration: duration || 180,
+      lyrics: lyrics || '',
       genre,
       audioUrl,
+      audio_source,
       thumbnailUrl,
-      lyrics: lyrics || '',
-      visibility: visibility || 'public',
-      moderationState: req.user.role === 'admin' ? 'approved' : 'pending'
+      cover_image_url: thumbnailUrl,
+      waveform_data,
+      status: initialStatus,
+      moderationState: initialStatus
     });
 
     await song.save();
-
-    // Notify admins if song is pending approval
-    if (song.moderationState === 'pending') {
-      try {
-        const admins = await User.find({ role: 'admin' });
-        for (const admin of admins) {
-          const notification = new Notification({
-            userId: admin._id,
-            senderId: req.user._id,
-            title: 'Bài hát mới chờ duyệt',
-            message: `Nghệ sĩ ${req.user.name} vừa tải lên bài hát mới "${song.title}" cần kiểm duyệt.`,
-            type: 'system',
-            link: '/admin-dashboard'
-          });
-          await notification.save();
-        }
-      } catch (err) {
-        console.error('Failed to send pending approval notifications to admin:', err);
-      }
-    }
-
-    // Notify followers if song is immediately approved (e.g. uploaded by admin) and visibility is public
-    if (song.moderationState === 'approved' && song.visibility === 'public') {
-      try {
-        const followers = await User.find({ following: req.user._id });
-        for (const follower of followers) {
-          const notification = new Notification({
-            userId: follower._id,
-            senderId: req.user._id,
-            title: 'Bài hát mới',
-            message: `${req.user.name} vừa tải lên bài hát mới: "${song.title}"`,
-            type: 'new_track',
-            link: `/player?songId=${song._id}`
-          });
-          await notification.save();
-        }
-      } catch (err) {
-        console.error('Failed to send upload notifications:', err);
-      }
-    }
-
-    return res.status(201).json({
-      message: 'Song uploaded successfully',
-      song
-    });
+    return res.status(201).json(song);
   } catch (err) {
-    return res.status(500).json({ message: 'Song upload failed', error: err.message });
+    return res.status(500).json({ message: 'Failed to create song', error: err.message });
   }
 }
 
-export async function deleteSong(req, res) {
+export async function incrementStreamCount(req, res) {
   try {
-    const { id } = req.params;
-    const song = await Song.findById(id);
-    if (!song || song.isDeleted === true) {
+    const { durationListened } = req.body;
+    if (!durationListened || durationListened < 30) {
+      return res.status(400).json({ message: 'Listening duration must be at least 30 seconds to count as a stream' });
+    }
+
+    const song = await Song.findById(req.params.id);
+    if (!song) {
       return res.status(404).json({ message: 'Song not found' });
     }
 
-    // Authorize: Admin or original artist creator
-    if (req.user.role !== 'admin' && song.artistId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Forbidden: You do not own this song' });
-    }
-
-    song.isDeleted = true;
+    song.stream_count = (song.stream_count || 0) + 1;
+    song.views = (song.views || 0) + 1;
     await song.save();
 
-    // Business rule: Khi một bài hát bị xóa, gỡ bài hát đó ra khỏi các danh sách phát (playlist) hiện có
-    await Playlist.updateMany(
-      { songs: id },
-      { $pull: { songs: id } }
-    );
-
-    // Also pull from users' liked songs and recently played lists
-    await User.updateMany(
-      { likedSongs: id },
-      { $pull: { likedSongs: id } }
-    );
-    await User.updateMany(
-      { 'recentlyPlayed.songId': id },
-      { $pull: { recentlyPlayed: { songId: id } } }
-    );
-
-    return res.status(200).json({ message: 'Song deleted successfully and removed from all playlists' });
-  } catch (err) {
-    return res.status(500).json({ message: 'Failed to delete song', error: err.message });
-  }
-}
-
-export async function incrementPlayCount(req, res) {
-  try {
-    const { id } = req.params;
-    const song = await Song.findById(id);
-    if (!song || song.isDeleted === true) {
-      return res.status(404).json({ message: 'Song not found' });
-    }
-
-    song.views += 1;
-    await song.save();
-
-    // If user is logged in, log playback history
+    // Add to user's recentlyPlayed
     if (req.user) {
-      // Add to recentlyPlayed (max 20 items to prevent bloat)
-      req.user.recentlyPlayed.unshift({ songId: song._id, playedAt: new Date() });
-      if (req.user.recentlyPlayed.length > 20) {
-        req.user.recentlyPlayed.pop();
+      const user = await User.findById(req.user._id);
+      if (user) {
+        // Keep only top 20 items
+        user.recentlyPlayed.unshift({ songId: song._id });
+        if (user.recentlyPlayed.length > 20) {
+          user.recentlyPlayed.pop();
+        }
+        await user.save();
       }
-      await req.user.save();
     }
 
-    return res.status(200).json({ message: 'Playback tracked successfully', views: song.views });
+    return res.json({ success: true, stream_count: song.stream_count });
   } catch (err) {
-    return res.status(500).json({ message: 'Failed to track playback', error: err.message });
+    return res.status(500).json({ message: 'Failed to increment stream count', error: err.message });
   }
 }
 
-export async function updateSong(req, res) {
+export async function likeSong(req, res) {
   try {
-    const { id } = req.params;
-    const { title, genre, lyrics, visibility } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const song = await Song.findById(id);
-    if (!song || song.isDeleted === true) {
-      return res.status(404).json({ message: 'Song not found' });
+    const songId = req.params.id;
+    if (!user.likedSongs.includes(songId)) {
+      user.likedSongs.push(songId);
+      await user.save();
+
+      // Increment likes count on song
+      await Song.findByIdAndUpdate(songId, { $inc: { likes: 1 } });
     }
 
-    // Authorize: Admin or original artist creator
-    if (req.user.role !== 'admin' && song.artistId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Forbidden: You do not own this song' });
-    }
-
-    if (title) song.title = title;
-    if (genre) song.genre = genre;
-    if (lyrics !== undefined) song.lyrics = lyrics;
-    if (visibility) song.visibility = visibility;
-
-    await song.save();
-    return res.status(200).json({ message: 'Song updated successfully', song });
+    return res.json({ success: true, likedSongs: user.likedSongs });
   } catch (err) {
-    return res.status(500).json({ message: 'Failed to update song', error: err.message });
+    return res.status(500).json({ message: 'Error liking song', error: err.message });
+  }
+}
+
+export async function unlikeSong(req, res) {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const songId = req.params.id;
+    user.likedSongs = user.likedSongs.filter(id => id.toString() !== songId);
+    await user.save();
+
+    // Decrement likes count on song
+    await Song.findByIdAndUpdate(songId, { $inc: { likes: -1 } });
+
+    return res.json({ success: true, likedSongs: user.likedSongs });
+  } catch (err) {
+    return res.status(500).json({ message: 'Error unliking song', error: err.message });
+  }
+}
+
+export async function downloadSongDRM(req, res) {
+  try {
+    const song = await Song.findById(req.params.id);
+    if (!song) return res.status(404).json({ message: 'Song not found' });
+
+    // Validate Premium status
+    if (req.user.premium_status !== 'PREMIUM') {
+      return res.status(403).json({ message: 'Premium membership is required to download DRM encrypted files' });
+    }
+
+    // Create encrypted buffer: Mock encryption by XORing song title with random bytes
+    const metadata = JSON.stringify({
+      songId: song._id,
+      title: song.title,
+      artist: song.artist,
+      lyrics: song.lyrics,
+      downloadedAt: new Date().toISOString(),
+      watermark: 'MELODIES-DRM-SECURED'
+    });
+
+    const metadataBuffer = Buffer.from(metadata);
+    const key = crypto.randomBytes(4); // 4-byte encryption key
+    
+    // Simple XOR cipher
+    const encryptedData = Buffer.alloc(metadataBuffer.length);
+    for (let i = 0; i < metadataBuffer.length; i++) {
+      encryptedData[i] = metadataBuffer[i] ^ key[i % key.length];
+    }
+
+    // Construct custom binary DRM package: [4 bytes key] + [4 bytes length of metadata] + [encrypted metadata]
+    const lengthBuffer = Buffer.alloc(4);
+    lengthBuffer.writeUInt32BE(encryptedData.length, 0);
+
+    const drmFileBuffer = Buffer.concat([key, lengthBuffer, encryptedData]);
+
+    res.setHeader('Content-Disposition', `attachment; filename="${song.title.replace(/\s+/g, '_')}.melodrm"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    return res.send(drmFileBuffer);
+  } catch (err) {
+    return res.status(500).json({ message: 'DRM compilation failed', error: err.message });
   }
 }

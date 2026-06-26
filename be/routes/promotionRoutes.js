@@ -1,10 +1,9 @@
 import express from 'express';
-import { getPromotions, createPromotion } from '../controllers/promotionController.js';
-import { authenticate, authorize } from '../middleware/auth.js';
+import { getAllPromotions, validatePromotion } from '../controllers/promotionController.js';
 
 const router = express.Router();
 
-router.get('/', getPromotions);
-router.post('/', authenticate, authorize(['artist', 'admin']), createPromotion);
+router.get('/', getAllPromotions);
+router.post('/validate', validatePromotion);
 
 export default router;

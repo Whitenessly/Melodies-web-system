@@ -1,10 +1,9 @@
 import express from 'express';
-import { handleStripeWebhook } from '../controllers/webhookController.js';
+import { stripeWebhook } from '../controllers/paymentController.js';
 
 const router = express.Router();
 
-// Webhook endpoint for Stripe
-// Note: This must receive raw body, not JSON parsed
-router.post('/stripe', express.raw({ type: 'application/json' }), handleStripeWebhook);
+// Using raw express body parser or parsing as JSON depending on setup
+router.post('/stripe', express.raw({ type: 'application/json' }), stripeWebhook);
 
 export default router;

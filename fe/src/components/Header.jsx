@@ -1,210 +1,268 @@
-import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
+import { usePlayer } from '../context/PlayerContext.jsx';
+import { api } from '../utils/api.js';
 
-const Header = ({ placeholder, showSearch = true }) => {
-  const { user, logout, hasUnread } = useAuth();
+export default function Header() {
+  const { user } = useAuth();
+  const { t } = useLanguage();
+  const { playSong } = usePlayer();
   const navigate = useNavigate();
-  const { language, setLanguage, t } = useLanguage();
-  const [showLangSubmenu, setShowLangSubmenu] = useState(false);
-  const defaultPlaceholder = t("Tìm kiếm bài hát, nghệ sĩ...");
-  const currentPlaceholder = placeholder || defaultPlaceholder;
+  const location = useLocation();
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const dropdownRef = useRef(null);
+  const [instantResults, setInstantResults] = useState([]);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  
+  // Notification states
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
+
+  const searchContainerRef = useRef(null);
+  const notifContainerRef = useRef(null);
+
+  // Parse q from URL search params on load
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const q = params.get('q');
+    if (q) setSearchQuery(q);
+  }, [location.search]);
+
+  // Load notifications
+  const loadNotifications = async () => {
+    try {
+      const data = await api.get('/notifications');
+      setNotifications(data);
+      setUnreadCount(data.filter(n => !n.isRead).length);
+    } catch (err) {
+      console.log('Failed to fetch notifications:', err.message);
+    }
+  };
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowUserDropdown(false);
-        setShowLangSubmenu(false);
-      }
-    };
-
-    if (showUserDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
+    if (user) {
+      loadNotifications();
+      // Poll notifications every 30s
+      const timer = setInterval(loadNotifications, 30000);
+      return () => clearInterval(timer);
     }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showUserDropdown]);
+  }, [user]);
+
+  // Debounced search logic (400ms)
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setInstantResults([]);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const data = await api.get(`/songs?isApproved=true&q=${encodeURIComponent(searchQuery)}`);
+        // If query returns normal array or fuzzy object
+        const songs = Array.isArray(data) ? data : (data.songs || []);
+        setInstantResults(songs.slice(0, 5)); // show top 5 instant results
+      } catch (err) {
+        console.error('Instant search error:', err.message);
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setShowSearchDropdown(false);
+      }
+      if (notifContainerRef.current && !notifContainerRef.current.contains(event.target)) {
+        setShowNotificationDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search-results?q=${encodeURIComponent(searchQuery.trim())}`);
+    setShowSearchDropdown(false);
+    navigate(`/search-results?q=${encodeURIComponent(searchQuery)}`);
+  };
+
+  const handleInstantClick = (song) => {
+    setShowSearchDropdown(false);
+    playSong(song, [song], 0);
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await api.post('/notifications/read-all');
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (err) {
+      console.log(err);
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/auth');
-  };
-
-  const getAvatarUrl = () => {
-    if (user?.avatarUrl) {
-      return user.avatarUrl.startsWith('http') ? user.avatarUrl : `http://localhost:8080${user.avatarUrl}`;
+  const handleNotifClick = async (notif) => {
+    try {
+      await api.post(`/notifications/${notif._id}/read`);
+      setNotifications(prev => prev.map(n => n._id === notif._id ? { ...n, isRead: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      if (notif.link) {
+        navigate(notif.link);
+      }
+      setShowNotificationDropdown(false);
+    } catch (err) {
+      console.log(err);
     }
-    return null;
   };
 
   return (
-    <header className="flex justify-between items-center w-full px-gutter-desktop h-16 sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-white/10">
-      {/* Search Input Bar */}
-      {showSearch ? (
-        <form onSubmit={handleSearchSubmit} className="flex items-center gap-4 grow max-w-xl">
-          <div className="relative w-full">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-            <input 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-surface-container border-none rounded-full py-2 pl-10 pr-4 text-on-surface focus:ring-2 focus:ring-primary transition-all outline-none" 
-              placeholder={currentPlaceholder} 
-              type="text" 
-            />
-          </div>
-        </form>
-      ) : (
-        <div className="grow"></div>
-      )}
-
-      {/* Account actions & notifications */}
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate('/notifications-social')}
-            className="relative w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:text-primary hover:bg-white/5 transition-all scale-95 active:scale-90 cursor-pointer"
-            title={t("Thông báo")}
-          >
-            <span className="material-symbols-outlined">notifications</span>
-            {hasUnread && (
-              <span className="absolute top-2 right-2 flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-error"></span>
-              </span>
-            )}
-          </button>
+    <header className="sticky top-0 h-20 bg-background/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 z-20">
+      {/* Search Input */}
+      <form ref={searchContainerRef} onSubmit={handleSearchSubmit} className="relative w-[380px]">
+        <div className="relative">
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+          <input 
+            type="text"
+            placeholder={t('search_placeholder')}
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setShowSearchDropdown(true);
+            }}
+            onFocus={() => setShowSearchDropdown(true)}
+            className="w-full h-11 pl-12 pr-4 bg-white/5 border border-white/5 rounded-full text-sm text-white placeholder-on-surface-variant focus:border-white/10 focus:bg-white/10 transition"
+          />
         </div>
 
-        {/* Upgrade Button */}
-        <button
-          onClick={() => navigate('/subscription-plans')}
-          className="px-4 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md hover:scale-105 active:scale-95 transition-transform text-sm cursor-pointer"
-        >
-          {t("Nâng cấp")}
-        </button>
-
-        {user && (
-          <div ref={dropdownRef} className="relative">
-            {/* User Avatar Clickable */}
-            <div 
-              onClick={() => {
-                setShowUserDropdown(!showUserDropdown);
-                setShowLangSubmenu(false);
-              }}
-              className="h-10 w-10 rounded-full overflow-hidden bg-surface-container-high border border-white/10 flex items-center justify-center text-primary font-bold cursor-pointer hover:border-primary active:scale-95 transition-all"
-            >
-              {getAvatarUrl() ? (
-                <img 
-                  src={getAvatarUrl()} 
-                  alt={user.name} 
-                  className="w-full h-full object-cover" 
-                />
-              ) : (
-                user.name ? user.name[0].toUpperCase() : 'U'
-              )}
-            </div>
-
-            {/* Dropdown Menu */}
-            {showUserDropdown && (
-              <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-surface-container border border-white/10 shadow-2xl py-2 z-40">
-                <div className="px-4 py-2 border-b border-white/5">
-                  <p className="text-on-surface font-bold text-label-md truncate">{user.name}</p>
-                  <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">{user.role}</p>
-                </div>
-                
-                <button 
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    setShowLangSubmenu(false);
-                    navigate('/settings');
-                  }}
-                  className="w-full text-left px-4 py-3 hover:bg-white/5 text-label-md text-white font-bold flex items-center gap-2 transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-sm">settings</span>
-                  {t("Cài đặt tài khoản")}
-                </button>
-
-                <div className="relative">
-                  <button 
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowLangSubmenu(!showLangSubmenu);
-                    }}
-                    className="w-full text-left px-4 py-3 hover:bg-white/5 text-label-md text-white font-bold flex items-center justify-between transition-colors cursor-pointer"
+        {/* Instant Search Dropdown */}
+        {showSearchDropdown && searchQuery.trim() && (
+          <div className="absolute top-13 left-0 w-full glass-panel rounded-2xl p-2 shadow-2xl z-50">
+            {instantResults.length > 0 ? (
+              <div className="flex flex-col">
+                {instantResults.map(song => (
+                  <div 
+                    key={song._id} 
+                    onClick={() => handleInstantClick(song)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-sm">language</span>
-                      {t("Ngôn ngữ")}
+                    <img 
+                      src={song.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=80'} 
+                      alt={song.title} 
+                      className="w-10 h-10 rounded-lg object-cover" 
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{song.title}</p>
+                      <p className="text-xs text-on-surface-variant truncate">{song.artist}</p>
                     </div>
-                    <span className="material-symbols-outlined text-xs">arrow_back_ios</span>
-                  </button>
-                  
-                  {/* Language Submenu to the left */}
-                  {showLangSubmenu && (
-                    <div className="absolute right-full top-0 mr-2 w-48 rounded-2xl bg-surface-container border border-white/10 shadow-2xl py-2 z-50">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (language !== 'en') {
-                            setLanguage('en');
-                          }
-                        }}
-                        className="w-full text-left px-4 py-2.5 hover:bg-white/5 text-label-md text-white font-bold flex items-center justify-between transition-colors cursor-pointer"
-                      >
-                        <span>English</span>
-                        {language === 'en' && (
-                          <span className="material-symbols-outlined text-primary text-sm font-bold">check</span>
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (language !== 'vi') {
-                            setLanguage('vi');
-                          }
-                        }}
-                        className="w-full text-left px-4 py-2.5 hover:bg-white/5 text-label-md text-white font-bold flex items-center justify-between transition-colors cursor-pointer"
-                      >
-                        <span>Tiếng Việt</span>
-                        {language === 'vi' && (
-                          <span className="material-symbols-outlined text-primary text-sm font-bold">check</span>
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </div>
-                
+                    <span className="material-symbols-outlined text-on-surface-variant hover:text-white transition">play_circle</span>
+                  </div>
+                ))}
                 <button 
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    setShowLangSubmenu(false);
-                    handleLogout();
-                  }}
-                  className="w-full text-left px-4 py-3 hover:bg-error/10 text-label-md text-error font-bold flex items-center gap-2 transition-colors cursor-pointer"
+                  type="submit"
+                  className="text-xs text-center py-2 text-secondary-container hover:underline cursor-pointer border-t border-white/5 mt-1 pt-2 font-medium"
                 >
-                  <span className="material-symbols-outlined text-sm">logout</span>
-                  {t("Đăng xuất")}
+                  Xem tất cả kết quả cho "{searchQuery}"
                 </button>
               </div>
+            ) : (
+              <p className="text-xs text-on-surface-variant p-4 text-center">Không tìm thấy kết quả phù hợp</p>
             )}
           </div>
         )}
+      </form>
+
+      {/* Right Controls */}
+      <div className="flex items-center gap-6">
+        {/* Upgrade Premium CTA for Free account */}
+        {user?.premium_status === 'FREE' && (
+          <button 
+            onClick={() => navigate('/subscription-plans')}
+            className="electric-btn text-white text-xs font-bold px-5 py-2.5 rounded-full hover:scale-105 transition duration-200 cursor-pointer shadow-lg shadow-primary-container/20"
+          >
+            Upgrade Premium
+          </button>
+        )}
+
+        {/* Notifications Dropdown Container */}
+        <div ref={notifContainerRef} className="relative">
+          <button 
+            onClick={() => {
+              setShowNotificationDropdown(!showNotificationDropdown);
+              loadNotifications();
+            }}
+            className="w-10 h-10 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-on-surface-variant hover:text-white transition hover:bg-white/10 cursor-pointer relative"
+          >
+            <span className="material-symbols-outlined text-xl">notifications</span>
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-error text-white font-bold text-[10px] rounded-full flex items-center justify-center animate-pulse">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+
+          {showNotificationDropdown && (
+            <div className="absolute right-0 top-12 w-80 glass-panel rounded-2xl p-2 shadow-2xl z-50">
+              <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
+                <span className="text-xs font-bold text-white">Thông báo</span>
+                {unreadCount > 0 && (
+                  <button 
+                    onClick={handleMarkAllRead} 
+                    className="text-[10px] text-secondary-container hover:underline cursor-pointer"
+                  >
+                    Đọc tất cả
+                  </button>
+                )}
+              </div>
+              <div className="max-h-64 overflow-y-auto custom-scrollbar flex flex-col gap-1 mt-2">
+                {notifications.length > 0 ? (
+                  notifications.map(notif => (
+                    <div 
+                      key={notif._id}
+                      onClick={() => handleNotifClick(notif)}
+                      className={`p-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition flex items-start gap-2.5 ${!notif.isRead ? 'bg-white/[0.02]' : ''}`}
+                    >
+                      <span className={`material-symbols-outlined text-lg mt-0.5 ${
+                        notif.type === 'new_track' ? 'text-tertiary' : notif.type === 'admin' ? 'text-error' : 'text-secondary-container'
+                      }`}>
+                        {notif.type === 'new_track' ? 'library_music' : notif.type === 'admin' ? 'warning' : 'info'}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-xs font-semibold text-white ${!notif.isRead ? 'font-bold' : ''}`}>{notif.title}</p>
+                        <p className="text-[10px] text-on-surface-variant mt-0.5 line-clamp-2">{notif.message}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-on-surface-variant p-4 text-center">Không có thông báo mới nào</p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* User Badge Info */}
+        <div 
+          onClick={() => navigate('/settings')}
+          className="flex items-center gap-3 cursor-pointer p-1.5 rounded-full hover:bg-white/5 transition"
+        >
+          <div className="w-9 h-9 rounded-full bg-secondary-container flex items-center justify-center font-bold text-white overflow-hidden">
+            {user?.avatarUrl ? (
+              <img src={user.avatarUrl} alt={user?.name} className="w-full h-full object-cover" />
+            ) : (
+              user?.name.charAt(0).toUpperCase()
+            )}
+          </div>
+          <span className="text-xs font-semibold text-white max-w-[120px] truncate hidden sm:inline-block">
+            {user?.name}
+          </span>
+        </div>
       </div>
     </header>
   );
-};
-
-export default Header;
+}

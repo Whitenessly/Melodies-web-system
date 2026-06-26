@@ -10,6 +10,8 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['listener', 'artist', 'admin'], default: 'listener' },
+  premium_status: { type: String, enum: ['FREE', 'PREMIUM'], default: 'FREE' },
+  premium_expired_at: { type: Date, default: null },
   avatarUrl: { type: String, default: "" },
   stripeCustomerId: { type: String },
   paymentMethods: [{
@@ -28,4 +30,3 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 export default User;
-

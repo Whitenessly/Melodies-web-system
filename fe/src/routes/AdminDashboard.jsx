@@ -1,688 +1,585 @@
-import { useEffect, useState, useRef } from 'react';
-import { api } from '../utils/api.js';
+import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import Header from '../components/Header.jsx';
-import { useLanguage } from '../context/LanguageContext.jsx';
+import MusicPlayer from '../components/MusicPlayer.jsx';
+import { api } from '../utils/api.js';
 
-const AdminDashboard = () => {
-  const { t } = useLanguage();
-  const [stats, setStats] = useState({ totalUsers: 0, totalSongs: 0, totalAlbums: 0, totalStreams: 0, cpuLoad: 24.8, latency: 14 });
-  const [securityLogs, setSecurityLogs] = useState([]);
+export default function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'songs', 'comments', 'ads', 'config'
+  
+  // States
+  const [stats, setStats] = useState(null);
   const [pendingSongs, setPendingSongs] = useState([]);
+  const [hiddenComments, setHiddenComments] = useState([]);
+  const [ads, setAds] = useState([]);
+  const [plans, setPlans] = useState([]);
+  
   const [loading, setLoading] = useState(true);
 
-  // Paginated songs state
-  const [allSongs, setAllSongs] = useState([]);
-  const [totalSongs, setTotalSongs] = useState(0);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-  const [searchInput, setSearchInput] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loadingSongs, setLoadingSongs] = useState(false);
-  const [selectedSongDetails, setSelectedSongDetails] = useState(null);
+  // Forms
+  const [showAdModal, setShowAdModal] = useState(false);
+  const [adTitle, setAdTitle] = useState('');
+  const [adType, setAdType] = useState('audio');
+  const [adClient, setAdClient] = useState('');
+  const [adBudget, setAdBudget] = useState(100);
+  const [adAudioUrl, setAdAudioUrl] = useState('');
+  const [adImageUrl, setAdImageUrl] = useState('');
+  const [adTargetUrl, setAdTargetUrl] = useState('');
+  const [adLocation, setAdLocation] = useState('Global');
 
-  const [previewingId, setPreviewingId] = useState(null);
-  const audioPlayerRef = useRef(new Audio());
+  // Gateway config forms
+  const [momoSecret, setMomoSecret] = useState('momo_sec_key_123456');
+  const [momoMerchant, setMomoMerchant] = useState('MOMO_MERCH_ID');
+  const [vnpaySecret, setVnpaySecret] = useState('vnpay_sec_key_987654');
+  const [vnpayMerchant, setVnpayMerchant] = useState('VNPAY_MERCH_ID');
 
-  useEffect(() => {
-    const audio = audioPlayerRef.current;
-    const handleEnded = () => {
-      setPreviewingId(null);
-    };
-    audio.addEventListener('ended', handleEnded);
-    return () => {
-      audio.removeEventListener('ended', handleEnded);
-      audio.pause();
-    };
-  }, []);
-
-  const handleTogglePreview = (song) => {
-    const audio = audioPlayerRef.current;
-    const fullUrl = song.audioUrl.startsWith('http') ? song.audioUrl : `http://localhost:8080${song.audioUrl}`;
-    if (previewingId === song._id) {
-      audio.pause();
-      setPreviewingId(null);
-    } else {
-      audio.src = fullUrl;
-      audio.play().catch(err => console.error("Preview failed:", err));
-      setPreviewingId(song._id);
-    }
-  };
-
-  const fetchAdminData = async () => {
+  const loadData = async () => {
+    setLoading(true);
     try {
-      const statsData = await api.get('/admin/stats');
-      setStats(statsData.stats || { totalUsers: 0, totalSongs: 0, totalAlbums: 0, totalStreams: 0, cpuLoad: 24.8, latency: 14 });
-      setSecurityLogs(statsData.securityLogs || []);
-
-      const modData = await api.get('/admin/moderation');
-      setPendingSongs(modData.songs || []);
+      if (activeTab === 'overview') {
+        const statsData = await api.get('/admin/stats');
+        setStats(statsData);
+      } else if (activeTab === 'songs') {
+        const songsData = await api.get('/admin/moderation/songs');
+        setPendingSongs(songsData);
+      } else if (activeTab === 'comments') {
+        const commentsData = await api.get('/admin/moderation/comments');
+        setHiddenComments(commentsData);
+      } else if (activeTab === 'ads') {
+        const adsData = await api.get('/admin/ads');
+        setAds(adsData);
+      } else if (activeTab === 'config') {
+        const plansData = await api.get('/admin/plans');
+        setPlans(plansData);
+      }
     } catch (err) {
-      console.error('Failed to load admin dashboard data:', err);
+      console.error('Failed to load admin data:', err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchPaginatedSongs = async () => {
-    setLoadingSongs(true);
-    try {
-      const data = await api.get(`/admin/songs?page=${page}&limit=${limit}&search=${encodeURIComponent(searchQuery)}`);
-      setAllSongs(data.songs || []);
-      setTotalSongs(data.totalSongs || 0);
-      setTotalPages(data.totalPages || 1);
-    } catch (err) {
-      console.error('Failed to fetch paginated songs:', err);
-    } finally {
-      setLoadingSongs(false);
-    }
-  };
-
   useEffect(() => {
-    Promise.resolve().then(() => fetchAdminData());
-  }, []);
+    loadData();
+  }, [activeTab]);
 
-  useEffect(() => {
-    Promise.resolve().then(() => fetchPaginatedSongs());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, searchQuery]);
-
-  const handleApprove = async (songId) => {
+  // Songs Moderation
+  const handleApproveSong = async (songId) => {
     try {
-      if (previewingId === songId) {
-        audioPlayerRef.current.pause();
-        setPreviewingId(null);
-      }
-      await api.put(`/admin/moderation/${songId}/approve`);
-      // Reload lists
-      fetchAdminData();
-      fetchPaginatedSongs();
+      await api.post(`/admin/moderation/songs/${songId}/approve`);
+      setPendingSongs(prev => prev.filter(s => s._id !== songId));
     } catch (err) {
-      console.error(err);
-      alert(t('Phê duyệt bài hát thất bại.'));
+      alert('Phê duyệt thất bại: ' + err.message);
     }
   };
 
-  const handleBlock = async (songId) => {
+  const handleBanSong = async (songId) => {
     try {
-      if (previewingId === songId) {
-        audioPlayerRef.current.pause();
-        setPreviewingId(null);
-      }
-      await api.put(`/admin/moderation/${songId}/block`);
-      // Reload lists
-      fetchAdminData();
-      fetchPaginatedSongs();
+      await api.post(`/admin/moderation/songs/${songId}/ban`);
+      setPendingSongs(prev => prev.filter(s => s._id !== songId));
     } catch (err) {
-      console.error(err);
-      alert(t('Chặn bài hát thất bại.'));
+      alert('Gỡ bỏ thất bại: ' + err.message);
     }
   };
 
-  const handleApproveAll = async () => {
-    if (pendingSongs.length === 0) return;
+  // Comments Moderation
+  const handleApproveComment = async (commentId) => {
     try {
-      for (const song of pendingSongs) {
-        await api.put(`/admin/moderation/${song._id}/approve`);
-      }
-      fetchAdminData();
-      fetchPaginatedSongs();
+      await api.post(`/admin/moderation/comments/${commentId}/approve`);
+      setHiddenComments(prev => prev.filter(c => c._id !== commentId));
     } catch (err) {
-      console.error(err);
-      alert(t('Phê duyệt đồng loạt gặp sự cố.'));
+      alert(err.message);
     }
   };
 
-  const handleToggleModeration = async (song) => {
+  const handleRejectComment = async (commentId) => {
     try {
-      if (previewingId === song._id) {
-        audioPlayerRef.current.pause();
-        setPreviewingId(null);
-      }
-      if (song.moderationState === 'approved') {
-        await api.put(`/admin/moderation/${song._id}/block`);
-      } else {
-        await api.put(`/admin/moderation/${song._id}/approve`);
-      }
-      fetchAdminData();
-      fetchPaginatedSongs();
+      await api.delete(`/admin/moderation/comments/${commentId}`);
+      setHiddenComments(prev => prev.filter(c => c._id !== commentId));
     } catch (err) {
-      console.error(err);
-      alert(t('Cập nhật trạng thái bài hát thất bại.'));
+      alert(err.message);
     }
   };
 
-  const handleSearchSubmit = (e) => {
+  // Ad CRUD
+  const handleCreateAd = async (e) => {
     e.preventDefault();
-    setPage(1);
-    setSearchQuery(searchInput);
+    try {
+      const newAd = await api.post('/admin/ads', {
+        title: adTitle,
+        type: adType,
+        clientName: adClient,
+        budgetLimit: adBudget,
+        audioUrl: adAudioUrl,
+        imageUrl: adImageUrl,
+        targetUrl: adTargetUrl,
+        location: adLocation
+      });
+      setAds(prev => [...prev, newAd]);
+      setShowAdModal(false);
+      
+      // Clear form
+      setAdTitle('');
+      setAdClient('');
+      setAdBudget(100);
+      setAdAudioUrl('');
+      setAdImageUrl('');
+      setAdTargetUrl('');
+    } catch (err) {
+      alert('Tạo chiến dịch quảng cáo thất bại: ' + err.message);
+    }
   };
 
-  const getFullUrl = (url) => {
-    if (!url) return '';
-    return url.startsWith('http') ? url : `http://localhost:8080${url}`;
+  const handleToggleAdStatus = async (ad) => {
+    const nextStatus = ad.status === 'active' ? 'paused' : 'active';
+    try {
+      const updated = await api.put(`/admin/ads/${ad._id}`, { status: nextStatus });
+      setAds(prev => prev.map(item => item._id === ad._id ? updated : item));
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleDeleteAd = async (adId) => {
+    if (!window.confirm('Bạn có chắc muốn xóa chiến dịch quảng cáo này?')) return;
+    try {
+      await api.delete(`/admin/ads/${adId}`);
+      setAds(prev => prev.filter(item => item._id !== adId));
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  // Pricing Config
+  const handleUpdatePrice = async (planId, priceId, newPrice) => {
+    try {
+      const updated = await api.put(`/admin/plans/${priceId}`, { price: parseInt(newPrice) });
+      setPlans(prev => prev.map(p => p._id === priceId ? updated.plan : p));
+      alert('Cập nhật giá gói cước thành công!');
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleSavePaymentConfig = async (gateway, secretKey, merchantId) => {
+    try {
+      const res = await api.post('/admin/payment-config', { gateway, secretKey, merchantId });
+      alert(res.message);
+    } catch (err) {
+      alert(err.message);
+    }
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-background text-white flex">
       <Sidebar />
-
-      <main className="md:ml-sidebar-width pb-32 bg-background min-h-screen">
-        <Header placeholder={t("Tìm kiếm hệ thống...")} />
-
-        {loading ? (
-          <div className="flex items-center justify-center py-20 text-primary">
-            <span className="material-symbols-outlined text-4xl animate-spin mr-2">sync</span>
-            <span>{t("Đang tải bảng điều khiển Admin...")}</span>
+      <div className="flex-1 flex flex-col min-w-0">
+        <Header />
+        
+        <main className="md:ml-sidebar-width flex-1 p-8 overflow-y-auto flex flex-col gap-6">
+          <div>
+            <h1 className="font-display-lg text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+              <span className="material-symbols-outlined text-secondary-container">admin_panel_settings</span>
+              Kênh Quản trị Hệ thống
+            </h1>
+            <p className="text-xs text-on-surface-variant mt-1.5">
+              Phân hệ trung tâm hỗ trợ duyệt kiểm duyệt tác phẩm, chiến dịch quảng cáo & quản lý giá cước cước phí.
+            </p>
           </div>
-        ) : (
-          <div className="px-gutter-mobile md:px-margin-page py-10 max-w-7xl mx-auto">
-            <header className="mb-10">
-              <h1 className="font-headline-xl text-headline-xl text-white mb-2 font-bold">{t("Hệ thống Quản trị")}</h1>
-              <p className="text-on-surface-variant font-body-lg text-body-lg">
-                {t("Giám sát thời gian thực và điều phối nội dung Melodies.")}
-              </p>
-            </header>
 
-            {/* Quick stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-              <div className="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:bg-white/5 transition-all border border-white/5">
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <span className="material-symbols-outlined text-7xl text-primary">group</span>
-                </div>
-                <h3 className="text-on-surface-variant font-label-md text-label-md uppercase tracking-wider mb-2">{t("Người dùng")}</h3>
-                <div className="flex items-end gap-3">
-                  <span className="text-4xl font-bold text-white">{stats.totalUsers}</span>
-                  <span className="text-secondary font-label-sm text-label-sm mb-1 flex items-center gap-1 font-bold">
-                    <span className="material-symbols-outlined text-sm">trending_up</span> +100%
-                  </span>
-                </div>
-              </div>
-
-              <div className="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:bg-white/5 transition-all border border-white/5">
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <span className="material-symbols-outlined text-7xl text-secondary">payments</span>
-                </div>
-                <h3 className="text-on-surface-variant font-label-md text-label-md uppercase tracking-wider mb-2">{t("Lượt stream")}</h3>
-                <div className="flex items-end gap-3">
-                  <span className="text-4xl font-bold text-white">{stats.totalStreams.toLocaleString()}</span>
-                  <span className="text-secondary font-label-sm text-label-sm mb-1 flex items-center gap-1 font-bold">
-                    <span className="material-symbols-outlined text-sm">trending_up</span> +5.4%
-                  </span>
-                </div>
-              </div>
-
-              <div className="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:bg-white/5 transition-all border border-white/5">
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <span className="material-symbols-outlined text-7xl text-tertiary">memory</span>
-                </div>
-                <h3 className="text-on-surface-variant font-label-md text-label-md uppercase tracking-wider mb-2">{t("Tải CPU hệ thống")}</h3>
-                <div className="flex items-end gap-3">
-                  <span className="text-4xl font-bold text-white">{stats.cpuLoad}%</span>
-                  <span className="text-on-surface-variant font-label-sm text-label-sm mb-1">{t("Tối ưu")}</span>
-                </div>
-                <div className="w-full h-1 bg-white/5 mt-4 rounded-full overflow-hidden">
-                  <div className="h-full bg-tertiary" style={{ width: `${stats.cpuLoad}%` }}></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Uptime metrics */}
-              <div className="lg:col-span-8 glass-panel p-6 rounded-3xl flex flex-col min-h-[400px] border border-white/5 bg-white/5">
-                <div className="flex justify-between items-center mb-6">
-                  <div>
-                    <h2 className="font-headline-md text-headline-md text-white font-bold">{t("Hạ tầng Toàn cầu")}</h2>
-                    <p className="text-on-surface-variant text-label-md">{t("Thời gian hoạt động (Uptime) trong 24 giờ qua")}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="px-3 py-1 bg-surface-container-highest rounded-lg text-label-sm text-white font-bold">{t("Tuần này")}</span>
-                    <span className="px-3 py-1 bg-primary/20 text-primary border border-primary/30 rounded-lg text-label-sm font-bold">{t("Thời gian thực")}</span>
-                  </div>
-                </div>
-                <div className="flex-grow relative flex items-end gap-2 overflow-hidden pt-10 px-4">
-                  <div className="flex-1 bg-gradient-to-t from-primary/20 to-primary/40 rounded-t-lg transition-all hover:brightness-125 h-[80%]"></div>
-                  <div className="flex-1 bg-gradient-to-t from-primary/20 to-primary/40 rounded-t-lg transition-all hover:brightness-125 h-[85%]"></div>
-                  <div className="flex-1 bg-gradient-to-t from-primary/20 to-primary/40 rounded-t-lg transition-all hover:brightness-125 h-[75%]"></div>
-                  <div className="flex-1 bg-gradient-to-t from-primary/20 to-primary/40 rounded-t-lg transition-all hover:brightness-125 h-[90%]"></div>
-                  <div className="flex-1 bg-gradient-to-t from-secondary/20 to-secondary/40 rounded-t-lg transition-all hover:brightness-125 h-[98%]"></div>
-                  <div className="flex-1 bg-gradient-to-t from-primary/20 to-primary/40 rounded-t-lg transition-all hover:brightness-125 h-[88%]"></div>
-                  <div className="flex-1 bg-gradient-to-t from-primary/20 to-primary/40 rounded-t-lg transition-all hover:brightness-125 h-[92%]"></div>
-                </div>
-                <div className="grid grid-cols-4 mt-6 pt-6 border-t border-white/5 gap-4">
-                  <div className="text-center">
-                    <p className="text-on-surface-variant text-label-sm uppercase">Singapore</p>
-                    <p className="text-secondary font-bold">99.99%</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-on-surface-variant text-label-sm uppercase">Tokyo</p>
-                    <p className="text-secondary font-bold">99.95%</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-on-surface-variant text-label-sm uppercase">US-West</p>
-                    <p className="text-secondary font-bold">100.00%</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-on-surface-variant text-label-sm uppercase">EU-Central</p>
-                    <p className="text-secondary font-bold">99.98%</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Security Logs */}
-              <div className="lg:col-span-4 glass-panel p-6 rounded-3xl overflow-hidden flex flex-col h-[400px] border border-white/5 bg-white/5">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="font-headline-md text-headline-md text-white font-bold">{t("Sự cố Bảo mật")}</h2>
-                  <span className="material-symbols-outlined text-on-surface-variant">security</span>
-                </div>
-                <div className="flex-grow overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-                  {securityLogs.map(log => (
-                    <div key={log.id} className="flex gap-4 items-start p-3 rounded-xl hover:bg-white/5 transition-colors">
-                      <div className={`w-2.5 h-2.5 mt-2 rounded-full ${log.severity === 'high' ? 'bg-error animate-pulse' : log.severity === 'success' ? 'bg-secondary' : 'bg-primary'}`}></div>
-                      <div>
-                        <p className="text-white text-label-md font-bold">{log.title}</p>
-                        <p className="text-on-surface-variant text-label-sm">IP: {log.ip} • {log.time}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Moderation Queue */}
-              <div className="lg:col-span-12 glass-panel p-8 rounded-3xl border border-white/5 bg-white/5">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8">
-                  <div>
-                    <h2 className="font-headline-md text-headline-md text-white font-bold">{t("Hàng đợi Kiểm duyệt Nội dung")}</h2>
-                    <p className="text-on-surface-variant text-label-md">
-                      {t("Đang chờ xử lý")}: <span className="text-tertiary font-bold">{pendingSongs.length} {t("mục")}</span>
-                    </p>
-                  </div>
-                  {pendingSongs.length > 0 && (
-                    <button 
-                      onClick={handleApproveAll}
-                      className="px-4 py-2 bg-primary/20 text-primary rounded-xl text-label-md hover:bg-primary/30 transition-all font-bold cursor-pointer"
-                    >
-                      {t("Phê duyệt tất cả")}
-                    </button>
-                  )}
-                </div>
-
-                <div className="overflow-x-auto">
-                  {pendingSongs.length > 0 ? (
-                    <table className="w-full border-separate border-spacing-y-3">
-                      <thead>
-                        <tr className="text-left text-on-surface-variant text-label-sm uppercase tracking-wider">
-                          <th className="pb-2 px-4">{t("Tác phẩm")}</th>
-                          <th className="pb-2 px-4">{t("Nghệ sĩ")}</th>
-                          <th className="pb-2 px-4">{t("Quyền truy cập")}</th>
-                          <th className="pb-2 px-4 text-right">{t("Thao tác")}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pendingSongs.map(song => (
-                          <tr key={song._id} className="group hover:bg-white/5 transition-colors bg-white/2">
-                            <td className="py-4 px-4 rounded-l-2xl">
-                              <div className="flex items-center gap-4">
-                                <div className="relative w-12 h-12 rounded-lg bg-surface-container-highest overflow-hidden flex-shrink-0 group/preview">
-                                  <img className="w-full h-full object-cover" src={getFullUrl(song.thumbnailUrl)} alt={song.title} />
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleTogglePreview(song);
-                                    }}
-                                    className={`absolute inset-0 bg-black/55 flex items-center justify-center transition-all cursor-pointer ${
-                                      previewingId === song._id ? 'opacity-100' : 'opacity-0 group-hover/preview:opacity-100'
-                                    }`}
-                                    title={previewingId === song._id ? t("Tạm dừng nghe thử") : t("Nghe thử")}
-                                  >
-                                    <span className="material-symbols-outlined text-white text-2xl">
-                                      {previewingId === song._id ? 'pause' : 'play_arrow'}
-                                    </span>
-                                  </button>
-                                </div>
-                                <div>
-                                  <p className="text-white font-bold">{song.title}</p>
-                                  <p className="text-on-surface-variant text-label-sm italic">{song.genre}</p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-4 px-4 text-on-surface font-bold">
-                              {song.artistId?.name || song.artist}
-                            </td>
-                            <td className="py-4 px-4 text-on-surface-variant uppercase font-semibold text-[10px]">
-                              {song.visibility}
-                            </td>
-                            <td className="py-4 px-4 rounded-r-2xl text-right">
-                              <div className="flex justify-end gap-2">
-                                <button 
-                                  onClick={() => handleBlock(song._id)}
-                                  className="w-10 h-10 rounded-full flex items-center justify-center text-error hover:bg-error/10 transition-colors cursor-pointer"
-                                  title={t("Chặn bài hát")}
-                                >
-                                  <span className="material-symbols-outlined">block</span>
-                                </button>
-                                <button 
-                                  onClick={() => handleApprove(song._id)}
-                                  className="w-10 h-10 rounded-full flex items-center justify-center text-secondary hover:bg-secondary/10 transition-colors cursor-pointer"
-                                  title={t("Phê duyệt bài hát")}
-                                >
-                                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div className="text-center py-12 text-on-surface-variant bg-white/2 rounded-2xl">
-                      <span className="material-symbols-outlined text-5xl mb-3">verified</span>
-                      <p className="font-body-md">{t("Sạch sẽ! Không có bài hát nào đang chờ kiểm duyệt.")}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* All Songs Management Section */}
-              <div className="lg:col-span-12 glass-panel p-8 rounded-3xl border border-white/5 bg-white/5 mt-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-                  <div>
-                    <h2 className="font-headline-md text-headline-md text-white font-bold">{t("Danh sách toàn bộ bài hát")}</h2>
-                    <p className="text-on-surface-variant text-label-md">
-                      {t("Tổng số")}: <span className="text-primary font-bold">{totalSongs} {t("bài hát")}</span>
-                    </p>
-                  </div>
-
-                  {/* Search and Limit controls */}
-                  <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-                    <form onSubmit={handleSearchSubmit} className="flex gap-2 flex-grow sm:flex-grow-0">
-                      <div className="relative flex-grow">
-                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-body-lg">search</span>
-                        <input
-                          type="text"
-                          placeholder={t("Tìm kiếm bài hát, nghệ sĩ...")}
-                          value={searchInput}
-                          onChange={(e) => setSearchInput(e.target.value)}
-                          className="pl-10 pr-4 py-2 w-full sm:w-[240px] bg-surface-container-lowest/40 border border-outline-variant/30 rounded-xl text-body-md text-white focus:border-primary/50 transition-all outline-none"
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        className="px-4 py-2 bg-primary text-on-primary rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all text-label-md cursor-pointer"
-                      >
-                        {t("Tìm")}
-                      </button>
-                    </form>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-label-sm text-on-surface-variant whitespace-nowrap">{t("Hiển thị")}:</span>
-                      <select
-                        value={limit}
-                        onChange={(e) => {
-                          setLimit(parseInt(e.target.value));
-                          setPage(1);
-                        }}
-                        className="bg-surface-container-high border-none rounded-xl text-label-sm text-on-surface py-2 px-3 outline-none cursor-pointer"
-                      >
-                        <option value={5}>5</option>
-                        <option value={10}>10</option>
-                        <option value={20}>20</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  {loadingSongs ? (
-                    <div className="flex items-center justify-center py-12 text-primary">
-                      <span className="material-symbols-outlined text-3xl animate-spin mr-2">sync</span>
-                      <span>{t("Đang tải danh sách bài hát...")}</span>
-                    </div>
-                  ) : allSongs.length > 0 ? (
-                    <table className="w-full border-separate border-spacing-y-3">
-                      <thead>
-                        <tr className="text-left text-on-surface-variant text-label-sm uppercase tracking-wider">
-                          <th className="pb-2 px-4">{t("Tác phẩm")}</th>
-                          <th className="pb-2 px-4">{t("Nghệ sĩ")}</th>
-                          <th className="pb-2 px-4">{t("Trạng thái")}</th>
-                          <th className="pb-2 px-4">{t("Lượt nghe")}</th>
-                          <th className="pb-2 px-4 text-right">{t("Thao tác")}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {allSongs.map(song => (
-                          <tr key={song._id} className="group hover:bg-white/5 transition-colors bg-white/2">
-                            <td className="py-4 px-4 rounded-l-2xl">
-                              <div className="flex items-center gap-4">
-                                <div className="relative w-12 h-12 rounded-lg bg-surface-container-highest overflow-hidden flex-shrink-0 group/preview">
-                                  <img className="w-full h-full object-cover" src={getFullUrl(song.thumbnailUrl)} alt={song.title} />
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleTogglePreview(song);
-                                    }}
-                                    className={`absolute inset-0 bg-black/55 flex items-center justify-center transition-all cursor-pointer ${
-                                      previewingId === song._id ? 'opacity-100' : 'opacity-0 group-hover/preview:opacity-100'
-                                    }`}
-                                    title={previewingId === song._id ? t("Tạm dừng nghe thử") : t("Nghe thử")}
-                                  >
-                                    <span className="material-symbols-outlined text-white text-2xl">
-                                      {previewingId === song._id ? 'pause' : 'play_arrow'}
-                                    </span>
-                                  </button>
-                                </div>
-                                <div>
-                                  <p className="text-white font-bold truncate max-w-[180px]" title={song.title}>{song.title}</p>
-                                  <p className="text-on-surface-variant text-label-sm italic">{song.genre}</p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-4 px-4 text-on-surface font-bold">
-                              {song.artistId?.name || song.artist}
-                            </td>
-                            <td className="py-4 px-4">
-                              <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase ${
-                                song.moderationState === 'approved' 
-                                  ? 'bg-green-500/20 text-green-400' 
-                                  : song.moderationState === 'pending' 
-                                    ? 'bg-yellow-500/20 text-yellow-400' 
-                                    : 'bg-red-500/20 text-red-400'
-                              }`}>
-                                {song.moderationState === 'approved' 
-                                  ? t('Được duyệt') 
-                                  : song.moderationState === 'pending' 
-                                    ? t('Chờ duyệt') 
-                                    : t('Bị chặn')}
-                              </span>
-                            </td>
-                            <td className="py-4 px-4 text-on-surface font-semibold text-label-md">
-                              {(song.views || 0).toLocaleString()}
-                            </td>
-                            <td className="py-4 px-4 rounded-r-2xl text-right">
-                              <div className="flex justify-end gap-2">
-                                <button
-                                  onClick={() => setSelectedSongDetails(song)}
-                                  className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                                  title={t("Chi tiết thông tin")}
-                                >
-                                  <span className="material-symbols-outlined text-body-lg">info</span>
-                                </button>
-                                
-                                {song.moderationState === 'approved' ? (
-                                  <button 
-                                    onClick={() => handleToggleModeration(song)}
-                                    className="w-9 h-9 rounded-full flex items-center justify-center text-error hover:bg-error/15 transition-colors cursor-pointer"
-                                    title={t("Chặn bài hát")}
-                                  >
-                                    <span className="material-symbols-outlined text-body-lg">block</span>
-                                  </button>
-                                ) : (
-                                  <button 
-                                    onClick={() => handleToggleModeration(song)}
-                                    className="w-9 h-9 rounded-full flex items-center justify-center text-secondary hover:bg-secondary/15 transition-colors cursor-pointer"
-                                    title={t("Cho phép bài hát")}
-                                  >
-                                    <span className="material-symbols-outlined text-body-lg" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div className="text-center py-12 text-on-surface-variant bg-white/2 rounded-2xl">
-                      <span className="material-symbols-outlined text-5xl mb-3">music_note</span>
-                      <p className="font-body-md">{t("Không tìm thấy bài hát nào.")}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                  <div className="flex justify-between items-center mt-6 pt-6 border-t border-white/5">
-                    <span className="text-label-sm text-on-surface-variant">
-                      {t("Hiển thị trang")} {page} / {totalPages}
-                    </span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setPage(prev => Math.max(1, prev - 1))}
-                        disabled={page === 1}
-                        className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 text-white flex items-center justify-center hover:bg-white/10 active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer"
-                        title={t("Trang trước")}
-                      >
-                        <span className="material-symbols-outlined">chevron_left</span>
-                      </button>
-                      <button
-                        onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
-                        disabled={page === totalPages}
-                        className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 text-white flex items-center justify-center hover:bg-white/10 active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer"
-                        title={t("Trang sau")}
-                      >
-                        <span className="material-symbols-outlined">chevron_right</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* Song Details Modal */}
-      {selectedSongDetails && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="glass-panel w-full max-w-2xl rounded-3xl border border-white/10 p-8 shadow-2xl space-y-6 relative overflow-hidden animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div className="flex justify-between items-center pb-4 border-b border-white/5">
-              <h3 className="font-headline-md text-headline-md text-white font-bold">{t("Thông tin chi tiết bài hát")}</h3>
-              <button 
-                type="button"
-                onClick={() => setSelectedSongDetails(null)}
-                className="text-on-surface-variant hover:text-white p-1.5 rounded-full hover:bg-white/5 transition-colors cursor-pointer"
+          {/* Navigation Tabbed items */}
+          <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 overflow-x-auto gap-1">
+            {[
+              { id: 'overview', label: 'Tổng quan', icon: 'monitoring' },
+              { id: 'songs', label: 'Duyệt bài hát', icon: 'rate_review' },
+              { id: 'comments', label: 'Bình luận ẩn', icon: 'speaker_notes_off' },
+              { id: 'ads', label: 'Chiến dịch Ads', icon: 'campaign' },
+              { id: 'config', label: 'Gói cước & Cấu hình', icon: 'settings_suggest' },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2.5 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer flex-shrink-0 ${
+                  activeTab === tab.id ? 'bg-white/10 text-white shadow' : 'text-on-surface-variant hover:text-white'
+                }`}
               >
-                <span className="material-symbols-outlined">close</span>
+                <span className="material-symbols-outlined text-base">{tab.icon}</span>
+                {tab.label}
               </button>
+            ))}
+          </div>
+
+          {/* Loading segment */}
+          {loading ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-secondary-container gap-3 min-h-[30vh]">
+              <span className="material-symbols-outlined text-4xl animate-spin">sync</span>
+              <p className="text-sm font-semibold">Tải phân hệ dữ liệu...</p>
             </div>
-
-            <div className="flex flex-col md:flex-row gap-6">
-              {/* Cover Image */}
-              <div className="w-48 h-48 rounded-2xl bg-surface-container-highest overflow-hidden flex-shrink-0 mx-auto md:mx-0 border border-white/10 shadow-lg">
-                <img className="w-full h-full object-cover" src={getFullUrl(selectedSongDetails.thumbnailUrl)} alt={selectedSongDetails.title} />
-              </div>
-
-              {/* Info Details */}
-              <div className="flex-grow space-y-4">
-                <div>
-                  <h4 className="text-2xl font-bold text-white mb-1">{selectedSongDetails.title}</h4>
-                  <p className="text-primary font-bold text-body-lg">{selectedSongDetails.artistId?.name || selectedSongDetails.artist}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/2 border border-white/5 rounded-xl p-3">
-                    <p className="text-xs text-on-surface-variant font-medium uppercase tracking-wider mb-1">{t("Thể loại")}</p>
-                    <p className="text-white font-semibold">{selectedSongDetails.genre}</p>
-                  </div>
-                  <div className="bg-white/2 border border-white/5 rounded-xl p-3">
-                    <p className="text-xs text-on-surface-variant font-medium uppercase tracking-wider mb-1">{t("Trạng thái")}</p>
-                    <span className={`inline-block px-2.5 py-0.5 mt-0.5 rounded-full text-[9px] font-bold uppercase ${
-                      selectedSongDetails.moderationState === 'approved' 
-                        ? 'bg-green-500/20 text-green-400' 
-                        : selectedSongDetails.moderationState === 'pending' 
-                          ? 'bg-yellow-500/20 text-yellow-400' 
-                          : 'bg-red-500/20 text-red-400'
-                    }`}>
-                      {selectedSongDetails.moderationState === 'approved' 
-                        ? t('Được duyệt') 
-                        : selectedSongDetails.moderationState === 'pending' 
-                          ? t('Chờ duyệt') 
-                          : t('Bị chặn')}
-                    </span>
-                  </div>
-                  <div className="bg-white/2 border border-white/5 rounded-xl p-3">
-                    <p className="text-xs text-on-surface-variant font-medium uppercase tracking-wider mb-1">{t("Lượt nghe")}</p>
-                    <p className="text-white font-semibold">{(selectedSongDetails.views || 0).toLocaleString()}</p>
-                  </div>
-                  <div className="bg-white/2 border border-white/5 rounded-xl p-3">
-                    <p className="text-xs text-on-surface-variant font-medium uppercase tracking-wider mb-1">{t("Quyền truy cập")}</p>
-                    <p className="text-white font-semibold uppercase">{selectedSongDetails.visibility}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Lyrics Section */}
-            {selectedSongDetails.lyrics && (
-              <div className="space-y-2">
-                <h5 className="font-label-md text-label-md text-white font-bold uppercase tracking-wider">{t("Lời bài hát")}</h5>
-                <div className="bg-white/2 border border-white/5 rounded-2xl p-4 max-h-[160px] overflow-y-auto custom-scrollbar text-on-surface-variant text-body-md whitespace-pre-line leading-relaxed italic">
-                  {selectedSongDetails.lyrics}
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-4 pt-4 border-t border-white/5">
-              <div className="flex-grow"></div>
+          ) : (
+            <div className="flex flex-col gap-6">
               
-              {selectedSongDetails.moderationState === 'approved' ? (
-                <button
-                  onClick={() => {
-                    handleToggleModeration(selectedSongDetails);
-                    setSelectedSongDetails(null);
-                  }}
-                  className="px-6 py-3 bg-error text-on-error rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-lg shadow-error/20 flex items-center gap-1"
-                >
-                  <span className="material-symbols-outlined text-[20px]">block</span>
-                  {t("Chặn bài hát")}
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    handleToggleModeration(selectedSongDetails);
-                    setSelectedSongDetails(null);
-                  }}
-                  className="px-6 py-3 bg-secondary text-on-secondary rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-lg shadow-secondary/20 flex items-center gap-1"
-                >
-                  <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                  {t("Cho phép bài hát")}
-                </button>
+              {/* TAB 1: Overview */}
+              {activeTab === 'overview' && stats && (
+                <div className="flex flex-col gap-8">
+                  {/* Stats card */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="glass-panel p-5 rounded-2xl border border-white/5">
+                      <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Người dùng</p>
+                      <p className="text-2xl font-extrabold text-white mt-1.5">{stats.metrics?.totalUsers.toLocaleString()}</p>
+                    </div>
+                    <div className="glass-panel p-5 rounded-2xl border border-white/5">
+                      <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Hội viên Premium</p>
+                      <p className="text-2xl font-extrabold text-tertiary mt-1.5">{stats.metrics?.premiumUsers.toLocaleString()}</p>
+                    </div>
+                    <div className="glass-panel p-5 rounded-2xl border border-white/5">
+                      <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Lượt Stream nhạc</p>
+                      <p className="text-2xl font-extrabold text-white mt-1.5">{stats.metrics?.totalStreams.toLocaleString()}</p>
+                    </div>
+                    <div className="glass-panel p-5 rounded-2xl border border-white/5">
+                      <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Doanh thu Premium</p>
+                      <p className="text-2xl font-extrabold text-white mt-1.5">{stats.metrics?.monthlyRevenue.toLocaleString()} VND</p>
+                    </div>
+                  </div>
+
+                  {/* Chart representation */}
+                  <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-6">
+                    <div>
+                      <h3 className="text-xs font-bold text-white uppercase tracking-wider">Doanh thu & Số lượt Stream</h3>
+                      <p className="text-[10px] text-on-surface-variant mt-0.5">Biểu đồ thể hiện sự gia tăng tương tác trong tuần qua.</p>
+                    </div>
+                    <div className="h-44 flex items-end justify-between gap-4 pt-4 border-b border-white/5">
+                      {stats.chartData?.map((item, idx) => (
+                        <div key={idx} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer">
+                          <div 
+                            className="w-full rounded-t bg-secondary-container/50 group-hover:bg-secondary-container transition-all"
+                            style={{ height: `${item.streams / 3}px` }}
+                          />
+                          <span className="text-[9px] font-bold text-on-surface-variant">{item.date}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               )}
 
-              <button
-                type="button"
-                onClick={() => setSelectedSongDetails(null)}
-                className="px-6 py-3 bg-white/5 text-white rounded-xl font-bold hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
-              >
-                {t("Đóng")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-};
+              {/* TAB 2: Song Moderation Queue */}
+              {activeTab === 'songs' && (
+                <div className="flex flex-col gap-4">
+                  <h3 className="text-sm font-bold text-white">Yêu cầu phê duyệt bài hát ({pendingSongs.length})</h3>
+                  {pendingSongs.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-4">
+                      {pendingSongs.map(song => (
+                        <div key={song._id} className="glass-panel p-5 rounded-2xl border border-white/5 flex flex-col md:flex-row justify-between md:items-center gap-4">
+                          <div className="flex items-center gap-4">
+                            <img src={song.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=80'} className="w-12 h-12 rounded-xl object-cover" alt="" />
+                            <div>
+                              <p className="text-sm font-bold text-white">{song.title}</p>
+                              <p className="text-xs text-on-surface-variant mt-0.5">Nghệ sĩ: {song.artist} ({song.artistId?.email})</p>
+                              <p className="text-[10px] uppercase tracking-wider font-semibold text-white/55 mt-1 bg-white/5 px-2 py-0.5 rounded w-max">{song.genre}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <audio src={song.audioUrl} controls className="h-9 w-48 border border-white/5 rounded-lg" />
+                            <button 
+                              onClick={() => handleApproveSong(song._id)}
+                              className="px-4 py-2 bg-status-success/15 hover:bg-status-success/25 transition text-status-success font-bold text-xs rounded-xl cursor-pointer"
+                            >
+                              Phê duyệt
+                            </button>
+                            <button 
+                              onClick={() => handleBanSong(song._id)}
+                              className="px-4 py-2 bg-status-error/15 hover:bg-status-error/25 transition text-status-error font-bold text-xs rounded-xl cursor-pointer"
+                            >
+                              Gỡ bỏ
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="glass-panel p-8 text-center rounded-2xl border border-white/5">
+                      <p className="text-xs text-on-surface-variant">Không có yêu cầu duyệt bài hát nào ở hàng đợi.</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
-export default AdminDashboard;
+              {/* TAB 3: Comments Hidden Queue */}
+              {activeTab === 'comments' && (
+                <div className="flex flex-col gap-4">
+                  <h3 className="text-sm font-bold text-white">Bình luận bị ẩn do vi phạm từ tục tĩu ({hiddenComments.length})</h3>
+                  {hiddenComments.length > 0 ? (
+                    <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-white/5 border-b border-white/5 text-on-surface-variant font-bold">
+                            <th className="p-4">Người dùng</th>
+                            <th className="p-4">Bài hát</th>
+                            <th className="p-4">Nội dung bình luận</th>
+                            <th className="p-4 text-center">Hành động</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          {hiddenComments.map(comment => (
+                            <tr key={comment._id} className="hover:bg-white/[0.01]">
+                              <td className="p-4 font-bold text-white">{comment.userId?.name}</td>
+                              <td className="p-4 text-on-surface-variant">{comment.songId?.title}</td>
+                              <td className="p-4 text-status-error italic font-medium">"{comment.content}"</td>
+                              <td className="p-4 text-center flex items-center justify-center gap-2">
+                                <button 
+                                  onClick={() => handleApproveComment(comment._id)}
+                                  className="px-3 py-1.5 bg-status-success/15 hover:bg-status-success/25 transition text-status-success rounded-lg font-bold"
+                                >
+                                  Hiện
+                                </button>
+                                <button 
+                                  onClick={() => handleRejectComment(comment._id)}
+                                  className="px-3 py-1.5 bg-status-error/15 hover:bg-status-error/25 transition text-status-error rounded-lg font-bold"
+                                >
+                                  Xóa bỏ
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="glass-panel p-8 text-center rounded-2xl border border-white/5">
+                      <p className="text-xs text-on-surface-variant">Không phát hiện bình luận vi phạm nào.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 4: Ads Campaigns */}
+              {activeTab === 'ads' && (
+                <div className="flex flex-col gap-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-sm font-bold text-white">Chiến dịch Quảng cáo hiển thị / Audio</h3>
+                    <button 
+                      onClick={() => setShowAdModal(true)}
+                      className="electric-btn text-white text-xs font-bold px-4 py-2 rounded-xl hover:scale-102 transition cursor-pointer shadow-lg"
+                    >
+                      Tạo Quảng cáo mới
+                    </button>
+                  </div>
+
+                  {ads.length > 0 ? (
+                    <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-white/5 border-b border-white/5 text-on-surface-variant font-bold">
+                            <th className="p-4">Tên Chiến dịch</th>
+                            <th className="p-4">Mẫu</th>
+                            <th className="p-4">Doanh nghiệp</th>
+                            <th className="p-4 text-center">Hiển thị</th>
+                            <th className="p-4 text-center">Click</th>
+                            <th className="p-4 text-center">Ngân sách</th>
+                            <th className="p-4 text-center">Trạng thái</th>
+                            <th className="p-4 text-center">Hành động</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          {ads.map(ad => (
+                            <tr key={ad._id} className="hover:bg-white/[0.01]">
+                              <td className="p-4 font-bold text-white">{ad.title}</td>
+                              <td className="p-4 text-on-surface-variant capitalize">{ad.type}</td>
+                              <td className="p-4 text-on-surface-variant">{ad.clientName}</td>
+                              <td className="p-4 text-center font-mono">{ad.impressions || 0}</td>
+                              <td className="p-4 text-center font-mono">{ad.clicks || 0}</td>
+                              <td className="p-4 text-center font-mono text-tertiary">
+                                {ad.budgetSpent?.toLocaleString()} / {ad.budgetLimit?.toLocaleString()} USD
+                              </td>
+                              <td className="p-4 text-center">
+                                <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${
+                                  ad.status === 'active' ? 'bg-status-success/15 text-status-success' : 'bg-white/10 text-on-surface-variant'
+                                }`}>
+                                  {ad.status}
+                                </span>
+                              </td>
+                              <td className="p-4 text-center flex items-center justify-center gap-2">
+                                <button 
+                                  onClick={() => handleToggleAdStatus(ad)}
+                                  className="text-[10px] font-bold px-2 py-1 bg-white/5 hover:bg-white/10 rounded border border-white/5 transition"
+                                >
+                                  {ad.status === 'active' ? 'Dừng' : 'Chạy'}
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteAd(ad._id)}
+                                  className="text-[10px] font-bold px-2 py-1 bg-status-error/15 hover:bg-status-error/25 text-status-error rounded transition"
+                                >
+                                  Xóa
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="glass-panel p-8 text-center rounded-2xl border border-white/5">
+                      <p className="text-xs text-on-surface-variant">Chưa thiết lập chiến dịch quảng cáo nào.</p>
+                    </div>
+                  )}
+
+                  {/* Create Ad modal dialog overlay */}
+                  {showAdModal && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
+                      <form onSubmit={handleCreateAd} className="glass-panel w-full max-w-md p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4">
+                        <h2 className="text-base font-bold text-white">Tạo chiến dịch quảng cáo mới</h2>
+                        
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] uppercase font-bold text-on-surface-variant">Tên chiến dịch</label>
+                          <input type="text" required placeholder="Campaign Name" value={adTitle} onChange={e => setAdTitle(e.target.value)} className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] uppercase font-bold text-on-surface-variant">Loại Quảng cáo</label>
+                            <select value={adType} onChange={e => setAdType(e.target.value)} className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white [&>option]:bg-surface">
+                              <option value="audio">Audio Ad (Âm thanh)</option>
+                              <option value="banner">Banner Ad (Hiển thị)</option>
+                            </select>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] uppercase font-bold text-on-surface-variant">Giới hạn ngân sách (USD)</label>
+                            <input type="number" min="1" value={adBudget} onChange={e => setAdBudget(e.target.value)} className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" />
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] uppercase font-bold text-on-surface-variant">Doanh nghiệp đối tác</label>
+                          <input type="text" required placeholder="Client name" value={adClient} onChange={e => setAdClient(e.target.value)} className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" />
+                        </div>
+
+                        {adType === 'audio' ? (
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] uppercase font-bold text-on-surface-variant">Đường dẫn tệp Audio (URL)</label>
+                            <input type="text" placeholder="https://example.com/ad.mp3" value={adAudioUrl} onChange={e => setAdAudioUrl(e.target.value)} className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" />
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] uppercase font-bold text-on-surface-variant">Đường dẫn ảnh Banner (URL)</label>
+                            <input type="text" placeholder="https://example.com/ad.png" value={adImageUrl} onChange={e => setAdImageUrl(e.target.value)} className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" />
+                          </div>
+                        )}
+
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] uppercase font-bold text-on-surface-variant">URL Đích (Khi Click)</label>
+                          <input type="text" placeholder="https://target-business.com" value={adTargetUrl} onChange={e => setAdTargetUrl(e.target.value)} className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" />
+                        </div>
+
+                        <div className="flex gap-3 justify-end mt-2">
+                          <button type="button" onClick={() => setShowAdModal(false)} className="px-4 py-2 rounded-xl text-xs bg-white/5 hover:bg-white/10 transition text-white">Hủy</button>
+                          <button type="submit" className="px-4 py-2 rounded-xl text-xs electric-btn text-white font-bold">Kích hoạt</button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
+
+                </div>
+              )}
+
+              {/* TAB 5: Config & Service packages */}
+              {activeTab === 'config' && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                  
+                  {/* Pricing Plans Config */}
+                  <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-4">
+                    <h3 className="text-sm font-bold text-white">Quản lý biểu phí Gói dịch vụ</h3>
+                    <p className="text-[10px] text-on-surface-variant">Thay đổi trực tiếp giá trị thanh toán của từng phân cấp tài khoản.</p>
+                    
+                    <div className="flex flex-col gap-4 mt-2">
+                      {plans.map(plan => (
+                        <div key={plan._id} className="flex items-center justify-between p-3.5 bg-white/5 border border-white/5 rounded-2xl">
+                          <div>
+                            <p className="text-xs font-bold text-white capitalize">{plan.name} Plan</p>
+                            <p className="text-[9px] text-on-surface-variant mt-0.5">{plan.planId}</p>
+                          </div>
+                          
+                          <div className="flex items-center gap-3">
+                            <input 
+                              type="number" 
+                              defaultValue={plan.price}
+                              onBlur={(e) => handleUpdatePrice(plan.planId, plan._id, e.target.value)}
+                              className="w-24 h-9 px-2 text-right bg-background border border-white/5 rounded-lg text-xs font-mono font-bold"
+                            />
+                            <span className="text-[10px] text-on-surface-variant">VND</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Payment Sandbox API configurations */}
+                  <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-6">
+                    <div>
+                      <h3 className="text-sm font-bold text-white">Cấu hình Cổng thanh toán Sandbox</h3>
+                      <p className="text-[10px] text-on-surface-variant">Thiết lập tham số chữ ký số Merchant & Secret của đối tác.</p>
+                    </div>
+
+                    {/* Momo config */}
+                    <div className="flex flex-col gap-3 p-4 bg-white/5 border border-white/5 rounded-2xl">
+                      <h4 className="text-xs font-bold text-[#A50064] flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-sm">qr_code_scanner</span>
+                        Momo Merchant Credentials
+                      </h4>
+                      <div className="grid grid-cols-2 gap-3 mt-1">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-on-surface-variant">Merchant ID</label>
+                          <input type="text" value={momoMerchant} onChange={e => setMomoMerchant(e.target.value)} className="h-9 px-3 bg-background border border-white/5 rounded-lg text-[10px] text-white" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-on-surface-variant">Secret Key</label>
+                          <input type="password" value={momoSecret} onChange={e => setMomoSecret(e.target.value)} className="h-9 px-3 bg-background border border-white/5 rounded-lg text-[10px] text-white" />
+                        </div>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => handleSavePaymentConfig('momo', momoSecret, momoMerchant)}
+                        className="text-[9px] font-bold px-3 py-1.5 bg-[#A50064]/20 text-[#A50064] rounded-lg mt-2 w-max hover:bg-[#A50064]/30 transition cursor-pointer"
+                      >
+                        Cập nhật Momo Config
+                      </button>
+                    </div>
+
+                    {/* VNPay config */}
+                    <div className="flex flex-col gap-3 p-4 bg-white/5 border border-white/5 rounded-2xl">
+                      <h4 className="text-xs font-bold text-[#005BAA] flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-sm">account_balance_wallet</span>
+                        VNPay Merchant Credentials
+                      </h4>
+                      <div className="grid grid-cols-2 gap-3 mt-1">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-on-surface-variant">Merchant ID</label>
+                          <input type="text" value={vnpayMerchant} onChange={e => setVnpayMerchant(e.target.value)} className="h-9 px-3 bg-background border border-white/5 rounded-lg text-[10px] text-white" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-on-surface-variant">Secret Key</label>
+                          <input type="password" value={vnpaySecret} onChange={e => setVnpaySecret(e.target.value)} className="h-9 px-3 bg-background border border-white/5 rounded-lg text-[10px] text-white" />
+                        </div>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => handleSavePaymentConfig('vnpay', vnpaySecret, vnpayMerchant)}
+                        className="text-[9px] font-bold px-3 py-1.5 bg-[#005BAA]/20 text-[#005BAA] rounded-lg mt-2 w-max hover:bg-[#005BAA]/30 transition cursor-pointer"
+                      >
+                        Cập nhật VNPay Config
+                      </button>
+                    </div>
+
+                  </div>
+
+                </div>
+              )}
+
+            </div>
+          )}
+
+        </main>
+      </div>
+      <MusicPlayer />
+    </div>
+  );
+}

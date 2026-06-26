@@ -1,270 +1,207 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { api } from '../utils/api.js';
-import { usePlayer } from '../context/PlayerContext.jsx';
-import { useAuth } from '../context/AuthContext.jsx';
-import { useLanguage } from '../context/LanguageContext.jsx';
+import { useNavigate } from 'react-router';
 import Sidebar from '../components/Sidebar.jsx';
 import Header from '../components/Header.jsx';
 import MusicPlayer from '../components/MusicPlayer.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
+import { usePlayer } from '../context/PlayerContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
+import { api } from '../utils/api.js';
 
-const Home = () => {
-  const navigate = useNavigate();
-  const { play } = usePlayer();
-  const { user } = useAuth();
+export default function Home() {
+  const { user, updateProfileState } = useAuth();
+  const { playSong } = usePlayer();
   const { t } = useLanguage();
-  
+  const navigate = useNavigate();
+
+  const [categories, setCategories] = useState([]);
   const [songs, setSongs] = useState([]);
-  const [charts, setCharts] = useState([]);
+  const [artists, setArtists] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const loadHomeData = async () => {
+    try {
+      const [catsData, songsData, artistsData] = await Promise.all([
+        api.get('/categories'),
+        api.get('/songs?isApproved=true'),
+        api.get('/users/artists')
+      ]);
+      setCategories(catsData);
+      setSongs(songsData);
+      setArtists(artistsData.slice(0, 5)); // show top 5 suggestions
+    } catch (err) {
+      console.error('Failed to load dashboard data:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchHomeData = async () => {
-      try {
-        const songsData = await api.get('/songs');
-        const chartsData = await api.get('/songs/charts');
-        setSongs(songsData.songs || []);
-        setCharts(chartsData.songs || []);
-      } catch (err) {
-        console.error('Failed to load home page data:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchHomeData();
+    loadHomeData();
   }, []);
 
-  const handlePlaySong = (song, list) => {
-    play(song, list);
+  const handleFollowToggle = async (artist) => {
+    const isFollowing = user.following?.includes(artist._id);
+    try {
+      if (isFollowing) {
+        await api.post(`/users/${artist._id}/unfollow`);
+        const updatedFollowing = user.following.filter(id => id !== artist._id);
+        updateProfileState({ following: updatedFollowing });
+        setArtists(prev => prev.map(a => a._id === artist._id ? { ...a, followersCount: a.followersCount - 1 } : a));
+      } else {
+        await api.post(`/users/${artist._id}/follow`);
+        const updatedFollowing = [...(user.following || []), artist._id];
+        updateProfileState({ following: updatedFollowing });
+        setArtists(prev => prev.map(a => a._id === artist._id ? { ...a, followersCount: a.followersCount + 1 } : a));
+      }
+    } catch (err) {
+      console.log('Follow action failed:', err.message);
+    }
   };
 
-  const getFullUrl = (url) => {
-    if (!url) return '';
-    return url.startsWith('http') ? url : `http://localhost:8080${url}`;
-  };
+  // Pre-defined colorful gradients for bento categories
+  const bentoGradients = [
+    'from-[#FF2D55] to-[#FF9500]',
+    'from-[#2E5BFF] to-[#8A3FFC]',
+    'from-[#53e076] to-[#00913d]',
+    'from-[#FFB800] to-[#FF4444]',
+    'from-[#00C6FF] to-[#0072FF]',
+    'from-[#f857a6] to-[#ff5858]'
+  ];
 
   return (
-    <>
+    <div className="min-h-screen bg-background text-white flex">
+      {/* Sidebar Nav */}
       <Sidebar />
-      
-      <main className="md:ml-sidebar-width pb-[120px] min-h-screen bg-background">
-        <Header placeholder={t("Tìm kiếm bài hát, nghệ sĩ...")} />
 
-        {loading ? (
-          <div className="flex items-center justify-center h-[calc(100vh-64px)] text-primary">
-            <span className="material-symbols-outlined text-4xl animate-spin mr-2">sync</span>
-            <span>{t("Đang tải giai điệu...")}</span>
-          </div>
-        ) : (
-          <>
-            {/* Banner Section */}
-            <section className="px-gutter-desktop mt-8">
-              <div 
-                onClick={() => songs.length > 0 && handlePlaySong(songs[0], songs)}
-                className="relative h-[380px] rounded-3xl overflow-hidden group cursor-pointer shadow-2xl"
-              >
-                <img 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqLbsgkRut0bnI7FP6rdekR522YrvrZ2s01Ke-M9mNvaPZrVmbULpghio_OESq9zWrEp7PAxJEiMRgBx9F1J8cXHzHPsfYREG6ijnEn8gZ5H6XH83OOSVOWXaeO8J-GN6t26N3GBf65x_5Y9_WBFqexjCaCp0AUW-A659htQ8mh-_cHpl0iZKClpoGypDnuQtpwgvXoOdSOQV9Oa17ntfqpe-JfFlF4Si1yM4_c3s-a-lL4WV62kU8wnKgAKJB7SjDL6sMwz1E_LA" 
-                  alt="Release banner"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent"></div>
-                <div className="absolute bottom-12 left-12 max-w-2xl z-10">
-                  <span className="inline-block px-4 py-1 rounded-full bg-primary/20 text-primary border border-primary/30 backdrop-blur-md font-label-sm text-label-sm mb-4">
-                    {t("MỚI PHÁT HÀNH")}
-                  </span>
-                  <h2 className="font-headline-xl text-headline-xl text-white mb-4">{t("Âm Thanh Của Tương Lai")}</h2>
-                  <p className="font-body-lg text-body-lg text-on-surface-variant mb-8 line-clamp-2">
-                    {t('Khám phá album mới nhất từ nhóm nhạc indie-electronic "Ethereal Echoes". Một hành trình âm nhạc xuyên không gian và thời gian.')}
-                  </p>
-                  <div className="flex gap-4">
-                    <button className="px-8 py-3 rounded-full bg-primary text-on-primary font-label-md text-label-md flex items-center gap-2 hover:scale-105 transition-transform cursor-pointer font-bold">
-                      <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
-                      {t("Nghe Ngay")}
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); navigate('/library-playlists'); }}
-                      className="px-8 py-3 rounded-full glass-panel text-white font-label-md text-label-md hover:bg-white/10 transition-all cursor-pointer"
-                    >
-                      {t("Xem Thư Viện")}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </section>
+      {/* Main Panel */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <Header />
 
-            {/* Suggestions list */}
-            <section className="px-gutter-desktop mt-margin-page">
-              <div className="flex justify-between items-end mb-6">
-                <h3 className="font-headline-lg text-headline-lg text-white font-bold">{t("Gợi Ý Cho Bạn")}</h3>
-                <span className="text-primary font-label-md text-label-md hover:underline cursor-default">{t("Phù hợp sở thích")}</span>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                {songs.slice(0, 5).map(song => (
-                  <div 
-                    key={song._id}
-                    onClick={() => handlePlaySong(song, songs)}
-                    className="group cursor-pointer bg-white/5 p-4 rounded-2xl hover:bg-white/10 transition-all border border-white/5"
-                  >
-                    <div className="aspect-square rounded-xl overflow-hidden relative mb-4 shadow-lg">
-                      <img 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                        src={getFullUrl(song.thumbnailUrl)} 
-                        alt={song.title}
-                      />
-                      <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-on-primary scale-90 group-hover:scale-100 transition-transform">
-                          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
-                        </div>
-                      </div>
-                    </div>
-                    <h4 className="font-label-md text-label-md text-white truncate font-bold">{song.title}</h4>
-                    <p 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (song.artistId) navigate(`/artist-detail?id=${song.artistId}`);
-                      }}
-                      className="font-label-sm text-label-sm text-on-surface-variant truncate hover:text-primary transition-colors cursor-pointer"
-                    >
-                      {song.artist}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Charts & Releases Split */}
-            <section className="px-gutter-desktop mt-margin-page grid grid-cols-1 lg:grid-cols-12 gap-10">
-              {/* Top Charts */}
-              <div className="lg:col-span-6">
-                <div className="flex justify-between items-end mb-6">
-                  <h3 className="font-headline-lg text-headline-lg text-white font-bold">{t("Bảng Xếp Hạng")}</h3>
-                  <span className="text-primary font-label-md text-label-md cursor-default">{t("Top Lượt Nghe")}</span>
-                </div>
-                <div className="space-y-2 bg-white/5 p-4 rounded-3xl border border-white/5">
-                  {charts.map((song, i) => (
+        <main className="md:ml-sidebar-width flex-1 p-8 flex flex-col gap-10 overflow-y-auto">
+          {loading ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-secondary-container gap-3 min-h-[50vh]">
+              <span className="material-symbols-outlined text-4xl animate-spin">sync</span>
+              <p className="text-sm font-semibold">Tải trang chủ...</p>
+            </div>
+          ) : (
+            <>
+              {/* Category Bento Grid */}
+              <section className="flex flex-col gap-4">
+                <h2 className="font-headline-md text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                  <span className="material-symbols-outlined text-secondary-container">grid_view</span>
+                  Khám phá Thể loại
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  {categories.map((cat, idx) => (
                     <div 
-                      key={song._id}
-                      onClick={() => handlePlaySong(song, charts)}
-                      className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-all group cursor-pointer"
+                      key={cat._id}
+                      onClick={() => navigate(`/search-results?genre=${encodeURIComponent(cat.name)}`)}
+                      className={`h-28 rounded-2xl bg-gradient-to-br ${bentoGradients[idx % bentoGradients.length]} p-5 flex flex-col justify-between cursor-pointer hover:scale-103 transition-transform duration-300 relative overflow-hidden group shadow-lg`}
                     >
-                      <span className="w-8 font-headline-md text-headline-md text-on-surface-variant opacity-40 text-center font-bold">
-                        {String(i + 1).padStart(2, '0')}
+                      {/* Ambient background symbol */}
+                      <span className="material-symbols-outlined absolute -bottom-4 -right-4 text-7xl opacity-15 rotate-12 group-hover:scale-110 transition duration-300">
+                        music_note
                       </span>
-                      <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
-                        <img className="w-full h-full object-cover" src={getFullUrl(song.thumbnailUrl)} alt={song.title} />
-                      </div>
-                      <div className="flex-grow min-w-0">
-                        <h5 className="font-label-md text-label-md text-white truncate font-bold">{song.title}</h5>
-                        <p 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (song.artistId) navigate(`/artist-detail?id=${song.artistId}`);
-                          }}
-                          className="font-label-sm text-label-sm text-on-surface-variant truncate hover:text-primary transition-colors cursor-pointer"
-                        >
-                          {song.artist}
-                        </p>
-                      </div>
-                      <span className="text-on-surface-variant font-label-sm text-label-sm hidden sm:block">
-                        {song.views.toLocaleString()} {t("lượt nghe")}
-                      </span>
-                      <button className="text-primary hover:text-white transition-colors">
-                        <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
-                      </button>
+                      <span className="font-headline-md font-bold text-sm text-white uppercase tracking-wider">{cat.name}</span>
+                      <span className="text-[10px] text-white/70 line-clamp-1">{cat.description}</span>
                     </div>
                   ))}
                 </div>
-              </div>
+              </section>
 
-              {/* Newly Released list */}
-              <div className="lg:col-span-6">
-                <div className="flex justify-between items-end mb-6">
-                  <h3 className="font-headline-lg text-headline-lg text-white font-bold">{t("Mới Cập Nhật")}</h3>
-                  <span className="text-primary font-label-md text-label-md cursor-default">{t("Mới Nhất")}</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {songs.slice(0, 6).map(song => (
-                    <div 
-                      key={song._id}
-                      onClick={() => handlePlaySong(song, songs)}
-                      className="glass-panel p-4 rounded-2xl flex gap-4 items-center group cursor-pointer hover:bg-white/10 transition-all"
-                    >
-                      <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 relative">
-                        <img className="w-full h-full object-cover" src={getFullUrl(song.thumbnailUrl)} alt={song.title} />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-                          <span className="material-symbols-outlined text-white" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+              {/* Grid split for Recommended Songs & Featured Artists */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                {/* Recommended Songs (Left 2 cols) */}
+                <div className="lg:col-span-2 flex flex-col gap-4">
+                  <h2 className="font-headline-md text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                    <span className="material-symbols-outlined text-secondary-container">music_note</span>
+                    Bài hát đề xuất
+                  </h2>
+                  <div className="glass-panel p-4 rounded-2xl flex flex-col divide-y divide-white/5">
+                    {songs.slice(0, 6).map((song, idx) => (
+                      <div 
+                        key={song._id}
+                        onClick={() => playSong(song, songs, idx)}
+                        className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-4 min-w-0">
+                          <span className="text-sm font-semibold text-on-surface-variant min-w-[20px]">{idx + 1}</span>
+                          <img 
+                            src={song.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100'} 
+                            alt={song.title} 
+                            className="w-12 h-12 rounded-lg object-cover" 
+                          />
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-white group-hover:text-secondary-container transition truncate">{song.title}</p>
+                            <p className="text-xs text-on-surface-variant truncate mt-0.5">{song.artist}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-4">
+                          <span className="text-xs text-on-surface-variant font-mono">{Math.floor(song.duration / 60)}:{(song.duration % 60) < 10 ? '0' : ''}{song.duration % 60}</span>
+                          <button className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-white/5 rounded-lg transition text-white">
+                            <span className="material-symbols-outlined filled text-xl text-secondary-container">play_arrow</span>
+                          </button>
                         </div>
                       </div>
-                      <div className="overflow-hidden min-w-0">
-                        <h5 className="font-label-md text-label-md text-white truncate font-bold">{song.title}</h5>
-                        <p 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (song.artistId) navigate(`/artist-detail?id=${song.artistId}`);
-                          }}
-                          className="font-label-sm text-label-sm text-on-surface-variant truncate hover:text-primary transition-colors cursor-pointer"
-                        >
-                          {song.artist}
-                        </p>
-                        <span className="inline-block text-[10px] text-secondary mt-1 bg-secondary/15 px-2 py-0.5 rounded-full font-bold">
-                          {song.genre}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            {/* Listener Stats banner */}
-            <section className="px-gutter-desktop mt-margin-page mb-12">
-              <div className="glass-panel rounded-3xl p-8 overflow-hidden relative">
-                <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
-                  <div className="max-w-md">
-                    <h3 className="font-headline-lg text-headline-lg text-white mb-2 font-bold">{t("Chào mừng trở lại,")} {user?.name}!</h3>
-                    <p className="font-body-md text-body-md text-on-surface-variant">
-                      {t("Bạn đã đăng nhập hệ thống với vai trò")} <span className="text-primary font-bold uppercase">{user?.role}</span>. {t("Khám phá hàng ngàn giai điệu và quản lý trải nghiệm cá nhân của mình ngay hôm nay.")}
-                    </p>
-                    <button 
-                      onClick={() => navigate('/library-playlists')}
-                      className="mt-6 px-6 py-2 rounded-full border border-primary text-primary font-label-md text-label-md hover:bg-primary/10 transition-all cursor-pointer"
-                    >
-                      {t("Xem danh sách phát của tôi")}
-                    </button>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className="w-12 bg-primary/20 h-32 rounded-t-lg relative overflow-hidden">
-                        <div className="absolute bottom-0 left-0 w-full bg-primary h-24"></div>
-                      </div>
-                      <span className="font-label-sm text-label-sm mt-2 text-white">Pop</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <div className="w-12 bg-secondary/20 h-32 rounded-t-lg relative overflow-hidden">
-                        <div className="absolute bottom-0 left-0 w-full bg-secondary h-16"></div>
-                      </div>
-                      <span className="font-label-sm text-label-sm mt-2 text-white">Lo-fi</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <div className="w-12 bg-tertiary-container/20 h-32 rounded-t-lg relative overflow-hidden">
-                        <div className="absolute bottom-0 left-0 w-full bg-tertiary-container h-28"></div>
-                      </div>
-                      <span className="font-label-sm text-label-sm mt-2 text-white">Indie</span>
-                    </div>
+                    ))}
                   </div>
                 </div>
-                <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/20 blur-[100px] rounded-full"></div>
-                <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary/10 blur-[100px] rounded-full"></div>
-              </div>
-            </section>
-          </>
-        )}
-      </main>
 
+                {/* Artists suggestions (Right 1 col) */}
+                <div className="flex flex-col gap-4">
+                  <h2 className="font-headline-md text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                    <span className="material-symbols-outlined text-secondary-container">stars</span>
+                    Gợi ý Nghệ sĩ
+                  </h2>
+                  <div className="glass-panel p-4 rounded-2xl flex flex-col gap-3">
+                    {artists.map(art => {
+                      const isFollowing = user.following?.includes(art._id);
+                      return (
+                        <div key={art._id} className="flex items-center justify-between p-2 rounded-xl hover:bg-white/[0.02] transition">
+                          <div 
+                            onClick={() => navigate(`/artist-detail?id=${art._id}`)}
+                            className="flex items-center gap-3 cursor-pointer group min-w-0"
+                          >
+                            <div className="w-10 h-10 rounded-full bg-secondary-container/20 flex items-center justify-center font-bold text-white overflow-hidden flex-shrink-0">
+                              {art.avatarUrl ? (
+                                <img src={art.avatarUrl} alt={art.name} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                              ) : (
+                                art.name.charAt(0).toUpperCase()
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-white group-hover:underline truncate">{art.name}</p>
+                              <p className="text-[10px] text-on-surface-variant mt-0.5 truncate">{art.followersCount || 0} người theo dõi</p>
+                            </div>
+                          </div>
+
+                          <button 
+                            onClick={() => handleFollowToggle(art)}
+                            className={`text-[10px] font-bold px-3 py-1.5 rounded-full transition cursor-pointer flex-shrink-0 ${
+                              isFollowing 
+                                ? 'bg-white/10 text-white hover:bg-white/15' 
+                                : 'electric-btn text-white hover:scale-102'
+                            }`}
+                          >
+                            {isFollowing ? 'Following' : 'Follow'}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+              </div>
+            </>
+          )}
+        </main>
+      </div>
+
+      {/* Persistent Audio Bottom Player */}
       <MusicPlayer />
-    </>
+    </div>
   );
-};
-
-export default Home;
+}

@@ -1,291 +1,182 @@
 import React, { useEffect, useState } from 'react';
-import { api } from '../utils/api.js';
-import { useAuth } from '../context/AuthContext.jsx';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useNavigate } from 'react-router';
 import Sidebar from '../components/Sidebar.jsx';
 import Header from '../components/Header.jsx';
+import MusicPlayer from '../components/MusicPlayer.jsx';
+import { api } from '../utils/api.js';
 
-const SubscriptionPlans = () => {
+export default function SubscriptionPlans() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { user } = useAuth();
+
   const [plans, setPlans] = useState([]);
-  const [currentSubscription, setCurrentSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [processingPlan, setProcessingPlan] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
+  const [selectedGateway, setSelectedGateway] = useState('momo'); // 'momo', 'vnpay', 'stripe'
 
-  // Fetch subscription data
-  const fetchSubscriptionData = async () => {
+  const loadPlans = async () => {
     try {
-      setError(null);
-      const plansData = await api.get('/payments/plans');
-      setPlans(plansData.plans || []);
-
-      if (user) {
-        const subData = await api.get('/payments/subscription');
-        setCurrentSubscription(subData.subscription);
-      }
+      const data = await api.get('/admin/plans');
+      setPlans(data);
     } catch (err) {
-      console.error('Failed to load subscription data:', err);
-      setError('Failed to load subscription plans. Please try again later.');
+      console.log('Failed to fetch pricing plans:', err.message);
+      // Fallback mockup matching seed
+      setPlans([
+        {
+          planId: 'free',
+          name: 'Free',
+          price: 0,
+          description: 'Trải nghiệm nghe nhạc trực tuyến miễn phí',
+          features: ['Nghe nhạc cơ bản', 'Có chèn Audio Ads quảng cáo', 'Chất lượng tiêu chuẩn 128kbps', 'Tải DRM bị khóa']
+        },
+        {
+          planId: 'premium',
+          name: 'Premium',
+          price: 59000, // 59,000 VND
+          description: 'Mở khóa âm nhạc chất lượng cao đỉnh cao',
+          features: ['Không quảng cáo (Ad-free)', 'Tải nhạc bản quyền DRM Offline', 'Chất lượng cao 320kbps', 'Âm thanh không nén lossless']
+        }
+      ]);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    const loadData = async () => {
-      await fetchSubscriptionData();
-      setLoading(false);
-    };
-    loadData();
-  }, [user]);
-
-  // Check if returning from successful payment
-  useEffect(() => {
-    if (searchParams.get('payment') === 'success') {
-      setSuccessMessage('✅ Payment successful! Your subscription has been activated.');
-      // Refresh subscription data
-      fetchSubscriptionData();
-      // Clear the query parameter
-      window.history.replaceState({}, document.title, window.location.pathname);
-      // Clear message after 5 seconds
-      const timer = setTimeout(() => setSuccessMessage(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [searchParams]);
+    loadPlans();
+  }, []);
 
   const handleSubscribe = async (plan) => {
-    if (!user) {
-      navigate('/auth');
+    if (plan.price === 0 || plan.planId === 'free') {
+      alert('Tài khoản của bạn đã ở gói Miễn phí mặc định.');
       return;
     }
 
-    setProcessingPlan(plan.planId);
-    setError(null);
-    
     try {
-      console.log('🔄 Subscribing to plan:', plan.planId);
-      
-      // Create subscription
-      const response = await api.post('/payments/subscription', {
-        planId: plan.planId
+      const res = await api.post('/payments/create', {
+        planId: plan.planId,
+        gateway: selectedGateway
       });
 
-      console.log('✅ Subscription response:', response);
-
-      // Always update current subscription after successful subscribe
-      if (response.subscription) {
-        setCurrentSubscription(response.subscription);
-      }
-
-      // For free plan: subscription created successfully
-      if (plan.planId === 'free') {
-        setSuccessMessage(`✅ Successfully subscribed to ${plan.name} plan!`);
-        await fetchSubscriptionData();
-        setTimeout(() => setSuccessMessage(null), 5000);
-      } 
-      // For paid plans: always go to payment page (with or without clientSecret)
-      else {
-        // Store subscription data in session
-        sessionStorage.setItem('pendingSubscription', JSON.stringify({
-          subscriptionId: response.subscription._id,
-          clientSecret: response.clientSecret || null, // null for demo mode
-          planId: plan.planId,
-          planName: plan.name,
-          amount: plan.price
-        }));
-
-        console.log('🔀 Navigating to payment confirm page');
-        navigate('/payment-confirm');
+      if (res.payment_url) {
+        // Redirect to external gateway or internal sandbox confirmation page
+        if (res.payment_url.startsWith('http')) {
+          window.location.href = res.payment_url;
+        } else {
+          navigate(res.payment_url);
+        }
       }
     } catch (err) {
-      const errorMessage = err.message || 'Failed to subscribe';
-      setError(errorMessage);
-      console.error('❌ Subscription error:', err);
-      alert(`❌ Error: ${errorMessage}`);
-    } finally {
-      setProcessingPlan(null);
+      alert('Tạo yêu cầu thanh toán thất bại: ' + err.message);
     }
   };
 
-  const handleCancel = async () => {
-    if (!window.confirm('Are you sure you want to cancel your subscription?')) {
-      return;
+  const getCardStyle = (planId) => {
+    if (planId === 'premium' || planId === 'pro') {
+      return 'border border-secondary-container bg-gradient-to-b from-secondary-container/10 to-surface scale-102';
     }
-
-    setError(null);
-    
-    try {
-      await api.delete('/payments/subscription');
-      alert('✅ Subscription canceled successfully');
-      window.location.reload();
-    } catch (err) {
-      const errorMessage = err.message || 'Failed to cancel subscription';
-      setError(errorMessage);
-      alert(`❌ Error: ${errorMessage}`);
-    }
+    return 'border border-white/5 bg-white/[0.02]';
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-        <span className="material-symbols-outlined text-5xl animate-spin text-primary mb-4">
-          sync
-        </span>
-        <span className="text-primary">Loading plans...</span>
-      </div>
-    );
-  }
 
   return (
-    <>
+    <div className="min-h-screen bg-background text-white flex">
       <Sidebar />
-      <main className="md:ml-sidebar-width pb-20 min-h-screen bg-background">
+      <div className="flex-1 flex flex-col min-w-0">
         <Header />
         
-        <div className="px-gutter-desktop py-8">
-          <h1 className="font-headline-xl text-headline-xl text-on-background mb-2">
-            Subscription Plans
-          </h1>
-          <p className="text-on-surface-variant mb-8">
-            Choose the perfect plan for your music experience
-          </p>
+        <main className="md:ml-sidebar-width flex-1 p-8 overflow-y-auto flex flex-col gap-8">
+          
+          <div className="text-center max-w-2xl mx-auto flex flex-col gap-2">
+            <h1 className="font-display-lg text-3xl font-extrabold tracking-tight text-white">Nâng cấp Gói Premium của bạn</h1>
+            <p className="text-xs text-on-surface-variant">
+              Tự hào nâng tầm chất lượng âm nhạc vượt trội. Lựa chọn gói cước phù hợp và hỗ trợ các nghệ sĩ bạn yêu quý.
+            </p>
+          </div>
 
-          {/* Success Message */}
-          {successMessage && (
-            <div className="mb-6 p-4 bg-green-100 border border-green-400 rounded-lg animate-pulse">
-              <p className="text-green-800 font-medium">{successMessage}</p>
+          {/* Payment gateway selector */}
+          <div className="max-w-md mx-auto w-full glass-panel p-4 rounded-2xl border border-white/5 flex flex-col gap-3">
+            <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider text-center">Chọn cổng kết nối thanh toán</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => setSelectedGateway('momo')}
+                className={`py-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                  selectedGateway === 'momo' ? 'bg-[#A50064] text-white' : 'bg-white/5 text-on-surface-variant hover:text-white'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm">qr_code_scanner</span>
+                Ví MoMo
+              </button>
+              <button 
+                onClick={() => setSelectedGateway('vnpay')}
+                className={`py-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                  selectedGateway === 'vnpay' ? 'bg-[#005BAA] text-white' : 'bg-white/5 text-on-surface-variant hover:text-white'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm">account_balance_wallet</span>
+                Cổng VNPAY
+              </button>
             </div>
-          )}
+          </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 p-4 bg-error/10 border border-error rounded-lg">
-              <p className="text-error flex items-center gap-2">
-                <span className="material-symbols-outlined">error</span>
-                {error}
-              </p>
-            </div>
-          )}
-
-          {/* Current Subscription Info */}
-          {currentSubscription && (
-            <div className="mb-8 p-4 bg-primary/10 border border-primary rounded-lg">
-              <p className="text-on-background mb-2">
-                <strong>Current Plan:</strong> {currentSubscription.planId.toUpperCase()}
-              </p>
-              <p className="text-on-surface-variant text-sm mb-4">
-                Status: <span className="capitalize text-primary font-medium">{currentSubscription.status}</span>
-              </p>
-              {currentSubscription.currentPeriodEnd && (
-                <p className="text-on-surface-variant text-sm mb-4">
-                  Renews on: {new Date(currentSubscription.currentPeriodEnd).toLocaleDateString()}
-                </p>
-              )}
-              {currentSubscription.status === 'active' && (
-                <button
-                  onClick={handleCancel}
-                  className="px-4 py-2 bg-error/20 text-error rounded hover:bg-error/30 transition font-medium"
-                >
-                  Cancel Subscription
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Plans Grid */}
-          {plans.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-on-surface-variant">No plans available at the moment</p>
+          {loading ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-secondary-container gap-3 min-h-[30vh]">
+              <span className="material-symbols-outlined text-4xl animate-spin">sync</span>
+              <p className="text-sm font-semibold">Tải danh sách các gói cước...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {plans.map((plan) => (
-                <div
-                  key={plan._id}
-                  className={`rounded-lg border transition-all overflow-hidden ${
-                    currentSubscription?.planId === plan.planId
-                      ? 'border-primary bg-primary/5 ring-2 ring-primary'
-                      : 'border-outline bg-surface-dim hover:border-primary hover:bg-surface'
-                  }`}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto w-full items-start">
+              {plans.map(plan => (
+                <div 
+                  key={plan.planId}
+                  className={`p-6 rounded-3xl flex flex-col gap-6 relative overflow-hidden transition shadow-xl ${getCardStyle(plan.planId)}`}
                 >
-                  <div className="p-6">
-                    <h3 className="font-headline-md text-headline-md text-on-background mb-2">
-                      {plan.name}
-                    </h3>
-                    <p className="text-on-surface-variant text-sm mb-4 h-10">
-                      {plan.description}
-                    </p>
+                  {/* Recommended badge */}
+                  {(plan.planId === 'premium' || plan.planId === 'pro') && (
+                    <span className="absolute top-4 right-4 text-[9px] font-bold electric-btn text-white px-2 py-0.5 rounded uppercase tracking-wider">
+                      Popular
+                    </span>
+                  )}
 
-                    {/* Price */}
-                    <div className="mb-6">
-                      {plan.price === 0 ? (
-                        <span className="text-headline-lg text-primary font-bold">Free</span>
-                      ) : (
-                        <>
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-headline-lg text-primary font-bold">
-                              ${(plan.price / 100).toFixed(2)}
-                            </span>
-                            <span className="text-on-surface-variant text-sm">
-                              /{plan.interval}
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Features */}
-                    <ul className="mb-6 space-y-2">
-                      {plan.features && plan.features.map((feature, idx) => (
-                        <li
-                          key={idx}
-                          className="flex items-start gap-2 text-sm text-on-surface-variant"
-                        >
-                          <span className="material-symbols-outlined text-primary text-lg shrink-0 mt-0.5">
-                            check_circle
-                          </span>
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {/* CTA Button */}
-                    {currentSubscription?.planId === plan.planId ? (
-                      <button
-                        disabled
-                        className="w-full py-2 px-4 bg-primary/30 text-primary rounded-lg font-medium cursor-not-allowed opacity-60"
-                      >
-                        Current Plan
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleSubscribe(plan)}
-                        disabled={processingPlan === plan.planId}
-                        className="w-full py-2 px-4 bg-primary text-on-primary rounded-lg font-medium hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {processingPlan === plan.planId ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <span className="material-symbols-outlined text-sm animate-spin">
-                              sync
-                            </span>
-                            Processing...
-                          </span>
-                        ) : (
-                          'Subscribe'
-                        )}
-                      </button>
-                    )}
+                  <div>
+                    <h3 className="font-display-lg text-lg font-bold text-white">{plan.name}</h3>
+                    <p className="text-[10px] text-on-surface-variant mt-1.5 min-h-[30px]">{plan.description || 'Trải nghiệm dịch vụ tuyệt vời'}</p>
                   </div>
+
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-extrabold text-white">
+                      {plan.price === 0 ? '0' : plan.price.toLocaleString()}
+                    </span>
+                    <span className="text-xs text-on-surface-variant font-medium">VND / Tháng</span>
+                  </div>
+
+                  <hr className="border-white/5" />
+
+                  {/* Features list */}
+                  <ul className="flex-1 flex flex-col gap-3">
+                    {plan.features?.map((feat, index) => (
+                      <li key={index} className="flex items-start gap-2.5 text-xs">
+                        <span className="material-symbols-outlined text-sm text-tertiary mt-0.5">check_circle</span>
+                        <span className="text-on-surface-variant font-medium leading-normal">{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button 
+                    onClick={() => handleSubscribe(plan)}
+                    className={`w-full py-3 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      plan.price === 0 
+                        ? 'bg-white/5 text-on-surface-variant hover:bg-white/10' 
+                        : 'electric-btn text-white hover:scale-102 shadow-lg shadow-primary-container/20'
+                    }`}
+                  >
+                    {plan.price === 0 ? 'Mặc định' : 'Nâng cấp ngay'}
+                  </button>
                 </div>
               ))}
             </div>
           )}
-        </div>
-      </main>
-    </>
-  );
-};
 
-export default SubscriptionPlans;
+        </main>
+      </div>
+      <MusicPlayer />
+    </div>
+  );
+}

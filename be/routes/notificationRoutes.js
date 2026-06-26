@@ -1,5 +1,5 @@
 import express from 'express';
-import { getUserNotifications, markAllRead, markRead } from '../controllers/notificationController.js';
+import { getUserNotifications, markAsRead, markAllAsRead } from '../controllers/notificationController.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -7,7 +7,7 @@ const router = express.Router();
 router.use(authenticate);
 
 router.get('/', getUserNotifications);
-router.put('/read-all', markAllRead);
-router.put('/:id/read', markRead);
+router.post('/read-all', markAllAsRead);
+router.post('/:id/read', markAsRead);
 
 export default router;

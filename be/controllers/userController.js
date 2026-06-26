@@ -1,322 +1,78 @@
 import User from '../models/User.js';
 import Song from '../models/Song.js';
-import Playlist from '../models/Playlist.js';
 
-export async function toggleLikeSong(req, res) {
+export async function getUserById(req, res) {
   try {
-    const { songId } = req.body;
-    if (!songId) {
-      return res.status(400).json({ message: 'Song ID is required' });
-    }
-
-    const song = await Song.findById(songId);
-    if (!song || song.isDeleted === true) {
-      return res.status(404).json({ message: 'Song not found' });
-    }
-
-    const index = req.user.likedSongs.indexOf(songId);
-    let liked = false;
-
-    if (index === -1) {
-      // Like song
-      req.user.likedSongs.push(songId);
-      song.likes += 1;
-      liked = true;
-    } else {
-      // Unlike song
-      req.user.likedSongs.splice(index, 1);
-      song.likes = Math.max(0, song.likes - 1);
-    }
-
-    await req.user.save();
-    await song.save();
-
-    return res.status(200).json({
-      message: liked ? 'Song liked' : 'Song unliked',
-      liked,
-      likes: song.likes
-    });
+    const user = await User.findById(req.params.id)
+      .select('-password')
+      .populate('following', 'name avatarUrl role');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    return res.json(user);
   } catch (err) {
-    return res.status(500).json({ message: 'Failed to like/unlike song', error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 }
 
-export async function toggleFollowArtist(req, res) {
+export async function getArtists(req, res) {
   try {
-    const { artistId } = req.body;
-    if (!artistId) {
-      return res.status(400).json({ message: 'Artist ID is required' });
-    }
-
-    const artist = await User.findById(artistId);
-    if (!artist || artist.role !== 'artist') {
-      return res.status(404).json({ message: 'Artist not found' });
-    }
-
-    const index = req.user.following.indexOf(artistId);
-    let followed = false;
-
-    if (index === -1) {
-      req.user.following.push(artistId);
-      followed = true;
-      artist.followersCount = (artist.followersCount || 0) + 1;
-    } else {
-      req.user.following.splice(index, 1);
-      artist.followersCount = Math.max(0, (artist.followersCount || 0) - 1);
-    }
-
-    await req.user.save();
-    await artist.save();
-
-    return res.status(200).json({
-      message: followed ? 'Artist followed' : 'Artist unfollowed',
-      followed
-    });
+    const artists = await User.find({ role: 'artist' }).select('name avatarUrl followersCount bio');
+    return res.json(artists);
   } catch (err) {
-    return res.status(500).json({ message: 'Failed to follow/unfollow artist', error: err.message });
-  }
-}
-
-export async function getRecentlyPlayed(req, res) {
-  try {
-    const populatedUser = await User.findById(req.user._id)
-      .populate({
-        path: 'recentlyPlayed.songId',
-        match: { isDeleted: { $ne: true } }
-      })
-      .exec();
-
-    const history = populatedUser.recentlyPlayed
-      .filter(item => item.songId != null) // filter out deleted songs
-      .map(item => ({
-        song: item.songId,
-        playedAt: item.playedAt
-      }));
-
-    return res.status(200).json({ history });
-  } catch (err) {
-    return res.status(500).json({ message: 'Failed to retrieve history', error: err.message });
-  }
-}
-
-export async function getArtistStats(req, res) {
-  try {
-    if (req.user.role !== 'artist' && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Forbidden: Artist only' });
-    }
-
-    const artistId = req.user._id;
-
-    // Fetch songs owned by artist
-    const songs = await Song.find({ artistId, isDeleted: { $ne: true } });
-
-    // Total views/streams
-    const totalStreams = songs.reduce((sum, song) => sum + song.views, 0);
-
-    // Total likes
-    const totalLikes = songs.reduce((sum, song) => sum + (song.likes || 0), 0);
-
-    // Follower count (read from the new stored field)
-    const artist = await User.findById(artistId);
-    const followersCount = artist ? (artist.followersCount || 0) : 0;
-
-    // Compute fake channel storage usage: each song is ~8MB
-    const storageUsed = (songs.length * 8.4 / 10).toFixed(1); // GB format out of 10GB limit
-
-    return res.status(200).json({
-      stats: {
-        totalStreams,
-        followersCount,
-        storageUsed,
-        totalTracks: songs.length,
-        totalLikes
-      },
-      songs
-    });
-  } catch (err) {
-    return res.status(500).json({ message: 'Failed to retrieve statistics', error: err.message });
-  }
-}
-
-export async function getAllUsers(req, res) {
-  try {
-    const users = await User.find({}).select('-password');
-    return res.status(200).json({ users });
-  } catch (err) {
-    return res.status(500).json({ message: 'Failed to retrieve users', error: err.message });
-  }
-}
-
-export async function deleteUser(req, res) {
-  try {
-    const { id } = req.params;
-    if (req.user._id.toString() === id) {
-      return res.status(400).json({ message: 'You cannot delete yourself' });
-    }
-
-    const user = await User.findById(id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    await User.findByIdAndDelete(id);
-
-    // Cleanup: If deleted user was an artist, delete their songs too
-    if (user.role === 'artist') {
-      const songs = await Song.find({ artistId: id, isDeleted: { $ne: true } });
-      for (const song of songs) {
-        // Remove from playlists/likes
-        await Playlist.updateMany({ songs: song._id }, { $pull: { songs: song._id } });
-        await User.updateMany({ likedSongs: song._id }, { $pull: { likedSongs: song._id } });
-        song.isDeleted = true;
-        await song.save();
-      }
-    }
-
-    return res.status(200).json({ message: 'User deleted successfully' });
-  } catch (err) {
-    return res.status(500).json({ message: 'Failed to delete user', error: err.message });
-  }
-}
-
-export async function getArtistPublicProfile(req, res) {
-  try {
-    const { id } = req.params;
-    const artist = await User.findById(id).select('-password');
-    if (!artist || artist.role !== 'artist') {
-      return res.status(404).json({ message: 'Artist not found' });
-    }
-
-    const followersCount = artist.followersCount || 0;
-    const songs = await Song.find({ artistId: id, visibility: 'public', moderationState: 'approved', isDeleted: { $ne: true } });
-
-    // Check if the current user is following this artist
-    const isFollowing = req.user ? req.user.following.includes(id) : false;
-
-    return res.status(200).json({
-      artist: {
-        _id: artist._id,
-        name: artist.name,
-        email: artist.email,
-        avatarUrl: artist.avatarUrl,
-        followersCount,
-        isFollowing
-      },
-      songs
-    });
-  } catch (err) {
-    return res.status(500).json({ message: 'Failed to retrieve artist profile', error: err.message });
-  }
-}
-
-export async function getPublicArtists(req, res) {
-  try {
-    const { search, page, limit } = req.query;
-    let query = { role: 'artist' };
-    
-    if (search) {
-      query.name = new RegExp(search, 'i');
-    }
-
-    let artistsQuery = User.find(query).select('name email role avatarUrl');
-
-    if (page && limit) {
-      const pageNum = parseInt(page, 10) || 1;
-      const limitNum = parseInt(limit, 10) || 10;
-      const skipNum = (pageNum - 1) * limitNum;
-      
-      const totalArtists = await User.countDocuments(query);
-      const artists = await artistsQuery.skip(skipNum).limit(limitNum);
-      
-      return res.status(200).json({
-        artists,
-        pagination: {
-          total: totalArtists,
-          page: pageNum,
-          limit: limitNum,
-          pages: Math.ceil(totalArtists / limitNum)
-        }
-      });
-    }
-
-    const artists = await artistsQuery;
-    return res.status(200).json({ artists });
-  } catch (err) {
-    return res.status(500).json({ message: 'Failed to retrieve artists', error: err.message });
-  }
-}
-
-export async function toggleLikePlaylist(req, res) {
-  try {
-    const { playlistId } = req.body;
-    if (!playlistId) {
-      return res.status(400).json({ message: 'Playlist ID is required' });
-    }
-
-    const playlist = await Playlist.findById(playlistId);
-    if (!playlist) {
-      return res.status(404).json({ message: 'Playlist not found' });
-    }
-
-    if (!req.user.likedPlaylists) {
-      req.user.likedPlaylists = [];
-    }
-
-    const index = req.user.likedPlaylists.indexOf(playlistId);
-    let liked = false;
-
-    if (index === -1) {
-      req.user.likedPlaylists.push(playlistId);
-      liked = true;
-    } else {
-      req.user.likedPlaylists.splice(index, 1);
-    }
-
-    await req.user.save();
-
-    return res.status(200).json({
-      message: liked ? 'Playlist liked' : 'Playlist unliked',
-      liked
-    });
-  } catch (err) {
-    return res.status(500).json({ message: 'Failed to like/unlike playlist', error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 }
 
 export async function getLikedSongs(req, res) {
   try {
-    const { page, limit } = req.query;
-    const likedIds = req.user.likedSongs || [];
+    const user = await User.findById(req.user._id).populate({
+      path: 'likedSongs',
+      match: { deleted_at: null, status: 'approved' },
+      populate: { path: 'artistId', select: 'name' }
+    });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    return res.json(user.likedSongs);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
 
-    const query = {
-      _id: { $in: likedIds },
-      isDeleted: { $ne: true }
-    };
-
-    let songsQuery = Song.find(query).populate('albumId', 'title');
-
-    if (page && limit) {
-      const pageNum = parseInt(page, 10) || 1;
-      const limitNum = parseInt(limit, 10) || 10;
-      const skipNum = (pageNum - 1) * limitNum;
-
-      const totalSongs = await Song.countDocuments(query);
-      const songs = await songsQuery.skip(skipNum).limit(limitNum);
-
-      return res.status(200).json({
-        songs,
-        pagination: {
-          total: totalSongs,
-          page: pageNum,
-          limit: limitNum,
-          pages: Math.ceil(totalSongs / limitNum)
-        }
-      });
+export async function followUser(req, res) {
+  try {
+    const userToFollowId = req.params.id;
+    if (userToFollowId === req.user._id.toString()) {
+      return res.status(400).json({ message: 'You cannot follow yourself' });
     }
 
-    const songs = await songsQuery;
-    return res.status(200).json({ songs });
+    const me = await User.findById(req.user._id);
+    if (!me.following.includes(userToFollowId)) {
+      me.following.push(userToFollowId);
+      await me.save();
+
+      // Increment target user's followers count
+      await User.findByIdAndUpdate(userToFollowId, { $inc: { followersCount: 1 } });
+    }
+
+    return res.json({ success: true, following: me.following });
   } catch (err) {
-    return res.status(500).json({ message: 'Failed to retrieve liked songs', error: err.message });
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+export async function unfollowUser(req, res) {
+  try {
+    const userToUnfollowId = req.params.id;
+    const me = await User.findById(req.user._id);
+    
+    if (me.following.includes(userToUnfollowId)) {
+      me.following = me.following.filter(id => id.toString() !== userToUnfollowId);
+      await me.save();
+
+      // Decrement target user's followers count
+      await User.findByIdAndUpdate(userToUnfollowId, { $inc: { followersCount: -1 } });
+    }
+
+    return res.json({ success: true, following: me.following });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 }

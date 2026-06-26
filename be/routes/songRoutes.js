@@ -1,24 +1,26 @@
 import express from 'express';
-import { getAllSongs, getTopSongs, createSong, deleteSong, incrementPlayCount, updateSong } from '../controllers/songController.js';
-import { authenticate, authorize } from '../middleware/auth.js';
+import { 
+  getAllSongs, 
+  getSongById, 
+  createSong, 
+  incrementStreamCount, 
+  likeSong, 
+  unlikeSong, 
+  downloadSongDRM 
+} from '../controllers/songController.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get songs can be accessed optionally authenticated (to view own private tracks)
-// We'll write a simple middleware for optional authentication
-function optionalAuthenticate(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    return authenticate(req, res, next);
-  }
-  next();
-}
+// Public routes
+router.get('/', getAllSongs);
+router.get('/:id', getSongById);
 
-router.get('/', optionalAuthenticate, getAllSongs);
-router.get('/charts', getTopSongs);
-router.post('/', authenticate, authorize(['artist', 'admin']), createSong);
-router.put('/:id', authenticate, updateSong);
-router.delete('/:id', authenticate, deleteSong);
-router.post('/:id/play', optionalAuthenticate, incrementPlayCount);
+// Authenticated routes
+router.post('/', authenticate, createSong);
+router.post('/:id/stream', authenticate, incrementStreamCount);
+router.post('/:id/like', authenticate, likeSong);
+router.post('/:id/unlike', authenticate, unlikeSong);
+router.get('/:id/download-drm', authenticate, downloadSongDRM);
 
 export default router;

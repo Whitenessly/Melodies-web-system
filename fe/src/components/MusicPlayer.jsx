@@ -1,240 +1,275 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { usePlayer } from '../context/PlayerContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
+import { api } from '../utils/api.js';
 
-const MusicPlayer = () => {
-  const navigate = useNavigate();
+export default function MusicPlayer() {
+  const { user, updateProfileState } = useAuth();
   const { t } = useLanguage();
-  const { 
-    currentSong, 
-    isPlaying, 
-    currentTime, 
-    duration, 
-    volume, 
-    shuffle, 
-    repeat, 
-    togglePlay, 
-    next, 
-    prev, 
-    seek, 
-    changeVolume, 
-    toggleShuffle, 
-    toggleRepeat 
+  const navigate = useNavigate();
+
+  const {
+    currentSong,
+    isPlaying,
+    currentTime,
+    duration,
+    volume,
+    setVolume,
+    isMuted,
+    setIsMuted,
+    loopMode,
+    setLoopMode,
+    isShuffle,
+    setIsShuffle,
+    isAdPlaying,
+    activeAd,
+    playNext,
+    playPrev,
+    togglePlay,
+    seek
   } = usePlayer();
 
-  const { user, toggleLikeSong } = useAuth();
-  const progressBarRef = useRef(null);
+  const [isLiked, setIsLiked] = useState(false);
 
-  const formatTime = (secs) => {
-    if (isNaN(secs)) return '0:00';
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
+  // Sync like state
+  useEffect(() => {
+    if (user && currentSong) {
+      setIsLiked(user.likedSongs?.includes(currentSong._id));
+    }
+  }, [user, currentSong]);
+
+  if (!currentSong && !isAdPlaying) return null;
+
+  const formatTime = (timeInSeconds) => {
+    if (isNaN(timeInSeconds)) return '0:00';
+    const mins = Math.floor(timeInSeconds / 60);
+    const secs = Math.floor(timeInSeconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  const handleProgressBarClick = (e) => {
-    if (!duration || !progressBarRef.current) return;
-    const rect = progressBarRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const percentage = Math.max(0, Math.min(1, clickX / rect.width));
-    seek(percentage * duration);
-  };
-
-  const handleVolumeBarClick = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const percentage = Math.max(0, Math.min(1, clickX / rect.width));
-    changeVolume(percentage);
-  };
-
-  const isLiked = user?.likedSongs && currentSong ? user.likedSongs.includes(currentSong._id) : false;
-
-  const handleLikeToggle = async (e) => {
-    e.stopPropagation();
-    if (!currentSong) return;
+  const handleLikeToggle = async () => {
+    if (isAdPlaying || !currentSong) return;
     try {
-      await toggleLikeSong(currentSong._id);
+      if (isLiked) {
+        await api.post(`/songs/${currentSong._id}/unlike`);
+        const updatedLiked = user.likedSongs.filter(id => id !== currentSong._id);
+        updateProfileState({ likedSongs: updatedLiked });
+        setIsLiked(false);
+      } else {
+        await api.post(`/songs/${currentSong._id}/like`);
+        const updatedLiked = [...(user.likedSongs || []), currentSong._id];
+        updateProfileState({ likedSongs: updatedLiked });
+        setIsLiked(true);
+      }
     } catch (err) {
-      console.error('Failed to toggle like:', err);
+      console.log('Failed to toggle like status:', err.message);
     }
   };
 
-  // If no song is loaded, render a disabled player bar (so the layout is still intact but inactive)
-  if (!currentSong) {
-    return (
-      <footer className="fixed bottom-6 left-6 right-6 h-[96px] z-50 flex items-center px-8 bg-surface-container-lowest/90 backdrop-blur-xl border border-white/10 justify-between shadow-2xl rounded-3xl">
-        <div className="flex items-center gap-4 w-1/4">
-          <div className="w-14 h-14 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant/50">
-            <span className="material-symbols-outlined">music_note</span>
-          </div>
-          <div>
-            <h5 className="text-label-md font-label-md text-on-surface-variant">{t('Không có bài hát')}</h5>
-            <p className="text-label-sm font-label-sm text-on-surface-variant/50">{t('Chọn nhạc để phát')}</p>
-          </div>
-        </div>
+  const handleLoopToggle = () => {
+    if (loopMode === 'none') setLoopMode('all');
+    else if (loopMode === 'all') setLoopMode('single');
+    else setLoopMode('none');
+  };
 
-        <div className="flex flex-col items-center gap-2 flex-1 max-w-xl">
-          <div className="flex items-center gap-6 opacity-50 pointer-events-none">
-            <span className="material-symbols-outlined">shuffle</span>
-            <span className="material-symbols-outlined">skip_previous</span>
-            <button className="w-10 h-10 rounded-full bg-white text-background flex items-center justify-center">
-              <span className="material-symbols-outlined">play_arrow</span>
-            </button>
-            <span className="material-symbols-outlined">skip_next</span>
-            <span className="material-symbols-outlined">repeat</span>
-          </div>
-          <div className="w-full flex items-center gap-3 opacity-50 pointer-events-none">
-            <span className="text-label-sm font-label-sm text-on-surface-variant">0:00</span>
-            <div className="flex-1 h-1 bg-white/10 rounded-full"></div>
-            <span className="text-label-sm font-label-sm text-on-surface-variant">0:00</span>
-          </div>
-        </div>
+  // Render waveform bars
+  const waveformData = currentSong?.waveform_data || Array.from({ length: 80 }, () => 0.5);
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
-        <div className="flex items-center justify-end gap-4 w-1/4">
-          <div className="flex items-center gap-2 w-32 opacity-50 pointer-events-none">
-            <span className="material-symbols-outlined text-on-surface-variant">volume_up</span>
-            <div className="flex-1 h-1 bg-white/10 rounded-full"></div>
-          </div>
-        </div>
-      </footer>
-    );
-  }
-
-  const progressPercent = duration ? (currentTime / duration) * 100 : 0;
-  const thumbnailSrc = currentSong.thumbnailUrl.startsWith('http') 
-    ? currentSong.thumbnailUrl 
-    : `http://localhost:8080${currentSong.thumbnailUrl}`;
+  const handleWaveformClick = (e, index) => {
+    if (isAdPlaying || duration <= 0) return;
+    const rect = e.currentTarget.parentNode.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const percent = Math.max(0, Math.min(1, clickX / rect.width));
+    seek(percent * duration);
+  };
 
   return (
-    <footer className="fixed bottom-6 left-6 right-6 h-[96px] z-50 flex items-center px-8 bg-surface-container-lowest/90 backdrop-blur-xl border border-white/10 justify-between shadow-2xl rounded-3xl">
-      {/* Song details */}
-      <div className="flex items-center gap-4 w-1/4">
-        <div 
-          onClick={() => navigate('/player')}
-          className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 shadow-lg border border-white/5 cursor-pointer hover:scale-105 transition-transform"
-        >
-          <img className="w-full h-full object-cover" src={thumbnailSrc} alt={currentSong.title} />
+    <div className="fixed bottom-0 left-0 w-full h-[112px] bg-surface/90 backdrop-blur-xl border-t border-white/5 flex flex-col justify-between px-8 py-3 z-40 shadow-2xl">
+      {/* Free User Advertisement Warning Top Bar */}
+      {user?.premium_status === 'FREE' && !isAdPlaying && (
+        <div className="absolute -top-6 left-0 w-full h-6 bg-gradient-to-r from-secondary-container to-primary-container flex items-center justify-between px-8">
+          <p className="text-[10px] text-white font-semibold flex items-center gap-1.5 uppercase tracking-wide">
+            <span className="material-symbols-outlined text-xs animate-pulse">campaign</span>
+            {t('free_banner')}
+          </p>
+          <button 
+            onClick={() => navigate('/subscription-plans')}
+            className="text-[9px] text-white font-bold hover:underline cursor-pointer bg-white/20 px-2 py-0.5 rounded"
+          >
+            Upgrade Now
+          </button>
         </div>
-        <div className="hidden sm:block overflow-hidden max-w-[150px]">
-          <h5 
-            onClick={() => navigate('/player')}
-            className="text-label-md font-label-md text-white truncate cursor-pointer hover:text-primary transition-colors"
-          >
-            {currentSong.title}
-          </h5>
-          <p 
-            onClick={() => {
-              if (currentSong.artistId) navigate(`/artist-detail?id=${currentSong.artistId}`);
-            }}
-            className="text-label-sm font-label-sm text-on-surface-variant truncate cursor-pointer hover:text-primary transition-colors"
-          >
-            {currentSong.artist}
+      )}
+
+      {/* Ad active top bar indicator */}
+      {isAdPlaying && (
+        <div className="absolute -top-6 left-0 w-full h-6 bg-error flex items-center justify-center px-8 animate-pulse">
+          <p className="text-[10px] text-white font-bold flex items-center gap-1.5 uppercase tracking-wider">
+            <span className="material-symbols-outlined text-xs">warning</span>
+            {t('playing_ad')}: {activeAd?.title || 'Quảng Cáo Tài Trợ'} ({formatTime(duration - currentTime)} còn lại)
           </p>
         </div>
-        <button 
-          onClick={handleLikeToggle}
-          className={`ml-2 transition-colors cursor-pointer ${isLiked ? 'text-primary' : 'text-on-surface-variant hover:text-white'}`}
-        >
-          <span className={`material-symbols-outlined ${isLiked ? 'filled' : ''}`}>favorite</span>
-        </button>
-      </div>
+      )}
 
-      {/* Center Controls */}
-      <div className="flex flex-col items-center gap-2 flex-1 max-w-xl">
-        <div className="flex items-center gap-6">
-          <button 
-            onClick={toggleShuffle}
-            className={`transition-colors cursor-pointer ${shuffle ? 'text-primary' : 'text-on-surface-variant hover:text-white'}`}
-          >
-            <span className="material-symbols-outlined">shuffle</span>
-          </button>
-          <button 
-            onClick={prev}
-            className="text-white hover:text-primary transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-3xl">skip_previous</span>
-          </button>
-          <button 
-            onClick={togglePlay}
-            className="w-12 h-12 rounded-full bg-white text-background flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-              {isPlaying ? 'pause' : 'play_arrow'}
-            </span>
-          </button>
-          <button 
-            onClick={next}
-            className="text-white hover:text-primary transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-3xl">skip_next</span>
-          </button>
-          <button 
-            onClick={toggleRepeat}
-            className={`transition-colors cursor-pointer ${repeat !== 'none' ? 'text-primary' : 'text-on-surface-variant hover:text-white'}`}
-          >
-            <span className="material-symbols-outlined">
-              {repeat === 'one' ? 'repeat_one' : 'repeat'}
-            </span>
-          </button>
-        </div>
-
-        {/* Progress scrub bar */}
-        <div className="w-full flex items-center gap-3">
-          <span className="text-label-sm font-label-sm text-on-surface-variant w-10 text-right">{formatTime(currentTime)}</span>
-          <div 
-            ref={progressBarRef}
-            onClick={handleProgressBarClick}
-            className="flex-1 h-1 bg-white/10 rounded-full relative group cursor-pointer"
-          >
-            <div 
-              style={{ width: `${progressPercent}%` }}
-              className="absolute top-0 left-0 h-full bg-primary rounded-full group-hover:bg-secondary transition-colors"
-            ></div>
-            <div 
-              style={{ left: `${progressPercent}%` }}
-              className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-            ></div>
-          </div>
-          <span className="text-label-sm font-label-sm text-on-surface-variant w-10">{formatTime(duration)}</span>
-        </div>
-      </div>
-
-      {/* Right controls (volume & lyrics link) */}
-      <div className="flex items-center justify-end gap-4 w-1/4">
-        <button 
-          onClick={() => navigate('/player')}
-          className="material-symbols-outlined text-on-surface-variant hover:text-white transition-colors cursor-pointer hidden md:block"
-        >
-          lyrics
-        </button>
+      {/* Main Player Row */}
+      <div className="flex-1 flex items-center justify-between gap-6">
         
-        {/* Volume bar */}
-        <div className="flex items-center gap-2 w-32 group">
-          <span className="material-symbols-outlined text-on-surface-variant text-xl">
-            {volume === 0 ? 'volume_off' : volume < 0.5 ? 'volume_down' : 'volume_up'}
-          </span>
+        {/* Left Side: Thumbnail & Track Info */}
+        <div className="flex items-center gap-4 w-[28%] min-w-[200px]">
           <div 
-            onClick={handleVolumeBarClick}
-            className="flex-1 h-1 bg-white/10 rounded-full relative cursor-pointer"
+            onClick={() => !isAdPlaying && navigate('/player')}
+            className="w-16 h-16 rounded-xl overflow-hidden bg-white/5 cursor-pointer relative group flex-shrink-0 border border-white/5"
           >
+            <img 
+              src={isAdPlaying ? (activeAd?.imageUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100') : (currentSong?.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100')} 
+              alt={isAdPlaying ? activeAd?.title : currentSong?.title} 
+              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+            />
+            {!isAdPlaying && (
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                <span className="material-symbols-outlined text-white text-xl">open_in_full</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <p 
+              onClick={() => !isAdPlaying && navigate('/player')}
+              className="text-sm font-bold text-white truncate hover:underline cursor-pointer"
+            >
+              {isAdPlaying ? activeAd?.title : currentSong?.title}
+            </p>
+            <p className="text-xs text-on-surface-variant truncate mt-0.5">
+              {isAdPlaying ? activeAd?.clientName : currentSong?.artist}
+            </p>
+          </div>
+
+          {!isAdPlaying && (
+            <button 
+              onClick={handleLikeToggle}
+              className={`transition cursor-pointer p-1.5 rounded-lg hover:bg-white/5 ${isLiked ? 'text-heart-active' : 'text-on-surface-variant hover:text-white'}`}
+            >
+              <span className={`material-symbols-outlined ${isLiked ? 'filled' : ''}`}>favorite</span>
+            </button>
+          )}
+        </div>
+
+        {/* Center: Playback Controls & Waveform */}
+        <div className="flex-1 max-w-[48%] flex flex-col items-center gap-1.5">
+          {/* Audio Controls Buttons */}
+          <div className="flex items-center gap-6">
+            <button 
+              disabled={isAdPlaying}
+              onClick={() => setIsShuffle(!isShuffle)}
+              className={`p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer ${isShuffle ? 'text-tertiary' : 'text-on-surface-variant hover:text-white'} ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+            >
+              <span className="material-symbols-outlined text-lg">shuffle</span>
+            </button>
+
+            <button 
+              disabled={isAdPlaying}
+              onClick={playPrev}
+              className={`p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+            >
+              <span className="material-symbols-outlined text-xl">skip_previous</span>
+            </button>
+
+            <button 
+              onClick={togglePlay}
+              className="w-11 h-11 rounded-full electric-btn flex items-center justify-center text-white hover:scale-105 transition cursor-pointer shadow-lg shadow-primary-container/20"
+            >
+              <span className="material-symbols-outlined text-2xl filled">
+                {isPlaying ? 'pause' : 'play_arrow'}
+              </span>
+            </button>
+
+            <button 
+              disabled={isAdPlaying}
+              onClick={playNext}
+              className={`p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+            >
+              <span className="material-symbols-outlined text-xl">skip_next</span>
+            </button>
+
+            <button 
+              disabled={isAdPlaying}
+              onClick={handleLoopToggle}
+              className={`p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer relative ${loopMode !== 'none' ? 'text-tertiary' : 'text-on-surface-variant hover:text-white'} ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+            >
+              <span className="material-symbols-outlined text-lg">
+                {loopMode === 'single' ? 'repeat_one' : 'repeat'}
+              </span>
+            </button>
+          </div>
+
+          {/* Waveform Progress Bar Container */}
+          <div className="w-full flex items-center gap-3">
+            <span className="text-[10px] text-on-surface-variant font-mono min-w-[30px] text-right">{formatTime(currentTime)}</span>
+            
+            {/* Waveform click container */}
             <div 
-              style={{ width: `${volume * 100}%` }}
-              className="absolute top-0 left-0 h-full bg-on-surface-variant group-hover:bg-primary transition-colors"
-            ></div>
+              className={`flex-1 h-8 flex items-center justify-between gap-[2px] cursor-pointer select-none relative ${isAdPlaying ? 'pointer-events-none opacity-40' : ''}`}
+              onClick={(e) => handleWaveformClick(e)}
+            >
+              {waveformData.map((val, idx) => {
+                const barPercent = (idx / waveformData.length) * 100;
+                const isPlayed = barPercent <= progressPercent;
+                return (
+                  <div
+                    key={idx}
+                    className={`waveform-bar ${isPlayed ? 'waveform-active' : ''}`}
+                    style={{ height: `${val * 100}%` }}
+                  />
+                );
+              })}
+            </div>
+
+            <span className="text-[10px] text-on-surface-variant font-mono min-w-[30px]">{formatTime(duration)}</span>
           </div>
         </div>
 
-        <button 
-          onClick={() => navigate('/player')}
-          className="material-symbols-outlined text-on-surface-variant hover:text-white transition-colors cursor-pointer"
-        >
-          open_in_full
-        </button>
-      </div>
-    </footer>
-  );
-};
+        {/* Right Side: Volume & Extra Utilities */}
+        <div className="flex items-center gap-4 w-[24%] justify-end min-w-[150px]">
+          {/* Lyrics button */}
+          {!isAdPlaying && (
+            <button 
+              onClick={() => navigate('/player')}
+              className="p-1.5 rounded-lg hover:bg-white/5 text-on-surface-variant hover:text-white transition cursor-pointer"
+              title={t('lyrics')}
+            >
+              <span className="material-symbols-outlined text-xl">lyrics</span>
+            </button>
+          )}
 
-export default MusicPlayer;
+          {/* Volume control */}
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setIsMuted(!isMuted)}
+              className="p-1.5 rounded-lg hover:bg-white/5 text-on-surface-variant hover:text-white transition cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-xl">
+                {isMuted || volume === 0 ? 'volume_off' : volume < 0.4 ? 'volume_down' : 'volume_up'}
+              </span>
+            </button>
+            <input 
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={isMuted ? 0 : volume}
+              onChange={(e) => {
+                setVolume(parseFloat(e.target.value));
+                setIsMuted(false);
+              }}
+              className="w-20 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white hover:accent-tertiary transition"
+            />
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}

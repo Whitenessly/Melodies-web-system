@@ -1,131 +1,68 @@
-import { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { api } from '../utils/api.js';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [hasUnread, setHasUnread] = useState(false);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    setUser(null);
-  }, []);
-
-  const checkUnreadNotifications = async () => {
-    if (!localStorage.getItem('token')) return;
+  const fetchProfile = async () => {
     try {
-      const data = await api.get('/notifications');
-      const unread = (data.notifications || []).some(n => !n.read);
-      setHasUnread(unread);
+      const data = await api.get('/auth/me');
+      setUser(data);
     } catch (err) {
-      console.error('Failed to check notifications:', err);
+      console.error('Failed to load profile:', err.message);
+      logout();
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      const fetchProfile = async () => {
-        try {
-          const data = await api.get('/auth/profile');
-          setUser(data.user);
-        } catch (err) {
-          console.error('Failed to fetch profile:', err);
-          logout();
-        } finally {
-          setLoading(false);
-        }
-      };
       fetchProfile();
     } else {
-      Promise.resolve().then(() => setLoading(false));
+      setLoading(false);
     }
-  }, [logout]);
-
-  useEffect(() => {
-    if (user) {
-      Promise.resolve().then(() => checkUnreadNotifications());
-      const interval = setInterval(checkUnreadNotifications, 15000);
-      return () => clearInterval(interval);
-    } else {
-      Promise.resolve().then(() => setHasUnread(false));
-    }
-  }, [user]);
+  }, []);
 
   const login = async (email, password) => {
-    const data = await api.post('/auth/login', { email, password });
-    localStorage.setItem('token', data.token);
-    setUser(data.user);
-    return data.user;
+    setLoading(true);
+    try {
+      const data = await api.post('/auth/login', { email, password });
+      localStorage.setItem('token', data.token);
+      setUser(data.user);
+      return data.user;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const register = async (name, email, password, role) => {
-    const data = await api.post('/auth/register', { name, email, password, role });
-    localStorage.setItem('token', data.token);
-    setUser(data.user);
-    return data.user;
+    setLoading(true);
+    try {
+      const data = await api.post('/auth/register', { name, email, password, role });
+      localStorage.setItem('token', data.token);
+      setUser(data.user);
+      return data.user;
+    } finally {
+      setLoading(false);
+    }
   };
 
-
-
-  const toggleLikeSong = async (songId) => {
-    const data = await api.post('/users/likes', { songId });
-    setUser(prev => {
-      if (!prev) return null;
-      const likedSongs = prev.likedSongs ? [...prev.likedSongs] : [];
-      const index = likedSongs.indexOf(songId);
-      if (index === -1) {
-        likedSongs.push(songId);
-      } else {
-        likedSongs.splice(index, 1);
-      }
-      return { ...prev, likedSongs };
-    });
-    return data.liked;
+  const logout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
   };
 
-  const updateProfile = async (profileData) => {
-    const data = await api.put('/auth/profile', profileData);
-    setUser(data.user);
-    return data.user;
-  };
-
-  const toggleFollowArtist = async (artistId) => {
-    const data = await api.post('/users/follow', { artistId });
-    setUser(prev => {
-      if (!prev) return null;
-      const following = prev.following ? [...prev.following] : [];
-      const index = following.indexOf(artistId);
-      if (index === -1) {
-        following.push(artistId);
-      } else {
-        following.splice(index, 1);
-      }
-      return { ...prev, following };
-    });
-    return data.followed;
-  };
-
-  const toggleLikePlaylist = async (playlistId) => {
-    const data = await api.post('/users/likes/playlist', { playlistId });
-    setUser(prev => {
-      if (!prev) return null;
-      const likedPlaylists = prev.likedPlaylists ? [...prev.likedPlaylists] : [];
-      const index = likedPlaylists.indexOf(playlistId);
-      if (index === -1) {
-        likedPlaylists.push(playlistId);
-      } else {
-        likedPlaylists.splice(index, 1);
-      }
-      return { ...prev, likedPlaylists };
-    });
-    return data.liked;
+  const updateProfileState = (updatedUser) => {
+    setUser(prev => ({ ...prev, ...updatedUser }));
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, register, logout, updateProfile, toggleLikeSong, toggleFollowArtist, toggleLikePlaylist, hasUnread, setHasUnread, checkUnreadNotifications }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, fetchProfile, updateProfileState }}>
       {children}
     </AuthContext.Provider>
   );
