@@ -78,14 +78,6 @@ export default function MusicPlayer() {
   const waveformData = currentSong?.waveform_data || Array.from({ length: 80 }, () => 0.5);
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
-  const handleWaveformClick = (e, index) => {
-    if (isAdPlaying || duration <= 0) return;
-    const rect = e.currentTarget.parentNode.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const percent = Math.max(0, Math.min(1, clickX / rect.width));
-    seek(percent * duration);
-  };
-
   return (
     <div className="fixed bottom-0 left-0 w-full h-[112px] bg-surface/90 backdrop-blur-xl border-t border-white/5 flex flex-col justify-between px-8 py-3 z-40 shadow-2xl">
       {/* Free User Advertisement Warning Top Bar */}
@@ -165,6 +157,7 @@ export default function MusicPlayer() {
               disabled={isAdPlaying}
               onClick={() => setIsShuffle(!isShuffle)}
               className={`p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer ${isShuffle ? 'text-tertiary' : 'text-on-surface-variant hover:text-white'} ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+              title="Shuffle"
             >
               <span className="material-symbols-outlined text-lg">shuffle</span>
             </button>
@@ -173,23 +166,46 @@ export default function MusicPlayer() {
               disabled={isAdPlaying}
               onClick={playPrev}
               className={`p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+              title="Previous"
             >
               <span className="material-symbols-outlined text-xl">skip_previous</span>
+            </button>
+
+            {/* Skip -10s */}
+            <button 
+              disabled={isAdPlaying}
+              onClick={() => seek(Math.max(0, currentTime - 10))}
+              className={`p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+              title="Backward 10s"
+            >
+              <span className="material-symbols-outlined text-xl">replay_10</span>
             </button>
 
             <button 
               onClick={togglePlay}
               className="w-11 h-11 rounded-full electric-btn flex items-center justify-center text-white hover:scale-105 transition cursor-pointer shadow-lg shadow-primary-container/20"
+              title={isPlaying ? "Pause" : "Play"}
             >
               <span className="material-symbols-outlined text-2xl filled">
                 {isPlaying ? 'pause' : 'play_arrow'}
               </span>
             </button>
 
+            {/* Skip +10s */}
+            <button 
+              disabled={isAdPlaying}
+              onClick={() => seek(Math.min(duration, currentTime + 10))}
+              className={`p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+              title="Forward 10s"
+            >
+              <span className="material-symbols-outlined text-xl">forward_10</span>
+            </button>
+
             <button 
               disabled={isAdPlaying}
               onClick={playNext}
               className={`p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+              title="Next"
             >
               <span className="material-symbols-outlined text-xl">skip_next</span>
             </button>
@@ -198,6 +214,7 @@ export default function MusicPlayer() {
               disabled={isAdPlaying}
               onClick={handleLoopToggle}
               className={`p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer relative ${loopMode !== 'none' ? 'text-tertiary' : 'text-on-surface-variant hover:text-white'} ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+              title="Loop"
             >
               <span className="material-symbols-outlined text-lg">
                 {loopMode === 'single' ? 'repeat_one' : 'repeat'}
@@ -209,22 +226,35 @@ export default function MusicPlayer() {
           <div className="w-full flex items-center gap-3">
             <span className="text-[10px] text-on-surface-variant font-mono min-w-[30px] text-right">{formatTime(currentTime)}</span>
             
-            {/* Waveform click container */}
-            <div 
-              className={`flex-1 h-8 flex items-center justify-between gap-[2px] cursor-pointer select-none relative ${isAdPlaying ? 'pointer-events-none opacity-40' : ''}`}
-              onClick={(e) => handleWaveformClick(e)}
-            >
-              {waveformData.map((val, idx) => {
-                const barPercent = (idx / waveformData.length) * 100;
-                const isPlayed = barPercent <= progressPercent;
-                return (
-                  <div
-                    key={idx}
-                    className={`waveform-bar ${isPlayed ? 'waveform-active' : ''}`}
-                    style={{ height: `${val * 100}%` }}
-                  />
-                );
-              })}
+            {/* Waveform scroll container */}
+            <div className={`flex-1 h-8 flex items-center justify-between gap-[2px] select-none relative ${isAdPlaying ? 'pointer-events-none opacity-40' : ''}`}>
+              {/* Invisible range input for perfect slider behavior */}
+              <input 
+                type="range"
+                min="0"
+                max={duration || 100}
+                value={currentTime || 0}
+                onChange={(e) => {
+                  if (isAdPlaying || duration <= 0) return;
+                  seek(parseFloat(e.target.value));
+                }}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              />
+              
+              {/* Waveform renderer */}
+              <div className="absolute inset-0 flex items-center justify-between gap-[2px] w-full h-full pointer-events-none">
+                {waveformData.map((val, idx) => {
+                  const barPercent = (idx / waveformData.length) * 100;
+                  const isPlayed = barPercent <= progressPercent;
+                  return (
+                    <div
+                      key={idx}
+                      className={`waveform-bar ${isPlayed ? 'waveform-active' : ''}`}
+                      style={{ height: `${val * 100}%` }}
+                    />
+                  );
+                })}
+              </div>
             </div>
 
             <span className="text-[10px] text-on-surface-variant font-mono min-w-[30px]">{formatTime(duration)}</span>

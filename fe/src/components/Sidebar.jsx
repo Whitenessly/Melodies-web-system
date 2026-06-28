@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
+import Logo from './Logo.jsx';
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
@@ -20,7 +21,7 @@ export default function Sidebar() {
     <aside className="fixed left-0 top-0 h-screen w-[280px] bg-surface border-r border-white/5 flex flex-col p-6 z-30">
       {/* Brand Logo */}
       <div className="flex items-center gap-3 mb-10 cursor-pointer" onClick={() => navigate('/home')}>
-        <span className="material-symbols-outlined text-4xl text-secondary-container">pulse</span>
+        <Logo className="w-9 h-9" />
         <span className="font-display-lg text-2xl font-bold tracking-tight text-white">Melodies</span>
       </div>
 

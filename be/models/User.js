@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema({
   premium_status: { type: String, enum: ['FREE', 'PREMIUM'], default: 'FREE' },
   premium_expired_at: { type: Date, default: null },
   avatarUrl: { type: String, default: "" },
+  bio: { type: String, default: "" },
   stripeCustomerId: { type: String },
   paymentMethods: [{
     brand: { type: String },
@@ -25,7 +26,10 @@ const userSchema = new mongoose.Schema({
   followersCount: { type: Number, default: 0 },
   likedSongs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Song' }],
   likedPlaylists: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Playlist' }],
-  recentlyPlayed: [recentlyPlayedSchema]
+  recentlyPlayed: [recentlyPlayedSchema],
+  likedGenres: [{ type: String }],
+  searchHistory: [{ type: String }],
+  artistGenres: [{ type: String }]
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);

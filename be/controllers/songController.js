@@ -2,6 +2,7 @@ import Song from '../models/Song.js';
 import User from '../models/User.js';
 import { saveBase64File } from '../utils/file.js';
 import crypto from 'crypto';
+import { updateLikedGenres, updateArtistGenres } from '../utils/genreHelpers.js';
 
 // Helper to remove Vietnamese tones for fuzzy search
 function removeVietnameseTones(str) {
@@ -28,40 +29,133 @@ function removeVietnameseTones(str) {
 export async function getAllSongs(req, res) {
   try {
     const { q, genre, artistId, isApproved } = req.query;
-    let query = { deleted_at: null };
-
-    if (isApproved === 'true') {
-      query.status = 'approved';
+    
+    // Update search history if user is logged in and q is queried
+    if (q && req.user) {
+      const cleanQ = q.trim();
+      if (cleanQ) {
+        let history = req.user.searchHistory || [];
+        // Remove duplicate (case-insensitive)
+        history = history.filter(item => item.toLowerCase() !== cleanQ.toLowerCase());
+        history.unshift(cleanQ);
+        if (history.length > 5) {
+          history = history.slice(0, 5);
+        }
+        req.user.searchHistory = history;
+        await req.user.save();
+      }
     }
 
-    if (artistId) {
-      query.artistId = artistId;
+    // If this is a specific query/search, follow the standard path
+    if (q || genre || artistId || isApproved !== 'true') {
+      let query = { deleted_at: null };
+      if (isApproved === 'true') {
+        query.status = 'approved';
+      }
+      if (artistId) {
+        query.artistId = artistId;
+      }
+      if (genre) {
+        query.genre = new RegExp(genre, 'i');
+      }
+      let songs = await Song.find(query).populate('artistId', 'name avatarUrl');
+      if (q) {
+        const cleanSearch = removeVietnameseTones(q).toLowerCase();
+        songs = songs.filter(song => {
+          const cleanTitle = removeVietnameseTones(song.title).toLowerCase();
+          const cleanArtistName = removeVietnameseTones(song.artist).toLowerCase();
+          return cleanTitle.includes(cleanSearch) || cleanArtistName.includes(cleanSearch);
+        });
+      }
+      if (q && songs.length === 0) {
+        const recommendations = await Song.find({ status: 'approved', deleted_at: null })
+          .limit(5)
+          .populate('artistId', 'name avatarUrl');
+        return res.json({ songs: [], recommendations, wasFuzzy: true });
+      }
+      return res.json(songs);
     }
 
-    if (genre) {
-      query.genre = new RegExp(genre, 'i');
-    }
+    // Personalized recommendations path (for general home page /songs?isApproved=true)
+    // If user is logged in and has likedGenres/searchHistory, recommend personalized songs
+    if (req.user && ((req.user.likedGenres && req.user.likedGenres.length > 0) || (req.user.searchHistory && req.user.searchHistory.length > 0))) {
+      const likedGenres = req.user.likedGenres || [];
+      const searchHistory = req.user.searchHistory || [];
+      
+      const orConditions = [];
 
-    let songs = await Song.find(query).populate('artistId', 'name avatarUrl');
+      // 1. Songs belonging to any liked genre
+      if (likedGenres.length > 0) {
+        orConditions.push({
+          genre: { $in: likedGenres.map(g => new RegExp('^' + g.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i')) }
+        });
+      }
 
-    if (q) {
-      const cleanSearch = removeVietnameseTones(q).toLowerCase();
-      // Simple fuzzy search filter on results using Regex or diacritic-free matches
-      songs = songs.filter(song => {
-        const cleanTitle = removeVietnameseTones(song.title).toLowerCase();
-        const cleanArtistName = removeVietnameseTones(song.artist).toLowerCase();
-        return cleanTitle.includes(cleanSearch) || cleanArtistName.includes(cleanSearch);
-      });
-    }
+      // 2. Songs related to search history
+      for (const qStr of searchHistory) {
+        // Search artist
+        const artistDoc = await User.findOne({
+          name: new RegExp('^' + qStr.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i'),
+          role: 'artist'
+        });
+        if (artistDoc) {
+          if (likedGenres.length > 0) {
+            orConditions.push({
+              artistId: artistDoc._id,
+              genre: { $in: likedGenres.map(g => new RegExp('^' + g.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i')) }
+            });
+          } else {
+            orConditions.push({ artistId: artistDoc._id });
+          }
+        }
 
-    // Recommendation logic if search yielded nothing
-    if (q && songs.length === 0) {
-      const recommendations = await Song.find({ status: 'approved', deleted_at: null })
-        .limit(5)
+        // Search song
+        const songDoc = await Song.findOne({
+          title: new RegExp('^' + qStr.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i'),
+          status: 'approved',
+          deleted_at: null
+        });
+        if (songDoc) {
+          orConditions.push({
+            genre: new RegExp('^' + songDoc.genre.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i'),
+            _id: { $ne: songDoc._id }
+          });
+        }
+      }
+
+      let recommendedSongs = [];
+      if (orConditions.length > 0) {
+        recommendedSongs = await Song.find({
+          status: 'approved',
+          deleted_at: null,
+          $or: orConditions
+        })
+        .sort({ createdAt: -1 })
         .populate('artistId', 'name avatarUrl');
-      return res.json({ songs: [], recommendations, wasFuzzy: true });
+      }
+
+      // Fallback to all approved songs if recommendations are empty or to fill space
+      const allApproved = await Song.find({ status: 'approved', deleted_at: null })
+        .sort({ createdAt: -1 })
+        .populate('artistId', 'name avatarUrl');
+
+      // Combine lists preserving uniqueness
+      const songMap = new Map();
+      recommendedSongs.forEach(s => songMap.set(s._id.toString(), s));
+      allApproved.forEach(s => {
+        if (!songMap.has(s._id.toString())) {
+          songMap.set(s._id.toString(), s);
+        }
+      });
+
+      const combinedSongs = Array.from(songMap.values());
+      return res.json(combinedSongs);
     }
 
+    // Default fallback path for unauthenticated users or users without history
+    const songs = await Song.find({ status: 'approved', deleted_at: null })
+      .sort({ createdAt: -1 })
+      .populate('artistId', 'name avatarUrl');
     return res.json(songs);
   } catch (err) {
     return res.status(500).json({ message: 'Failed to fetch songs', error: err.message });
@@ -136,6 +230,7 @@ export async function createSong(req, res) {
     });
 
     await song.save();
+    await updateArtistGenres(req.user._id);
     return res.status(201).json(song);
   } catch (err) {
     return res.status(500).json({ message: 'Failed to create song', error: err.message });
@@ -189,6 +284,7 @@ export async function likeSong(req, res) {
 
       // Increment likes count on song
       await Song.findByIdAndUpdate(songId, { $inc: { likes: 1 } });
+      await updateLikedGenres(user._id);
     }
 
     return res.json({ success: true, likedSongs: user.likedSongs });
@@ -208,6 +304,7 @@ export async function unlikeSong(req, res) {
 
     // Decrement likes count on song
     await Song.findByIdAndUpdate(songId, { $inc: { likes: -1 } });
+    await updateLikedGenres(user._id);
 
     return res.json({ success: true, likedSongs: user.likedSongs });
   } catch (err) {

@@ -41,3 +41,22 @@ export function authorize(roles = []) {
     next();
   };
 }
+
+export async function optionalAuthenticate(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const decoded = verifyToken(token);
+      if (decoded) {
+        const user = await User.findById(decoded.id);
+        if (user) {
+          req.user = user;
+        }
+      }
+    }
+    next();
+  } catch (err) {
+    next();
+  }
+}

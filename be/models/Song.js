@@ -33,13 +33,12 @@ const songSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Sync status and moderationState
-songSchema.pre('save', function(next) {
+songSchema.pre('save', function() {
   if (this.isModified('status')) {
     this.moderationState = this.status;
   } else if (this.isModified('moderationState')) {
     this.status = this.moderationState;
   }
-  next();
 });
 
 const Song = mongoose.model('Song', songSchema);

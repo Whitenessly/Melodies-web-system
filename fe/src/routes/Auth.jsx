@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
+import Logo from '../components/Logo.jsx';
 
 export default function Auth() {
   const { login, register } = useAuth();
@@ -47,8 +48,10 @@ export default function Auth() {
         
         {/* Brand logo header */}
         <div className="flex flex-col items-center gap-2 text-center">
-          <span className="material-symbols-outlined text-5xl text-secondary-container animate-pulse">pulse</span>
-          <h1 className="font-display-lg text-3xl font-extrabold tracking-tight text-white">Melodies</h1>
+          <div className="flex items-center gap-3 justify-center">
+            <Logo className="w-12 h-12 animate-pulse" />
+            <h1 className="font-display-lg text-3xl font-extrabold tracking-tight text-white">Melodies</h1>
+          </div>
           <p className="text-xs text-on-surface-variant">Your Premium Music streaming companion</p>
         </div>
 

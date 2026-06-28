@@ -33,10 +33,52 @@ export const PlayerProvider = ({ children }) => {
   const streamRegisteredRef = useRef(false);
   const lastTimeRef = useRef(0);
 
+  // Resume state ref for cold start seeking
+  const resumeTimeRef = useRef(0);
+
+  const getAudioUrlForUser = (song) => {
+    if (!song) return '';
+    // If premium, play high quality 320kbps
+    if (user && user.premium_status === 'PREMIUM' && song.audio_source?.stream_320kbps_url) {
+      return song.audio_source.stream_320kbps_url;
+    }
+    // Else play standard 128kbps or main URL
+    return song.audio_source?.stream_128kbps_url || song.audioUrl;
+  };
+
   // Sync volume
   useEffect(() => {
     audioRef.current.volume = isMuted ? 0 : volume;
   }, [volume, isMuted]);
+
+  // Load resume details from localStorage (soft storage cold start)
+  useEffect(() => {
+    const savedSongId = localStorage.getItem('melodies_resume_song_id');
+    const savedTime = parseFloat(localStorage.getItem('melodies_resume_time') || '0');
+    const savedQueueStr = localStorage.getItem('melodies_resume_queue');
+    const savedIndexStr = localStorage.getItem('melodies_resume_index');
+
+    if (savedSongId && savedQueueStr) {
+      try {
+        const parsedQueue = JSON.parse(savedQueueStr);
+        const parsedIndex = parseInt(savedIndexStr || '-1', 10);
+        const songToResume = parsedQueue[parsedIndex] || parsedQueue.find(s => s._id === savedSongId);
+
+        if (songToResume) {
+          setCurrentSong(songToResume);
+          setQueue(parsedQueue);
+          setCurrentIndex(parsedIndex !== -1 ? parsedIndex : parsedQueue.findIndex(s => s._id === savedSongId));
+          
+          resumeTimeRef.current = savedTime;
+          audioRef.current.src = getAudioUrlForUser(songToResume);
+          setCurrentTime(savedTime);
+          lastTimeRef.current = savedTime;
+        }
+      } catch (err) {
+        console.error('Failed to parse resume state:', err.message);
+      }
+    }
+  }, []);
 
   // Setup audio event listeners
   useEffect(() => {
@@ -48,6 +90,17 @@ export const PlayerProvider = ({ children }) => {
     const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
       
+      // Save current time and song info to localStorage (soft storage resume feature)
+      if (!isAdPlaying && currentSong) {
+        const lastSavedTime = parseFloat(localStorage.getItem('melodies_resume_time') || '0');
+        if (Math.abs(audio.currentTime - lastSavedTime) >= 1) {
+          localStorage.setItem('melodies_resume_song_id', currentSong._id);
+          localStorage.setItem('melodies_resume_time', audio.currentTime.toString());
+          localStorage.setItem('melodies_resume_queue', JSON.stringify(queue));
+          localStorage.setItem('melodies_resume_index', currentIndex.toString());
+        }
+      }
+
       // Accumulate listening time for stream count
       if (!isAdPlaying && currentSong) {
         const delta = audio.currentTime - lastTimeRef.current;
@@ -72,6 +125,10 @@ export const PlayerProvider = ({ children }) => {
 
     const handleLoadedMetadata = () => {
       setDuration(audio.duration || 0);
+      if (resumeTimeRef.current > 0) {
+        audio.currentTime = resumeTimeRef.current;
+        resumeTimeRef.current = 0;
+      }
     };
 
     const handleEnded = () => {
@@ -111,19 +168,15 @@ export const PlayerProvider = ({ children }) => {
     }
   };
 
-  const getAudioUrlForUser = (song) => {
-    if (!song) return '';
-    // If premium, play high quality 320kbps
-    if (user && user.premium_status === 'PREMIUM' && song.audio_source?.stream_320kbps_url) {
-      return song.audio_source.stream_320kbps_url;
-    }
-    // Else play standard 128kbps or main URL
-    return song.audio_source?.stream_128kbps_url || song.audioUrl;
-  };
-
   const playSong = async (song, newQueue = null, indexInQueue = -1) => {
     // If ad is playing, block switching songs
     if (isAdPlaying) return;
+
+    // Reset resumeTimeRef on manual play
+    resumeTimeRef.current = 0;
+
+    const finalQueue = newQueue || queue;
+    const finalIndex = indexInQueue !== -1 ? indexInQueue : currentIndex;
 
     if (newQueue) {
       setQueue(newQueue);
@@ -147,6 +200,12 @@ export const PlayerProvider = ({ children }) => {
     setCurrentSong(song);
     audioRef.current.src = getAudioUrlForUser(song);
     lastTimeRef.current = 0;
+
+    // Save to localStorage immediately on play start
+    localStorage.setItem('melodies_resume_song_id', song._id);
+    localStorage.setItem('melodies_resume_time', '0');
+    localStorage.setItem('melodies_resume_queue', JSON.stringify(finalQueue));
+    localStorage.setItem('melodies_resume_index', finalIndex.toString());
     
     try {
       await audioRef.current.play();

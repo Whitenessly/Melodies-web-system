@@ -8,12 +8,12 @@ import {
   unlikeSong, 
   downloadSongDRM 
 } from '../controllers/songController.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, optionalAuthenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Public routes
-router.get('/', getAllSongs);
+router.get('/', optionalAuthenticate, getAllSongs);
 router.get('/:id', getSongById);
 
 // Authenticated routes

@@ -122,7 +122,7 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 h-20 bg-background/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 z-20">
+    <header className="sticky top-0 h-20 bg-background/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between pl-8 md:pl-[312px] pr-8 z-20">
       {/* Search Input */}
       <form ref={searchContainerRef} onSubmit={handleSearchSubmit} className="relative w-[380px]">
         <div className="relative">
