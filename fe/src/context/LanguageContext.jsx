@@ -86,13 +86,14 @@ const translations = {
     account_settings: 'Account Settings',
     settings_subtitle: 'Update your profile information and manage premium subscriptions.',
     profile_updated: 'Profile updated successfully!',
-    email_disabled: 'Email (Cannot be changed)',
+    email_disabled: 'Email',
     fullname: 'Full Name',
     avatar_url: 'Avatar URL',
     avatar_url_placeholder: 'Enter image URL path...',
     purchase_transactions: 'Purchase Transactions',
     view_payment_history: 'View Payment History',
     save_changes: 'Save Changes',
+    update_password: 'Update Password',
     
     // Subscription Plans
     upgrade_premium: 'Upgrade Your Premium Plan',
@@ -215,13 +216,14 @@ const translations = {
     account_settings: 'Thiết lập Tài khoản',
     settings_subtitle: 'Cập nhật thông tin định danh và quản lý các giao dịch nâng cấp Premium.',
     profile_updated: 'Thông tin tài khoản đã được cập nhật thành công!',
-    email_disabled: 'Email (Không thể thay đổi)',
+    email_disabled: 'Email',
     fullname: 'Họ và Tên',
     avatar_url: 'Ảnh đại diện (URL)',
     avatar_url_placeholder: 'Nhập đường dẫn URL hình ảnh...',
     purchase_transactions: 'Giao dịch mua hàng',
     view_payment_history: 'Xem Lịch sử Giao dịch',
     save_changes: 'Lưu thay đổi',
+    update_password: 'Update Password',
     
     // Subscription Plans
     upgrade_premium: 'Nâng cấp Gói Premium của bạn',

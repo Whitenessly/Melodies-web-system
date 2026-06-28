@@ -163,9 +163,15 @@ main.md\:ml-sidebar-width {
     margin-left: 24px !important;
   }
 }
+.electric-btn,
+.bg-electric-gradient {
+  background: linear-gradient(135deg, #2E5BFF 0%, #8A3FFC 100%) !important;
+}
 
-.electric-btn {
+.text-electric-gradient {
   background: linear-gradient(135deg, #2E5BFF 0%, #8A3FFC 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .waveform-bar {

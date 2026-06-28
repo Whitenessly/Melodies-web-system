@@ -248,3 +248,85 @@ export async function resetPassword(req, res) {
     return res.status(500).json({ message: 'Failed to reset password', error: err.message });
   }
 }
+
+export async function changeEmailRequest(req, res) {
+  try {
+    const { newEmail } = req.body;
+    if (!newEmail) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    // Check if new email is in use
+    const existing = await User.findOne({ email: newEmail.toLowerCase() });
+    if (existing) {
+      return res.status(400).json({ message: 'Email này đã được sử dụng bởi tài khoản khác.' });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+
+    // Store in otpStore under newEmail.toLowerCase()
+    otpStore[newEmail.toLowerCase()] = { otp, expiresAt, userId: req.user._id };
+
+    console.log(`[OTP DEBUG] Email change OTP: ${otp} for email ${newEmail}`);
+
+    return res.json({ 
+      message: 'Mã OTP đã được gửi đến email mới của bạn.',
+      otp: otp // Expose OTP for easy sandbox testing
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to request email change', error: err.message });
+  }
+}
+
+export async function changeEmailVerify(req, res) {
+  try {
+    const { newEmail, otp } = req.body;
+    if (!newEmail || !otp) {
+      return res.status(400).json({ message: 'New email and OTP are required' });
+    }
+
+    const record = otpStore[newEmail.toLowerCase()];
+    if (!record || record.userId.toString() !== req.user._id.toString()) {
+      return res.status(400).json({ message: 'No OTP session found for this change request' });
+    }
+
+    if (Date.now() > record.expiresAt) {
+      delete otpStore[newEmail.toLowerCase()];
+      return res.status(400).json({ message: 'Mã xác thực đã hết hạn' });
+    }
+
+    if (record.otp !== otp) {
+      return res.status(400).json({ message: 'Mã xác thực không chính xác' });
+    }
+
+    // Update user's email
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.email = newEmail.toLowerCase();
+    await user.save();
+
+    // Clear OTP
+    delete otpStore[newEmail.toLowerCase()];
+
+    return res.json({ 
+      success: true,
+      message: 'Email đã được thay đổi thành công!',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        premium_status: user.premium_status,
+        avatarUrl: user.avatarUrl
+      }
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to verify email change', error: err.message });
+  }
+}
+

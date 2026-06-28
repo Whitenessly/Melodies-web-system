@@ -9,7 +9,9 @@ import {
   removeSearchQuery,
   forgotPassword,
   verifyOtp,
-  resetPassword
+  resetPassword,
+  changeEmailRequest,
+  changeEmailVerify
 } from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
 
@@ -22,6 +24,9 @@ router.put('/me', authenticate, updateMe);
 router.delete('/me', authenticate, deleteMe);
 router.put('/me/clear-search-history', authenticate, clearSearchHistory);
 router.put('/me/remove-search-query', authenticate, removeSearchQuery);
+
+router.post('/change-email-request', authenticate, changeEmailRequest);
+router.post('/change-email-verify', authenticate, changeEmailVerify);
 
 router.post('/forgot-password', forgotPassword);
 router.post('/verify-otp', verifyOtp);
