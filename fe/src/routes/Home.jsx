@@ -82,7 +82,7 @@ export default function Home() {
           {loading ? (
             <div className="flex-1 flex flex-col items-center justify-center text-secondary-container gap-3 min-h-[50vh]">
               <span className="material-symbols-outlined text-4xl animate-spin">sync</span>
-              <p className="text-sm font-semibold">Tải trang chủ...</p>
+              <p className="text-sm font-semibold">{t('loading_homepage')}</p>
             </div>
           ) : (
             <>
@@ -90,7 +90,7 @@ export default function Home() {
               <section className="flex flex-col gap-4">
                 <h2 className="font-headline-md text-xl font-bold tracking-tight text-white flex items-center gap-2">
                   <span className="material-symbols-outlined text-secondary-container">grid_view</span>
-                  Khám phá Thể loại
+                  {t('explore_categories')}
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                   {categories.map((cat, idx) => (
@@ -117,7 +117,7 @@ export default function Home() {
                 <div className="lg:col-span-2 flex flex-col gap-4">
                   <h2 className="font-headline-md text-xl font-bold tracking-tight text-white flex items-center gap-2">
                     <span className="material-symbols-outlined text-secondary-container">music_note</span>
-                    Bài hát đề xuất
+                    {t('recommended_songs')}
                   </h2>
                   <div className="glass-panel p-4 rounded-2xl flex flex-col divide-y divide-white/5">
                     {songs.slice(0, 6).map((song, idx) => (
@@ -154,7 +154,7 @@ export default function Home() {
                 <div className="flex flex-col gap-4">
                   <h2 className="font-headline-md text-xl font-bold tracking-tight text-white flex items-center gap-2">
                     <span className="material-symbols-outlined text-secondary-container">stars</span>
-                    Gợi ý Nghệ sĩ
+                    {t('artists_recommendation')}
                   </h2>
                   <div className="glass-panel p-4 rounded-2xl flex flex-col gap-3">
                     {artists.map(art => {
@@ -174,7 +174,7 @@ export default function Home() {
                             </div>
                             <div className="min-w-0">
                               <p className="text-xs font-bold text-white group-hover:underline truncate">{art.name}</p>
-                              <p className="text-[10px] text-on-surface-variant mt-0.5 truncate">{art.followersCount || 0} người theo dõi</p>
+                              <p className="text-[10px] text-on-surface-variant mt-0.5 truncate">{art.followersCount || 0} {t('followers')}</p>
                             </div>
                           </div>
 

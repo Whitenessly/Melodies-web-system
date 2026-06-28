@@ -32,6 +32,34 @@ export default function MusicPlayer() {
   } = usePlayer();
 
   const [isLiked, setIsLiked] = useState(false);
+  const [showAddPlaylistModal, setShowAddPlaylistModal] = useState(false);
+  const [userPlaylists, setUserPlaylists] = useState([]);
+
+  const loadUserPlaylists = async () => {
+    try {
+      const data = await api.get('/playlists/my');
+      setUserPlaylists(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    if (user && showAddPlaylistModal) {
+      loadUserPlaylists();
+    }
+  }, [user, showAddPlaylistModal]);
+
+  const handleAddSongToPlaylist = async (playlistId) => {
+    if (!currentSong) return;
+    try {
+      await api.post(`/playlists/${playlistId}/add`, { songId: currentSong._id });
+      alert('Đã thêm bài hát vào danh sách phát thành công!');
+      setShowAddPlaylistModal(false);
+    } catch (err) {
+      alert(err.message || 'Thêm bài hát thất bại.');
+    }
+  };
 
   // Sync like state
   useEffect(() => {
@@ -79,7 +107,7 @@ export default function MusicPlayer() {
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="fixed bottom-0 left-0 w-full h-[112px] bg-surface/90 backdrop-blur-xl border-t border-white/5 flex flex-col justify-between px-8 py-3 z-40 shadow-2xl">
+    <div className={`fixed bottom-0 left-0 w-full h-[112px] bg-surface/90 backdrop-blur-xl border-t border-white/5 flex flex-col justify-between px-8 py-3 shadow-2xl transition-all duration-300 ${showAddPlaylistModal ? 'z-[100]' : 'z-40'}`}>
       {/* Free User Advertisement Warning Top Bar */}
       {user?.premium_status === 'FREE' && !isAdPlaying && (
         <div className="absolute -top-6 left-0 w-full h-6 bg-gradient-to-r from-secondary-container to-primary-container flex items-center justify-between px-8">
@@ -140,12 +168,21 @@ export default function MusicPlayer() {
           </div>
 
           {!isAdPlaying && (
-            <button 
-              onClick={handleLikeToggle}
-              className={`transition cursor-pointer p-1.5 rounded-lg hover:bg-white/5 ${isLiked ? 'text-heart-active' : 'text-on-surface-variant hover:text-white'}`}
-            >
-              <span className={`material-symbols-outlined ${isLiked ? 'filled' : ''}`}>favorite</span>
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <button 
+                onClick={handleLikeToggle}
+                className={`transition cursor-pointer p-1.5 rounded-lg hover:bg-white/5 ${isLiked ? 'text-heart-active' : 'text-on-surface-variant hover:text-white'}`}
+              >
+                <span className={`material-symbols-outlined ${isLiked ? 'filled' : ''}`}>favorite</span>
+              </button>
+              <button 
+                onClick={() => setShowAddPlaylistModal(true)}
+                className="transition cursor-pointer p-1.5 rounded-lg hover:bg-white/5 text-on-surface-variant hover:text-white"
+                title="Thêm vào danh sách phát"
+              >
+                <span className="material-symbols-outlined text-lg">playlist_add</span>
+              </button>
+            </div>
           )}
         </div>
 
@@ -300,6 +337,55 @@ export default function MusicPlayer() {
         </div>
 
       </div>
+
+      {/* Add song to Playlist Modal Overlay */}
+      {showAddPlaylistModal && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center p-6 z-[100] animate-fade-in">
+          <div className="glass-panel w-full max-w-sm p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-white/5 pb-3">
+              <h3 className="text-sm font-bold text-white">Thêm vào Playlist</h3>
+              <button 
+                type="button"
+                onClick={() => setShowAddPlaylistModal(false)}
+                className="text-on-surface-variant hover:text-white cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
+            <div className="max-h-60 overflow-y-auto custom-scrollbar flex flex-col gap-2 pr-1">
+              {userPlaylists.length > 0 ? (
+                userPlaylists.map(pl => (
+                  <button
+                    key={pl._id}
+                    onClick={() => handleAddSongToPlaylist(pl._id)}
+                    className="w-full text-left p-3 rounded-xl hover:bg-white/5 border border-white/5 flex items-center gap-3 transition cursor-pointer"
+                  >
+                    <img src={pl.thumbnailUrl || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100'} className="w-8 h-8 rounded object-cover" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-white truncate">{pl.title}</p>
+                      <p className="text-[10px] text-on-surface-variant mt-0.5">{pl.songs?.length || 0} bài hát</p>
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-xs text-on-surface-variant">Bạn chưa tạo danh sách phát nào.</p>
+                  <button 
+                    onClick={() => {
+                      setShowAddPlaylistModal(false);
+                      navigate('/library-playlists');
+                    }}
+                    className="text-xs text-primary font-bold hover:underline mt-2 cursor-pointer"
+                  >
+                    Tạo Playlist mới
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

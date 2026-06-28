@@ -1,4 +1,5 @@
 import Playlist from '../models/Playlist.js';
+import { saveBase64File } from '../utils/file.js';
 
 export async function getAllPlaylists(req, res) {
   try {
@@ -40,12 +41,17 @@ export async function createPlaylist(req, res) {
     const { title, description, visibility, thumbnailUrl } = req.body;
     if (!title) return res.status(400).json({ message: 'Title is required' });
 
+    let finalThumbnail = thumbnailUrl;
+    if (thumbnailUrl && thumbnailUrl.startsWith('data:')) {
+      finalThumbnail = saveBase64File(thumbnailUrl, 'playlists', 'png');
+    }
+
     const playlist = new Playlist({
       title,
       description: description || '',
       userId: req.user._id,
       visibility: visibility || 'public',
-      thumbnailUrl: thumbnailUrl || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500',
+      thumbnailUrl: finalThumbnail || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500',
       songs: []
     });
 
@@ -91,6 +97,44 @@ export async function removeSongFromPlaylist(req, res) {
     await playlist.save();
 
     return res.json(playlist);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+export async function updatePlaylist(req, res) {
+  try {
+    const { title, description, visibility, thumbnailUrl } = req.body;
+    const playlist = await Playlist.findOne({ _id: req.params.id, userId: req.user._id, deleted_at: null });
+    if (!playlist) return res.status(404).json({ message: 'Playlist not found or access denied' });
+
+    if (title) playlist.title = title;
+    if (description !== undefined) playlist.description = description;
+    if (visibility) playlist.visibility = visibility;
+    
+    if (thumbnailUrl !== undefined) {
+      let finalThumbnail = thumbnailUrl;
+      if (thumbnailUrl && thumbnailUrl.startsWith('data:')) {
+        finalThumbnail = saveBase64File(thumbnailUrl, 'playlists', 'png');
+      }
+      playlist.thumbnailUrl = finalThumbnail;
+    }
+
+    await playlist.save();
+    return res.json(playlist);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+export async function deletePlaylist(req, res) {
+  try {
+    const playlist = await Playlist.findOne({ _id: req.params.id, userId: req.user._id, deleted_at: null });
+    if (!playlist) return res.status(404).json({ message: 'Playlist not found or access denied' });
+
+    playlist.deleted_at = new Date();
+    await playlist.save();
+    return res.json({ message: 'Playlist deleted successfully' });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

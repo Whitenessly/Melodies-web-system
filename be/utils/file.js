@@ -4,8 +4,12 @@ import path from 'path';
 export function saveBase64File(base64Data, subFolder, defaultExt = 'bin') {
   if (!base64Data) return '';
   
-  // If it's already a URL path, just return it
-  if (base64Data.startsWith('/uploads/') || base64Data.startsWith('http')) {
+  // If it's already a URL path, prepend the backend URL if relative
+  if (base64Data.startsWith('/uploads/')) {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    return `${backendUrl}${base64Data}`;
+  }
+  if (base64Data.startsWith('http')) {
     return base64Data;
   }
   
@@ -39,7 +43,8 @@ export function saveBase64File(base64Data, subFolder, defaultExt = 'bin') {
     const filePath = path.join(uploadDir, filename);
     fs.writeFileSync(filePath, buffer);
     
-    return `/uploads/${subFolder}/${filename}`;
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    return `${backendUrl}/uploads/${subFolder}/${filename}`;
   } catch (err) {
     console.error('Failed to save uploaded file:', err);
     return '';

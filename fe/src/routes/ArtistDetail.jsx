@@ -5,11 +5,13 @@ import Header from '../components/Header.jsx';
 import MusicPlayer from '../components/MusicPlayer.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { usePlayer } from '../context/PlayerContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
 import { api } from '../utils/api.js';
 
 export default function ArtistDetail() {
   const { user, updateProfileState } = useAuth();
   const { playSong } = usePlayer();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -80,7 +82,7 @@ export default function ArtistDetail() {
         <div className="flex-1 flex flex-col">
           <Header />
           <div className="flex-1 flex items-center justify-center">
-            <p>Không tìm thấy thông tin Nghệ sĩ.</p>
+            <p>{t('artist_not_found')}</p>
           </div>
         </div>
       </div>
@@ -116,7 +118,7 @@ export default function ArtistDetail() {
                 Verified Artist
               </span>
               <h1 className="font-display-lg text-3xl font-extrabold tracking-tight text-white mt-2">{artist.name}</h1>
-              <p className="text-xs text-on-surface-variant mt-1.5">{artist.followersCount || 0} người theo dõi</p>
+              <p className="text-xs text-on-surface-variant mt-1.5">{artist.followersCount || 0} {t('followers')}</p>
             </div>
 
             <button 
@@ -133,7 +135,7 @@ export default function ArtistDetail() {
           <div className="flex flex-col gap-4">
             <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
               <span className="material-symbols-outlined text-secondary-container">album</span>
-              Tất cả sản phẩm
+              {t('all_songs')}
             </h2>
 
             {songs.length > 0 ? (
@@ -159,7 +161,7 @@ export default function ArtistDetail() {
               </div>
             ) : (
               <div className="glass-panel p-8 text-center rounded-2xl">
-                <p className="text-xs text-on-surface-variant">Nghệ sĩ này chưa đăng tải tác phẩm nào.</p>
+                <p className="text-xs text-on-surface-variant">{t('no_songs_by_artist')}</p>
               </div>
             )}
           </div>

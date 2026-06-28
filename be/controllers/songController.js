@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import { saveBase64File } from '../utils/file.js';
 import crypto from 'crypto';
 import { updateLikedGenres, updateArtistGenres } from '../utils/genreHelpers.js';
+import { findClosestCorrection } from '../utils/stringSimilarity.js';
 
 // Helper to remove Vietnamese tones for fuzzy search
 function removeVietnameseTones(str) {
@@ -24,6 +25,27 @@ function removeVietnameseTones(str) {
   str = str.replace(/\u0300|\u0301|\u0309|\u0303|\u0323/g, ""); // diacritics
   str = str.replace(/\u02C6|\u0306|\u031B/g, ""); // hats
   return str.trim();
+}
+
+function paginateAndSend(songsList, req, res) {
+  if (req.query.page) {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+    const total = songsList.length;
+    const pages = Math.ceil(total / limit);
+    const paginated = songsList.slice(skip, skip + limit);
+    return res.json({
+      songs: paginated,
+      pagination: {
+        total,
+        page,
+        pages,
+        limit
+      }
+    });
+  }
+  return res.json(songsList);
 }
 
 export async function getAllSongs(req, res) {
@@ -59,21 +81,106 @@ export async function getAllSongs(req, res) {
         query.genre = new RegExp(genre, 'i');
       }
       let songs = await Song.find(query).populate('artistId', 'name avatarUrl');
+      
       if (q) {
         const cleanSearch = removeVietnameseTones(q).toLowerCase();
         songs = songs.filter(song => {
           const cleanTitle = removeVietnameseTones(song.title).toLowerCase();
-          const cleanArtistName = removeVietnameseTones(song.artist).toLowerCase();
-          return cleanTitle.includes(cleanSearch) || cleanArtistName.includes(cleanSearch);
+          return cleanTitle.includes(cleanSearch);
+        });
+
+        // Find matching artists
+        const allArtists = await User.find({ role: 'artist' }).select('name avatarUrl followersCount bio');
+        const matchingArtists = allArtists.filter(artist => {
+          const cleanName = removeVietnameseTones(artist.name).toLowerCase();
+          return cleanName.includes(cleanSearch);
+        });
+
+        if (songs.length === 0 && matchingArtists.length === 0) {
+          // Get all candidates
+          const candidateArtists = await User.find({ role: 'artist' }).select('name');
+          const candidateSongs = await Song.find({ status: 'approved', deleted_at: null }).select('title');
+          const candidates = [
+            ...candidateArtists.map(a => a.name),
+            ...candidateSongs.map(s => s.title)
+          ];
+
+          const closestMatch = findClosestCorrection(q, candidates);
+          if (closestMatch) {
+            const cleanMatched = removeVietnameseTones(closestMatch).toLowerCase();
+            
+            // Find matching songs for closestMatch
+            let correctedSongs = await Song.find(query).populate('artistId', 'name avatarUrl');
+            correctedSongs = correctedSongs.filter(song => {
+              const cleanTitle = removeVietnameseTones(song.title).toLowerCase();
+              return cleanTitle.includes(cleanMatched);
+            });
+
+            // Find matching artists for closestMatch
+            const correctedArtists = allArtists.filter(artist => {
+              const cleanName = removeVietnameseTones(artist.name).toLowerCase();
+              return cleanName.includes(cleanMatched);
+            });
+
+            // Return results with suggestedQuery field
+            if (req.query.page) {
+              const page = parseInt(req.query.page, 10) || 1;
+              const limit = parseInt(req.query.limit, 10) || 10;
+              const skip = (page - 1) * limit;
+              const total = correctedSongs.length;
+              const pages = Math.ceil(total / limit);
+              const paginated = correctedSongs.slice(skip, skip + limit);
+              return res.json({
+                songs: paginated,
+                artists: correctedArtists,
+                suggestedQuery: closestMatch,
+                pagination: {
+                  total,
+                  page,
+                  pages,
+                  limit
+                }
+              });
+            }
+            return res.json({
+              songs: correctedSongs,
+              artists: correctedArtists,
+              suggestedQuery: closestMatch
+            });
+          }
+
+          const recommendations = await Song.find({ status: 'approved', deleted_at: null })
+            .limit(5)
+            .populate('artistId', 'name avatarUrl');
+          return res.json({ songs: [], recommendations, wasFuzzy: true });
+        }
+
+        // Return paginated songs + matching artists
+        if (req.query.page) {
+          const page = parseInt(req.query.page, 10) || 1;
+          const limit = parseInt(req.query.limit, 10) || 10;
+          const skip = (page - 1) * limit;
+          const total = songs.length;
+          const pages = Math.ceil(total / limit);
+          const paginated = songs.slice(skip, skip + limit);
+          return res.json({
+            songs: paginated,
+            artists: matchingArtists,
+            pagination: {
+              total,
+              page,
+              pages,
+              limit
+            }
+          });
+        }
+        return res.json({
+          songs,
+          artists: matchingArtists
         });
       }
-      if (q && songs.length === 0) {
-        const recommendations = await Song.find({ status: 'approved', deleted_at: null })
-          .limit(5)
-          .populate('artistId', 'name avatarUrl');
-        return res.json({ songs: [], recommendations, wasFuzzy: true });
-      }
-      return res.json(songs);
+      
+      return paginateAndSend(songs, req, res);
     }
 
     // Personalized recommendations path (for general home page /songs?isApproved=true)
@@ -149,14 +256,14 @@ export async function getAllSongs(req, res) {
       });
 
       const combinedSongs = Array.from(songMap.values());
-      return res.json(combinedSongs);
+      return paginateAndSend(combinedSongs, req, res);
     }
 
     // Default fallback path for unauthenticated users or users without history
     const songs = await Song.find({ status: 'approved', deleted_at: null })
       .sort({ createdAt: -1 })
       .populate('artistId', 'name avatarUrl');
-    return res.json(songs);
+    return paginateAndSend(songs, req, res);
   } catch (err) {
     return res.status(500).json({ message: 'Failed to fetch songs', error: err.message });
   }

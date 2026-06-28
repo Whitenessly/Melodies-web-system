@@ -6,7 +6,7 @@ import { usePlayer } from '../context/PlayerContext.jsx';
 import { api } from '../utils/api.js';
 
 export default function Header() {
-  const { user } = useAuth();
+  const { user, fetchProfile, updateProfileState, logout } = useAuth();
   const { t } = useLanguage();
   const { playSong } = usePlayer();
   const navigate = useNavigate();
@@ -21,8 +21,12 @@ export default function Header() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
 
+  // User dropdown states
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+
   const searchContainerRef = useRef(null);
   const notifContainerRef = useRef(null);
+  const userMenuRef = useRef(null);
 
   // Parse q from URL search params on load
   useEffect(() => {
@@ -81,6 +85,9 @@ export default function Header() {
       if (notifContainerRef.current && !notifContainerRef.current.contains(event.target)) {
         setShowNotificationDropdown(false);
       }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserDropdown(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -135,7 +142,12 @@ export default function Header() {
               setSearchQuery(e.target.value);
               setShowSearchDropdown(true);
             }}
-            onFocus={() => setShowSearchDropdown(true)}
+            onFocus={() => {
+              setShowSearchDropdown(true);
+              if (user) {
+                fetchProfile();
+              }
+            }}
             className="w-full h-11 pl-12 pr-4 bg-white/5 border border-white/5 rounded-full text-sm text-white placeholder-on-surface-variant focus:border-white/10 focus:bg-white/10 transition"
           />
         </div>
@@ -173,6 +185,64 @@ export default function Header() {
             ) : (
               <p className="text-xs text-on-surface-variant p-4 text-center">Không tìm thấy kết quả phù hợp</p>
             )}
+          </div>
+        )}
+
+        {/* Recent Search Dropdown */}
+        {showSearchDropdown && !searchQuery.trim() && user && user.searchHistory && user.searchHistory.length > 0 && (
+          <div className="absolute top-13 left-0 w-full glass-panel rounded-2xl p-2 shadow-2xl z-50">
+            <div className="px-3 py-2 border-b border-white/5 flex items-center justify-between">
+              <span className="text-xs font-bold text-white">Tìm kiếm gần đây</span>
+              <button 
+                type="button"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    updateProfileState({ searchHistory: [] });
+                    await api.put('/auth/me/clear-search-history');
+                  } catch (err) {
+                    console.log('Failed to clear search history:', err.message);
+                  }
+                }}
+                className="text-[10px] text-on-surface-variant hover:text-white cursor-pointer hover:underline"
+              >
+                Xóa tất cả
+              </button>
+            </div>
+            <div className="flex flex-col gap-1 mt-1">
+              {user.searchHistory.map((queryText, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => {
+                    setSearchQuery(queryText);
+                    setShowSearchDropdown(false);
+                    navigate(`/search-results?q=${encodeURIComponent(queryText)}`);
+                  }}
+                  className="flex items-center justify-between py-1.5 px-3 rounded-xl hover:bg-white/5 cursor-pointer transition group"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="material-symbols-outlined text-on-surface-variant text-sm flex-shrink-0">history</span>
+                    <span className="text-sm font-semibold text-white truncate">{queryText}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        const updatedHistory = user.searchHistory.filter(h => h !== queryText);
+                        updateProfileState({ searchHistory: updatedHistory });
+                        await api.put('/auth/me/remove-search-query', { query: queryText });
+                      } catch (err) {
+                        console.log('Failed to remove search query:', err.message);
+                      }
+                    }}
+                    className="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center hover:bg-white/10 rounded-full text-on-surface-variant hover:text-white transition cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-xs">close</span>
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </form>
@@ -246,21 +316,51 @@ export default function Header() {
           )}
         </div>
 
-        {/* User Badge Info */}
-        <div 
-          onClick={() => navigate('/settings')}
-          className="flex items-center gap-3 cursor-pointer p-1.5 rounded-full hover:bg-white/5 transition"
-        >
-          <div className="w-9 h-9 rounded-full bg-secondary-container flex items-center justify-center font-bold text-white overflow-hidden">
-            {user?.avatarUrl ? (
-              <img src={user.avatarUrl} alt={user?.name} className="w-full h-full object-cover" />
-            ) : (
-              user?.name.charAt(0).toUpperCase()
-            )}
+        {/* User Badge Info with Dropdown */}
+        <div ref={userMenuRef} className="relative">
+          <div 
+            onClick={() => setShowUserDropdown(!showUserDropdown)}
+            className="flex items-center gap-3 cursor-pointer p-1.5 rounded-full hover:bg-white/5 transition"
+          >
+            <div className="w-9 h-9 rounded-full bg-secondary-container flex items-center justify-center font-bold text-white overflow-hidden">
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user?.name} className="w-full h-full object-cover" />
+              ) : (
+                user?.name.charAt(0).toUpperCase()
+              )}
+            </div>
+            <span className="text-xs font-semibold text-white max-w-[120px] truncate hidden sm:inline-block">
+              {user?.name}
+            </span>
           </div>
-          <span className="text-xs font-semibold text-white max-w-[120px] truncate hidden sm:inline-block">
-            {user?.name}
-          </span>
+
+          {showUserDropdown && (
+            <div className="absolute right-0 top-12 w-48 glass-panel rounded-2xl p-1.5 shadow-2xl z-50 flex flex-col gap-1 border border-white/5">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowUserDropdown(false);
+                  navigate('/settings');
+                }}
+                className="w-full text-left px-3 py-2 rounded-xl text-xs text-white hover:bg-white/5 transition flex items-center gap-2.5 font-semibold cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-lg text-secondary-container">settings</span>
+                {t('settings')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowUserDropdown(false);
+                  logout();
+                  navigate('/auth');
+                }}
+                className="w-full text-left px-3 py-2 rounded-xl text-xs text-error hover:bg-error/10 transition flex items-center gap-2.5 font-semibold cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-lg text-error">logout</span>
+                {t('logout')}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

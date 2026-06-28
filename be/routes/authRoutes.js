@@ -1,5 +1,16 @@
 import express from 'express';
-import { register, login, getMe, updateMe } from '../controllers/authController.js';
+import { 
+  register, 
+  login, 
+  getMe, 
+  updateMe, 
+  deleteMe, 
+  clearSearchHistory, 
+  removeSearchQuery,
+  forgotPassword,
+  verifyOtp,
+  resetPassword
+} from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -8,5 +19,12 @@ router.post('/register', register);
 router.post('/login', login);
 router.get('/me', authenticate, getMe);
 router.put('/me', authenticate, updateMe);
+router.delete('/me', authenticate, deleteMe);
+router.put('/me/clear-search-history', authenticate, clearSearchHistory);
+router.put('/me/remove-search-query', authenticate, removeSearchQuery);
+
+router.post('/forgot-password', forgotPassword);
+router.post('/verify-otp', verifyOtp);
+router.post('/reset-password', resetPassword);
 
 export default router;

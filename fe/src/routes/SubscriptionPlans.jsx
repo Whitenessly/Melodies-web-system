@@ -4,9 +4,11 @@ import Sidebar from '../components/Sidebar.jsx';
 import Header from '../components/Header.jsx';
 import MusicPlayer from '../components/MusicPlayer.jsx';
 import { api } from '../utils/api.js';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 export default function SubscriptionPlans() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +48,7 @@ export default function SubscriptionPlans() {
 
   const handleSubscribe = async (plan) => {
     if (plan.price === 0 || plan.planId === 'free') {
-      alert('Tài khoản của bạn đã ở gói Miễn phí mặc định.');
+      alert(t('already_free'));
       return;
     }
 
@@ -65,7 +67,7 @@ export default function SubscriptionPlans() {
         }
       }
     } catch (err) {
-      alert('Tạo yêu cầu thanh toán thất bại: ' + err.message);
+      alert(t('payment_failed') + err.message);
     }
   };
 
@@ -85,15 +87,15 @@ export default function SubscriptionPlans() {
         <main className="md:ml-sidebar-width flex-1 p-8 overflow-y-auto flex flex-col gap-8">
           
           <div className="text-center max-w-2xl mx-auto flex flex-col gap-2">
-            <h1 className="font-display-lg text-3xl font-extrabold tracking-tight text-white">Nâng cấp Gói Premium của bạn</h1>
+            <h1 className="font-display-lg text-3xl font-extrabold tracking-tight text-white">{t('upgrade_premium')}</h1>
             <p className="text-xs text-on-surface-variant">
-              Tự hào nâng tầm chất lượng âm nhạc vượt trội. Lựa chọn gói cước phù hợp và hỗ trợ các nghệ sĩ bạn yêu quý.
+              {t('subscription_subtitle')}
             </p>
           </div>
 
           {/* Payment gateway selector */}
           <div className="max-w-md mx-auto w-full glass-panel p-4 rounded-2xl border border-white/5 flex flex-col gap-3">
-            <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider text-center">Chọn cổng kết nối thanh toán</p>
+            <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider text-center">{t('choose_gateway')}</p>
             <div className="grid grid-cols-2 gap-3">
               <button 
                 onClick={() => setSelectedGateway('momo')}
@@ -102,7 +104,7 @@ export default function SubscriptionPlans() {
                 }`}
               >
                 <span className="material-symbols-outlined text-sm">qr_code_scanner</span>
-                Ví MoMo
+                {t('momo_wallet')}
               </button>
               <button 
                 onClick={() => setSelectedGateway('vnpay')}
@@ -111,7 +113,7 @@ export default function SubscriptionPlans() {
                 }`}
               >
                 <span className="material-symbols-outlined text-sm">account_balance_wallet</span>
-                Cổng VNPAY
+                {t('vnpay_gateway')}
               </button>
             </div>
           </div>
@@ -119,7 +121,7 @@ export default function SubscriptionPlans() {
           {loading ? (
             <div className="flex-1 flex flex-col items-center justify-center text-secondary-container gap-3 min-h-[30vh]">
               <span className="material-symbols-outlined text-4xl animate-spin">sync</span>
-              <p className="text-sm font-semibold">Tải danh sách các gói cước...</p>
+              <p className="text-sm font-semibold">{t('loading_plans')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto w-full items-start">
@@ -131,20 +133,20 @@ export default function SubscriptionPlans() {
                   {/* Recommended badge */}
                   {(plan.planId === 'premium' || plan.planId === 'pro') && (
                     <span className="absolute top-4 right-4 text-[9px] font-bold electric-btn text-white px-2 py-0.5 rounded uppercase tracking-wider">
-                      Popular
+                      {t('popular')}
                     </span>
                   )}
 
                   <div>
                     <h3 className="font-display-lg text-lg font-bold text-white">{plan.name}</h3>
-                    <p className="text-[10px] text-on-surface-variant mt-1.5 min-h-[30px]">{plan.description || 'Trải nghiệm dịch vụ tuyệt vời'}</p>
+                    <p className="text-[10px] text-on-surface-variant mt-1.5 min-h-[30px]">{t(plan.description) || 'Trải nghiệm dịch vụ tuyệt vời'}</p>
                   </div>
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-extrabold text-white">
                       {plan.price === 0 ? '0' : plan.price.toLocaleString()}
                     </span>
-                    <span className="text-xs text-on-surface-variant font-medium">VND / Tháng</span>
+                    <span className="text-xs text-on-surface-variant font-medium">{t('vnd_per_month')}</span>
                   </div>
 
                   <hr className="border-white/5" />
@@ -154,7 +156,7 @@ export default function SubscriptionPlans() {
                     {plan.features?.map((feat, index) => (
                       <li key={index} className="flex items-start gap-2.5 text-xs">
                         <span className="material-symbols-outlined text-sm text-tertiary mt-0.5">check_circle</span>
-                        <span className="text-on-surface-variant font-medium leading-normal">{feat}</span>
+                        <span className="text-on-surface-variant font-medium leading-normal">{t(feat)}</span>
                       </li>
                     ))}
                   </ul>
@@ -167,7 +169,7 @@ export default function SubscriptionPlans() {
                         : 'electric-btn text-white hover:scale-102 shadow-lg shadow-primary-container/20'
                     }`}
                   >
-                    {plan.price === 0 ? 'Mặc định' : 'Nâng cấp ngay'}
+                    {plan.price === 0 ? t('default_plan') : t('upgrade_now')}
                   </button>
                 </div>
               ))}

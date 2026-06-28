@@ -5,7 +5,9 @@ import {
   getPlaylistById, 
   createPlaylist, 
   addSongToPlaylist, 
-  removeSongFromPlaylist 
+  removeSongFromPlaylist,
+  updatePlaylist,
+  deletePlaylist
 } from '../controllers/playlistController.js';
 import { authenticate } from '../middleware/auth.js';
 
@@ -15,6 +17,8 @@ router.get('/', getAllPlaylists);
 router.get('/my', authenticate, getUserPlaylists);
 router.get('/:id', getPlaylistById);
 router.post('/', authenticate, createPlaylist);
+router.put('/:id', authenticate, updatePlaylist);
+router.delete('/:id', authenticate, deletePlaylist);
 router.post('/:id/add', authenticate, addSongToPlaylist);
 router.post('/:id/remove', authenticate, removeSongFromPlaylist);
 

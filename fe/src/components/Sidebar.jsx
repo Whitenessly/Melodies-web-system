@@ -2,11 +2,13 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
+import { usePlayer } from '../context/PlayerContext.jsx';
 import Logo from './Logo.jsx';
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const { language, setLanguage, t } = useLanguage();
+  const { currentSong, isAdPlaying } = usePlayer();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -17,8 +19,13 @@ export default function Sidebar() {
 
   const isActive = (path) => location.pathname === path;
 
+  const hasActivePlayer = !!(currentSong || isAdPlaying);
+  const playerHeightPadding = hasActivePlayer 
+    ? (user?.premium_status === 'FREE' ? 'pb-[140px]' : 'pb-[116px]') 
+    : 'pb-6';
+
   return (
-    <aside className="fixed left-0 top-0 h-screen w-[280px] bg-surface border-r border-white/5 flex flex-col p-6 z-30">
+    <aside className={`fixed left-0 top-0 h-screen w-[280px] bg-surface border-r border-white/5 flex flex-col px-6 pt-6 ${playerHeightPadding} z-30 transition-all duration-300`}>
       {/* Brand Logo */}
       <div className="flex items-center gap-3 mb-10 cursor-pointer" onClick={() => navigate('/home')}>
         <Logo className="w-9 h-9" />
@@ -67,15 +74,6 @@ export default function Sidebar() {
           <span>{t('notifications')}</span>
         </Link>
 
-        <Link 
-          to="/settings" 
-          className={`flex items-center gap-4 px-4 py-3 rounded-xl transition duration-200 ${
-            isActive('/settings') ? 'bg-white/10 text-white font-semibold' : 'text-on-surface-variant hover:text-white hover:bg-white/5'
-          }`}
-        >
-          <span className="material-symbols-outlined">settings</span>
-          <span>{t('settings')}</span>
-        </Link>
 
         {/* Separator */}
         <hr className="border-white/5 my-4" />
@@ -127,37 +125,6 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* User Card */}
-        {user && (
-          <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5">
-            <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center font-bold text-white overflow-hidden">
-              {user.avatarUrl ? (
-                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
-              ) : (
-                user.name.charAt(0).toUpperCase()
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{user.name}</p>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${
-                  user.premium_status === 'PREMIUM' 
-                    ? 'electric-btn text-white' 
-                    : 'bg-white/10 text-on-surface-variant'
-                }`}>
-                  {user.premium_status}
-                </span>
-              </div>
-            </div>
-            <button 
-              onClick={handleLogout}
-              className="text-on-surface-variant hover:text-error transition p-1 rounded-lg hover:bg-white/5"
-              title={t('logout')}
-            >
-              <span className="material-symbols-outlined text-xl">logout</span>
-            </button>
-          </div>
-        )}
       </div>
     </aside>
   );
