@@ -161,116 +161,125 @@ export default function LibraryPlaylists() {
             </div>
           )}
 
-          {/* Creation modal overlay */}
-          {showModal && (
-            <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-6 z-[100] animate-fade-in">
-              <form onSubmit={handleCreatePlaylist} className="glass-panel w-full max-w-sm p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4">
-                <h3 className="text-sm font-bold text-white">{t('create_playlist')}</h3>
-                
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-bold text-on-surface-variant">{t('playlist_name')}</label>
-                  <input 
-                    type="text" 
-                    required 
-                    placeholder="My Playlist" 
-                    value={title} 
-                    onChange={e => setTitle(e.target.value)} 
-                    className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" 
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-bold text-on-surface-variant">{t('short_description')}</label>
-                  <input 
-                    type="text" 
-                    placeholder={t('playlist_desc_placeholder')} 
-                    value={desc} 
-                    onChange={e => setDesc(e.target.value)} 
-                    className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" 
-                  />
-                </div>
-
-                {/* Cover Image Upload (Image instead of URL) */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[9px] uppercase font-bold text-on-surface-variant">Ảnh đại diện Playlist</label>
-                  <div className="flex flex-col gap-3 p-4 bg-white/5 border border-white/5 rounded-2xl">
-                    <label className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold cursor-pointer transition select-none self-start">
-                      <span className="material-symbols-outlined text-base">upload_file</span>
-                      <span>Chọn ảnh</span>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={handleFileChange} 
-                        className="hidden" 
-                      />
-                    </label>
-
-                    {/* Progress Bar */}
-                    {uploading && (
-                      <div className="w-full flex flex-col gap-1 mt-1">
-                        <div className="flex justify-between items-center text-[10px] text-on-surface-variant font-mono">
-                          <span>Uploading...</span>
-                          <span>{uploadProgress}%</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-electric-gradient transition-all duration-100" 
-                            style={{ width: `${uploadProgress}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Preview Image & Filename */}
-                    {thumbnailUrl && !uploading && (
-                      <div className="flex items-center gap-3 mt-1 p-2 bg-white/5 rounded-xl border border-white/5 animate-fade-in">
-                        <img 
-                          src={thumbnailUrl} 
-                          alt="Preview" 
-                          className="w-12 h-12 rounded-lg object-cover border border-white/10" 
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[10px] font-bold text-white truncate">{fileName || 'playlist-cover.jpg'}</p>
-                          <p className="text-[9px] text-status-success font-bold uppercase tracking-wider mt-0.5">Upload complete</p>
-                        </div>
-                        <button 
-                          type="button"
-                          onClick={() => {
-                            setThumbnailUrl('');
-                            setFileName('');
-                          }}
-                          className="text-on-surface-variant hover:text-error transition cursor-pointer p-1"
-                        >
-                          <span className="material-symbols-outlined text-base">delete</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-bold text-on-surface-variant">{t('privacy')}</label>
-                  <select 
-                    value={visibility} 
-                    onChange={e => setVisibility(e.target.value)} 
-                    className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white [&>option]:bg-surface"
-                  >
-                    <option value="public">{t('public')}</option>
-                    <option value="private">{t('private')}</option>
-                  </select>
-                </div>
-
-                <div className="flex gap-3 justify-end mt-2">
-                  <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 rounded-xl text-xs bg-white/5 hover:bg-white/10 text-white cursor-pointer">{t('cancel')}</button>
-                  <button type="submit" className="px-4 py-2 rounded-xl text-xs electric-btn text-white font-bold cursor-pointer">{t('create')}</button>
-                </div>
-              </form>
-            </div>
-          )}
-
         </main>
       </div>
       <MusicPlayer />
+
+      {/* Creation modal overlay */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-6 z-[100] animate-fade-in">
+          <form onSubmit={handleCreatePlaylist} className="glass-panel w-full max-w-sm p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-white/5 pb-2">
+              <h3 className="text-sm font-bold text-white">{t('create_playlist')}</h3>
+              <button 
+                type="button" 
+                onClick={() => setShowModal(false)}
+                className="text-on-surface-variant hover:text-white cursor-pointer flex items-center justify-center"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+            
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase font-bold text-on-surface-variant">{t('playlist_name')}</label>
+              <input 
+                type="text" 
+                required 
+                placeholder="My Playlist" 
+                value={title} 
+                onChange={e => setTitle(e.target.value)} 
+                className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" 
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase font-bold text-on-surface-variant">{t('short_description')}</label>
+              <input 
+                type="text" 
+                placeholder={t('playlist_desc_placeholder')} 
+                value={desc} 
+                onChange={e => setDesc(e.target.value)} 
+                className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" 
+              />
+            </div>
+
+            {/* Cover Image Upload (Image instead of URL) */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[9px] uppercase font-bold text-on-surface-variant">Ảnh đại diện Playlist</label>
+              <div className="flex flex-col gap-3 p-4 bg-white/5 border border-white/5 rounded-2xl">
+                <label className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold cursor-pointer transition select-none self-start">
+                  <span className="material-symbols-outlined text-base">upload_file</span>
+                  <span>Chọn ảnh</span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleFileChange} 
+                    className="hidden" 
+                  />
+                </label>
+
+                {/* Progress Bar */}
+                {uploading && (
+                  <div className="w-full flex flex-col gap-1 mt-1">
+                    <div className="flex justify-between items-center text-[10px] text-on-surface-variant font-mono">
+                      <span>Uploading...</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-electric-gradient transition-all duration-100" 
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Preview Image & Filename */}
+                {thumbnailUrl && !uploading && (
+                  <div className="flex items-center gap-3 mt-1 p-2 bg-white/5 rounded-xl border border-white/5 animate-fade-in">
+                    <img 
+                      src={thumbnailUrl} 
+                      alt="Preview" 
+                      className="w-12 h-12 rounded-lg object-cover border border-white/10" 
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-bold text-white truncate">{fileName || 'playlist-cover.jpg'}</p>
+                      <p className="text-[9px] text-status-success font-bold uppercase tracking-wider mt-0.5">Upload complete</p>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setThumbnailUrl('');
+                        setFileName('');
+                      }}
+                      className="text-on-surface-variant hover:text-error transition cursor-pointer p-1"
+                    >
+                      <span className="material-symbols-outlined text-base">delete</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase font-bold text-on-surface-variant">{t('privacy')}</label>
+              <select 
+                value={visibility} 
+                onChange={e => setVisibility(e.target.value)} 
+                className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white [&>option]:bg-surface"
+              >
+                <option value="public">{t('public')}</option>
+                <option value="private">{t('private')}</option>
+              </select>
+            </div>
+
+            <div className="flex justify-end mt-3 pt-3 border-t border-white/5 gap-2">
+              <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 rounded-xl text-xs bg-white/5 hover:bg-white/10 text-white cursor-pointer">{t('cancel')}</button>
+              <button type="submit" className="px-4 py-2 rounded-xl text-xs electric-btn text-white font-bold cursor-pointer">{t('create')}</button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
