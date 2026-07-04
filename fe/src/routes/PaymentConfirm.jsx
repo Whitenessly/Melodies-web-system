@@ -26,6 +26,28 @@ export default function PaymentConfirm() {
     if (order) setOrderId(order);
     if (gate) setGateway(gate);
     if (stat) setStatus(stat);
+
+    // Auto verify payment if URL redirected with SUCCESS status
+    if (stat === 'SUCCESS' && order && gate) {
+      const autoVerify = async () => {
+        setLoading(true);
+        setMessage('');
+        try {
+          const res = await api.post('/payments/verify', {
+            orderId: order,
+            gateway: gate,
+            status: 'SUCCESS'
+          });
+          setMessage(res.message || 'Thanh toán thành công! Gói cước của bạn đã được nâng cấp.');
+          await fetchProfile();
+        } catch (err) {
+          setMessage(err.message || 'Xác thực thanh toán thất bại.');
+        } finally {
+          setLoading(false);
+        }
+      };
+      autoVerify();
+    }
   }, [location.search]);
 
   const handleVerifyPayment = async () => {

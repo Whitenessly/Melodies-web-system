@@ -150,6 +150,7 @@ main.md\:ml-sidebar-width {
   background-image: none !important;
   backdrop-filter: blur(24px) !important;
   overflow-y: auto !important;
+  overflow-x: hidden !important;
 }
 
 @media (min-width: 768px) {

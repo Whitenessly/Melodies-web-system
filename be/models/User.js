@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['listener', 'artist', 'admin'], default: 'listener' },
   premium_status: { type: String, enum: ['FREE', 'PREMIUM'], default: 'FREE' },
   premium_expired_at: { type: Date, default: null },
+  premium_auto_renew: { type: Boolean, default: true },
   avatarUrl: { type: String, default: "" },
   bio: { type: String, default: "" },
   stripeCustomerId: { type: String },

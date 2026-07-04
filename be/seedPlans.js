@@ -11,80 +11,34 @@ mongoose.connect('mongodb://localhost:27017/melodies')
 const plans = [
   {
     planId: 'free',
-    name: 'Free',
-    description: 'Start listening to music for free',
+    name: 'Miễn phí',
+    description: 'Trải nghiệm cơ bản',
     price: 0,
-    currency: 'usd',
+    currency: 'vnd',
     interval: 'month',
     stripePriceId: null,
     features: [
-      'Basic music streaming',
-      'Ad-supported',
-      'Standard quality audio',
-      'Create playlists',
-      'Follow artists'
-    ],
-    isActive: true
-  },
-  {
-    planId: 'basic',
-    name: 'Basic',
-    description: 'Ad-free listening and offline downloads',
-    price: 499, // $4.99
-    currency: 'usd',
-    interval: 'month',
-    stripePriceId: 'price_1Ti4Ye0SjyAWtpfMAcafrbFp', // Replace with actual Stripe price ID
-    features: [
-      'Ad-free music streaming',
-      'Offline downloads (up to 3000 songs)',
-      'Standard quality audio (320kbps)',
-      'Create unlimited playlists',
-      'Follow unlimited artists',
-      'Scrobbling to external services'
-    ],
-    isActive: true
-  },
-  {
-    planId: 'pro',
-    name: 'Pro',
-    description: 'High quality audio and exclusive artist features',
-    price: 799, // $7.99
-    currency: 'usd',
-    interval: 'month',
-    stripePriceId: 'price_1Ti4dQ0SjyAWtpfMFyeFSm4v',
-    features: [
-      'Ad-free music streaming',
-      'Offline downloads (up to 5000 songs)',
-      'High quality audio (FLAC, 320kbps)',
-      'Create unlimited playlists',
-      'Shared playlists and collaborative editing',
-      'Artist dashboard',
-      'Early access to new features',
-      'Music analytics'
+      'Nghe hàng triệu bài hát',
+      'Tạo playlist cá nhân',
+      'Có quảng cáo xen kẽ',
+      'Chất lượng âm thanh tiêu chuẩn'
     ],
     isActive: true
   },
   {
     planId: 'premium',
     name: 'Premium',
-    description: 'Everything you need for ultimate music experience',
-    price: 1199, // $11.99
-    currency: 'usd',
+    description: 'Dành cho Audiophile',
+    price: 59000,
+    currency: 'vnd',
     interval: 'month',
-    stripePriceId: 'price_1Ti4dw0SjyAWtpfMvI5I0LoJ', // Replace with actual Stripe price ID
+    stripePriceId: null,
     features: [
-      'Ad-free music streaming',
-      'Offline downloads (unlimited)',
-      'Lossless audio (FLAC, WAV)',
-      'Spatial audio with Dolby Atmos',
-      'Create unlimited playlists',
-      'Shared playlists and collaborative editing',
-      'Full artist dashboard',
-      'Advanced music analytics',
-      'Priority customer support 24/7',
-      'Monetization tools for artists',
-      'Revenue from your streams',
-      'Early access to all features'
+      'Không quảng cáo',
+      'Âm thanh 320kbps cực đỉnh',
+      'Tải nhạc nghe Offline',
+      'Chuyển bài không giới hạn',
+      'Hỗ trợ đa thiết bị'
     ],
     isActive: true
   }

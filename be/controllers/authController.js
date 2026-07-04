@@ -32,6 +32,8 @@ export async function register(req, res) {
         email: user.email,
         role: user.role,
         premium_status: user.premium_status,
+        premium_expired_at: user.premium_expired_at,
+        premium_auto_renew: user.premium_auto_renew,
         avatarUrl: user.avatarUrl
       }
     });
@@ -66,6 +68,8 @@ export async function login(req, res) {
         email: user.email,
         role: user.role,
         premium_status: user.premium_status,
+        premium_expired_at: user.premium_expired_at,
+        premium_auto_renew: user.premium_auto_renew,
         avatarUrl: user.avatarUrl
       }
     });
@@ -77,6 +81,19 @@ export async function login(req, res) {
 export async function getMe(req, res) {
   try {
     const user = await User.findById(req.user._id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Check if subscription expired
+    if (user.premium_status === 'PREMIUM' && user.premium_expired_at && new Date() > user.premium_expired_at) {
+      user.premium_status = 'FREE';
+      user.premium_expired_at = null;
+      user.premium_auto_renew = true; // reset
+      await user.save();
+      console.log(`📉 User ${user.email} subscription expired. Downgraded to FREE.`);
+    }
+
     return res.json(user);
   } catch (err) {
     return res.status(500).json({ message: 'Failed to fetch user profile', error: err.message });
@@ -113,6 +130,8 @@ export async function updateMe(req, res) {
       email: user.email,
       role: user.role,
       premium_status: user.premium_status,
+      premium_expired_at: user.premium_expired_at,
+      premium_auto_renew: user.premium_auto_renew,
       avatarUrl: user.avatarUrl
     });
   } catch (err) {
@@ -322,11 +341,43 @@ export async function changeEmailVerify(req, res) {
         email: user.email,
         role: user.role,
         premium_status: user.premium_status,
+        premium_expired_at: user.premium_expired_at,
+        premium_auto_renew: user.premium_auto_renew,
         avatarUrl: user.avatarUrl
       }
     });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to verify email change', error: err.message });
+  }
+}
+
+export async function cancelSubscription(req, res) {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.premium_auto_renew = false;
+    await user.save();
+
+    console.log(`📉 User ${user.email} cancelled Premium auto-renewal.`);
+    return res.json(user);
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to cancel subscription', error: err.message });
+  }
+}
+
+export async function reactivateSubscription(req, res) {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.premium_auto_renew = true;
+    await user.save();
+
+    console.log(`🚀 User ${user.email} reactivated Premium auto-renewal.`);
+    return res.json(user);
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to reactivate subscription', error: err.message });
   }
 }
 

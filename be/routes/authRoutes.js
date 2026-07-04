@@ -11,7 +11,9 @@ import {
   verifyOtp,
   resetPassword,
   changeEmailRequest,
-  changeEmailVerify
+  changeEmailVerify,
+  cancelSubscription,
+  reactivateSubscription
 } from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
 
@@ -24,6 +26,8 @@ router.put('/me', authenticate, updateMe);
 router.delete('/me', authenticate, deleteMe);
 router.put('/me/clear-search-history', authenticate, clearSearchHistory);
 router.put('/me/remove-search-query', authenticate, removeSearchQuery);
+router.post('/me/cancel-subscription', authenticate, cancelSubscription);
+router.post('/me/reactivate-subscription', authenticate, reactivateSubscription);
 
 router.post('/change-email-request', authenticate, changeEmailRequest);
 router.post('/change-email-verify', authenticate, changeEmailVerify);

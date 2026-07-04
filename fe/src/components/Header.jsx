@@ -249,14 +249,22 @@ export default function Header() {
 
       {/* Right Controls */}
       <div className="flex items-center gap-6">
-        {/* Upgrade Premium CTA for Free account */}
-        {user?.premium_status === 'FREE' && (
+        {/* Upgrade Premium CTA for Free account, or Premium Badge for Premium account */}
+        {user?.premium_status === 'FREE' ? (
           <button 
             onClick={() => navigate('/subscription-plans')}
             className="electric-btn text-white text-xs font-bold px-5 py-2.5 rounded-full hover:scale-105 transition duration-200 cursor-pointer shadow-lg shadow-primary-container/20"
           >
-            Upgrade Premium
+            {t('btn_upgrade_premium')}
           </button>
+        ) : (
+          <div 
+            onClick={() => navigate('/settings')}
+            className="bg-electric-gradient text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-lg shadow-primary-container/20 flex items-center gap-1.5 cursor-pointer hover:scale-105 transition duration-200"
+          >
+            <span className="material-symbols-outlined text-sm">stars</span>
+            Premium
+          </div>
         )}
 
         {/* Notifications Dropdown Container */}

@@ -108,133 +108,141 @@ export default function Settings() {
     }, 1000);
   };
 
+  // Change Email Handlers
   const handleRequestEmailChange = async (e) => {
     e.preventDefault();
-    setEmailStepError('');
     setLoadingEmailStep(true);
+    setEmailStepError('');
 
     try {
-      await api.post('/auth/change-email-request', { newEmail });
+      await api.post('/auth/me/request-email-change', { newEmail });
+      setLoadingEmailStep(false);
       setEmailStep(2);
-      setVerificationCode(['', '', '', '', '', '']);
       startResendTimer();
     } catch (err) {
-      setEmailStepError(err.message || 'Gửi mã xác thực thất bại.');
-    } finally {
       setLoadingEmailStep(false);
+      setEmailStepError(err.message);
     }
   };
 
   const handleVerifyEmailChange = async (e) => {
     e.preventDefault();
-    setEmailStepError('');
     setLoadingEmailStep(true);
+    setEmailStepError('');
 
-    const otp = verificationCode.join('');
-    if (otp.length < 6) {
-      setEmailStepError('Vui lòng nhập đủ 6 chữ số.');
+    const code = verificationCode.join('');
+    if (code.length < 6) {
+      setEmailStepError(t('verify_otp_desc'));
       setLoadingEmailStep(false);
       return;
     }
 
     try {
-      const res = await api.post('/auth/change-email-verify', { newEmail, otp });
-      if (res.success) {
-        updateProfileState(res.user);
-        setEmailStep(3);
-      }
-    } catch (err) {
-      setEmailStepError(err.message || 'Xác thực OTP thất bại.');
-    } finally {
+      const updatedUser = await api.post('/auth/me/verify-email-change', {
+        newEmail,
+        code
+      });
+      updateProfileState(updatedUser);
       setLoadingEmailStep(false);
+      setEmailStep(3);
+      if (timerRef.current) clearInterval(timerRef.current);
+    } catch (err) {
+      setLoadingEmailStep(false);
+      setEmailStepError(err.message);
     }
   };
 
   const handleResendOtp = async () => {
     setEmailStepError('');
     try {
-      await api.post('/auth/change-email-request', { newEmail });
+      await api.post('/auth/me/request-email-change', { newEmail });
       startResendTimer();
     } catch (err) {
-      setEmailStepError(err.message || 'Gửi lại mã OTP thất bại.');
+      setEmailStepError(err.message);
     }
   };
 
   const handleOtpChange = (value, index) => {
-    if (value && !/^\d$/.test(value)) return;
-
+    if (isNaN(value)) return;
     const newCode = [...verificationCode];
     newCode[index] = value;
     setVerificationCode(newCode);
 
-    if (value && index < 5) {
-      otpRefs.current[index + 1]?.focus();
+    if (value !== '' && index < 5) {
+      otpRefs.current[index + 1].focus();
     }
   };
 
   const handleOtpKeyDown = (e, index) => {
-    if (e.key === 'Backspace' && !verificationCode[index] && index > 0) {
-      otpRefs.current[index - 1]?.focus();
+    if (e.key === 'Backspace' && verificationCode[index] === '' && index > 0) {
+      otpRefs.current[index - 1].focus();
     }
   };
 
-  // Change password handler
+  // Security Tab Handlers
   const handleChangePassword = async (e) => {
     e.preventDefault();
-    setPasswordError('');
-    setPasswordSuccess(false);
-
-    if (newPassword.length < 8) {
-      setPasswordError('Mật khẩu phải dài ít nhất 8 ký tự.');
-      return;
-    }
-    if (!/[A-Z]/.test(newPassword)) {
-      setPasswordError('Mật khẩu phải chứa ít nhất một chữ cái in hoa.');
-      return;
-    }
-    if (!/[0-9!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
-      setPasswordError('Mật khẩu phải chứa ít nhất một chữ số hoặc ký tự đặc biệt.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError('Mật khẩu xác nhận không khớp.');
-      return;
-    }
-
     setLoadingPassword(true);
+    setPasswordSuccess(false);
+    setPasswordError('');
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError(t('err_password_mismatch') || 'Mật khẩu xác nhận không khớp.');
+      setLoadingPassword(false);
+      return;
+    }
+
     try {
-      await api.put('/auth/me', { password: currentPassword, newPassword });
+      await api.put('/auth/me/password', {
+        currentPassword,
+        newPassword
+      });
       setPasswordSuccess(true);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
-      setPasswordError(err.message || 'Cập nhật mật khẩu thất bại.');
+      setPasswordError(err.message);
     } finally {
       setLoadingPassword(false);
     }
   };
 
-  // Delete account handler
   const handleDeleteAccount = async () => {
-    const confirmDelete = window.confirm('Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản này? Tất cả dữ liệu của bạn sẽ bị xóa và không thể khôi phục.');
+    const confirmDelete = window.confirm(t('confirm_delete_account') || 'CẢNH BÁO: Hành động này không thể hoàn tác. Bạn có chắc muốn xóa vĩnh viễn tài khoản của mình?');
     if (!confirmDelete) return;
 
     try {
       await api.delete('/auth/me');
-      alert('Tài khoản của bạn đã được xóa thành công.');
       logout();
       navigate('/auth');
     } catch (err) {
-      alert('Xóa tài khoản thất bại: ' + err.message);
+      alert(err.message);
     }
   };
 
-  // Cancel Premium handler
-  const handleCancelPremium = () => {
-    const confirmCancel = window.confirm('Bạn có chắc chắn muốn hủy gói Premium? Các đặc quyền của bạn vẫn sẽ hoạt động cho đến cuối chu kỳ thanh toán hiện tại.');
-    if (confirmCancel) {
-      alert('Yêu cầu hủy gói Premium của bạn đã được tiếp nhận thành công.');
+  // Cancel Subscription Plan handler
+  const handleCancelPremium = async () => {
+    const confirmCancel = window.confirm(t('confirm_cancel_premium') || 'Bạn có chắc chắn muốn hủy gia hạn tự động gói Premium?');
+    if (!confirmCancel) return;
+
+    try {
+      const updatedUser = await api.post('/auth/me/cancel-subscription');
+      updateProfileState(updatedUser);
+      alert(t('msg_cancel_premium_success') || 'Đã hủy tự động gia hạn thành công. Gói Premium của bạn vẫn hoạt động đến ngày hết hạn.');
+    } catch (err) {
+      alert(t('payment_failed') + err.message);
+    }
+  };
+
+  // Reactivate Premium handler
+  const handleReactivatePremium = async () => {
+    try {
+      const updatedUser = await api.post('/auth/me/reactivate-subscription');
+      updateProfileState(updatedUser);
+      alert(t('msg_reactivate_premium_success') || 'Đã kích hoạt lại tự động gia hạn gói Premium thành công!');
+    } catch (err) {
+      alert(t('payment_failed') + err.message);
     }
   };
 
@@ -253,7 +261,7 @@ export default function Settings() {
           <div className="w-full md:w-64 bg-surface-container-lowest flex flex-col py-6 px-4 border-b md:border-b-0 md:border-r border-white/5 shrink-0">
             <div className="px-4 mb-6 hidden md:block">
               <h2 className="text-lg font-bold text-white">{t('account_settings')}</h2>
-              <p className="text-[10px] text-on-surface-variant mt-1">Manage your experience</p>
+              <p className="text-[10px] text-on-surface-variant mt-1">{t('manage_experience')}</p>
             </div>
             
             <nav className="flex flex-row md:flex-col gap-1.5 overflow-x-auto md:overflow-x-visible pb-3 md:pb-0">
@@ -266,7 +274,7 @@ export default function Settings() {
                 }`}
               >
                 <span className="material-symbols-outlined text-lg">person</span>
-                <span>Account</span>
+                <span>{t('account_info').split(' ')[0]}</span>
               </button>
               
               <button 
@@ -278,7 +286,7 @@ export default function Settings() {
                 }`}
               >
                 <span className="material-symbols-outlined text-lg">security</span>
-                <span>Security</span>
+                <span>{t('security')}</span>
               </button>
               
               <button 
@@ -290,7 +298,7 @@ export default function Settings() {
                 }`}
               >
                 <span className="material-symbols-outlined text-lg">payments</span>
-                <span>Subscription</span>
+                <span>{t('billing_and_plans').split(' & ')[0]}</span>
               </button>
             </nav>
 
@@ -303,7 +311,7 @@ export default function Settings() {
                   onClick={() => navigate('/subscription-plans')}
                   className="bg-electric-gradient text-white text-[10px] font-bold w-full py-2 rounded-xl active:scale-95 transition-transform cursor-pointer shadow-lg shadow-primary-container/20"
                 >
-                  Upgrade to Premium
+                  {t('upgrade_to_premium_badge')}
                 </button>
               </div>
             )}
@@ -317,8 +325,8 @@ export default function Settings() {
               {activeTab === 'account' && (
                 <div className="animate-fade-in flex flex-col gap-6">
                   <div>
-                    <h1 className="font-display-lg text-2xl font-extrabold text-white">Account Information</h1>
-                    <p className="text-xs text-on-surface-variant mt-1">Update your public profile and personal details.</p>
+                    <h1 className="font-display-lg text-2xl font-extrabold text-white">{t('account_info')}</h1>
+                    <p className="text-xs text-on-surface-variant mt-1">{t('update_profile_desc')}</p>
                   </div>
 
                   <form onSubmit={handleUpdateProfile} className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-6 shadow-xl">
@@ -342,12 +350,12 @@ export default function Settings() {
                       </div>
                       <div className="flex flex-col items-start">
                         <h3 className="text-sm font-bold text-white">{name || 'Alex Nguyen'}</h3>
-                        <p className="text-[10px] text-on-surface-variant mt-1">Joined Melodies in 2024</p>
+                        <p className="text-[10px] text-on-surface-variant mt-1">{t('joined_date')}</p>
                         
                         {!avatarUploading ? (
                           <div className="flex items-center gap-3">
                             <label className="border border-white/20 hover:border-white/40 bg-[#1E1E1E] hover:bg-white/5 text-white rounded-full text-xs font-bold px-6 py-2.5 mt-3 cursor-pointer transition select-none flex items-center justify-center w-fit shadow-md">
-                              Change Photo
+                              {t('change_photo')}
                               <input 
                                 type="file" 
                                 accept="image/*" 
@@ -364,14 +372,14 @@ export default function Settings() {
                                 }}
                                 className="border border-error/20 hover:border-error/40 bg-error/5 hover:bg-error/10 text-error rounded-full text-xs font-bold px-6 py-2.5 mt-3 cursor-pointer transition select-none flex items-center justify-center w-fit shadow-md"
                               >
-                                Delete
+                                {t('remove')}
                               </button>
                             )}
                           </div>
                         ) : (
                           <div className="w-48 flex flex-col gap-1 mt-3">
                             <div className="flex justify-between items-center text-[10px] text-on-surface-variant font-mono">
-                              <span>Uploading...</span>
+                              <span>{t('uploading')}</span>
                               <span>{avatarUploadProgress}%</span>
                             </div>
                             <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
@@ -418,7 +426,7 @@ export default function Settings() {
                             }}
                             className="absolute right-2 px-3.5 py-1.5 bg-white/10 hover:bg-white/15 text-white rounded-lg text-[10px] font-bold cursor-pointer transition select-none"
                           >
-                            Thay đổi
+                            {t('change')}
                           </button>
                         </div>
                       </div>
@@ -445,9 +453,9 @@ export default function Settings() {
               {activeTab === 'security' && (
                 <div className="animate-fade-in flex flex-col gap-6">
                   <div>
-                    <h1 className="font-display-lg text-2xl font-extrabold text-white">Security</h1>
+                    <h1 className="font-display-lg text-2xl font-extrabold text-white">{t('security')}</h1>
                     <p className="text-xs text-on-surface-variant mt-1.5 max-w-2xl leading-relaxed">
-                      Keep your Melodies account secure. We recommend using a unique password that you don't use on other services.
+                      {t('security_desc')}
                     </p>
                   </div>
 
@@ -457,7 +465,7 @@ export default function Settings() {
                       {passwordSuccess && (
                         <div className="bg-status-success/15 border border-status-success/30 text-status-success px-4 py-3 rounded-xl text-xs flex items-center gap-2">
                           <span className="material-symbols-outlined text-base">check_circle</span>
-                          <span>Mật khẩu đã được cập nhật thành công!</span>
+                          <span>{t('password_updated_success')}</span>
                         </div>
                       )}
 
@@ -509,7 +517,7 @@ export default function Settings() {
                           <input 
                             type={showNewPassword ? 'text' : 'password'} 
                             required
-                            placeholder="New password"
+                            placeholder={t('new_password_placeholder')}
                             value={newPassword}
                             onChange={e => setNewPassword(e.target.value)}
                             className="w-full h-11 pl-10 pr-10 bg-white/5 border border-white/5 rounded-xl text-xs text-white focus:border-white/10 focus:bg-white/10 transition" 
@@ -533,7 +541,7 @@ export default function Settings() {
                           <input 
                             type="password" 
                             required
-                            placeholder="Confirm password"
+                            placeholder={t('confirm_password_placeholder')}
                             value={confirmPassword}
                             onChange={e => setConfirmPassword(e.target.value)}
                             className="w-full h-11 pl-10 pr-4 bg-white/5 border border-white/5 rounded-xl text-xs text-white focus:border-white/10 focus:bg-white/10 transition" 
@@ -560,7 +568,7 @@ export default function Settings() {
                     <div className="flex flex-col gap-6">
                       {/* Password Requirements Card */}
                       <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-4 shadow-xl">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Password Requirements</h3>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">{t('password_requirements')}</h3>
                         <ul className="flex flex-col gap-3 text-xs text-white">
                           <li className="flex items-center gap-2.5">
                             <span className={`material-symbols-outlined text-base shrink-0 select-none ${
@@ -569,7 +577,7 @@ export default function Settings() {
                               {newPassword.length >= 8 ? 'check_circle' : 'radio_button_unchecked'}
                             </span>
                             <span className={newPassword.length >= 8 ? 'text-white' : 'text-on-surface-variant'}>
-                              8+ characters minimum
+                              {t('req_min_chars')}
                             </span>
                           </li>
                           <li className="flex items-center gap-2.5">
@@ -579,7 +587,7 @@ export default function Settings() {
                               {/[A-Z]/.test(newPassword) ? 'check_circle' : 'radio_button_unchecked'}
                             </span>
                             <span className={/[A-Z]/.test(newPassword) ? 'text-white' : 'text-on-surface-variant'}>
-                              At least one uppercase letter
+                              {t('req_uppercase')}
                             </span>
                           </li>
                           <li className="flex items-center gap-2.5">
@@ -589,7 +597,7 @@ export default function Settings() {
                               {/[0-9!@#$%^&*(),.?":{}|<>]/.test(newPassword) ? 'check_circle' : 'radio_button_unchecked'}
                             </span>
                             <span className={/[0-9!@#$%^&*(),.?":{}|<>]/.test(newPassword) ? 'text-white' : 'text-on-surface-variant'}>
-                              At least one number or symbol
+                              {t('req_number_symbol')}
                             </span>
                           </li>
                           <li className="flex items-center gap-2.5">
@@ -599,7 +607,7 @@ export default function Settings() {
                               {confirmPassword && newPassword === confirmPassword ? 'check_circle' : 'radio_button_unchecked'}
                             </span>
                             <span className={confirmPassword && newPassword === confirmPassword ? 'text-white' : 'text-on-surface-variant'}>
-                              Matches confirmation field
+                              {t('req_match')}
                             </span>
                           </li>
                         </ul>
@@ -612,15 +620,15 @@ export default function Settings() {
                           <span className="material-symbols-outlined text-[#2E5BFF] text-lg">shield</span>
                         </div>
                         <div className="flex flex-col gap-1">
-                          <h4 className="text-xs font-bold text-white">Pro Tip</h4>
+                          <h4 className="text-xs font-bold text-white">{t('pro_tip')}</h4>
                           <p className="text-[10px] text-on-surface-variant leading-relaxed">
-                            Consider enabling Two-Factor Authentication (2FA) for an extra layer of security beyond your password.
+                            {t('2fa_tip_desc')}
                           </p>
                           <button 
                             type="button" 
                             className="text-secondary-container hover:text-white font-bold text-[10px] mt-1 cursor-pointer flex items-center gap-1 self-start"
                           >
-                            <span>Configure 2FA</span>
+                            <span>{t('configure_2fa')}</span>
                             <span className="material-symbols-outlined text-[10px]">arrow_forward</span>
                           </button>
                         </div>
@@ -646,12 +654,14 @@ export default function Settings() {
 
               {/* 3. Subscription Section */}
               {activeTab === 'subscription' && (
-                <div className="animate-fade-in flex flex-col gap-6">
+                <div className="animate-fade-in flex flex-col gap-8">
+                  {/* Title & Description */}
                   <div>
-                    <h1 className="font-display-lg text-2xl font-extrabold text-white">Subscription & Payment</h1>
-                    <p className="text-xs text-on-surface-variant mt-1">Manage your premium plan and payment configurations.</p>
+                    <h1 className="font-display-lg text-2xl font-extrabold text-white">{t('billing_and_plans')}</h1>
+                    <p className="text-xs text-on-surface-variant mt-1">{t('billing_subtitle')}</p>
                   </div>
 
+                  {/* Top Row: Plan details & Active method */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
                     {/* Current Active Plan Card */}
@@ -672,26 +682,46 @@ export default function Settings() {
                         </h3>
                         <p className="text-xs text-on-surface-variant leading-relaxed">
                           {user?.premium_status === 'PREMIUM' 
-                            ? 'Monthly Premium Plan — 59,000 VND / month' 
-                            : 'Ad-supported streaming session plan.'}
+                            ? t('premium_monthly_desc') 
+                            : t('free_plan_desc')}
                         </p>
                       </div>
 
                       <div className="flex flex-col gap-3 mt-4">
-                        {user?.premium_status === 'PREMIUM' && (
-                          <div className="flex justify-between items-center text-[10px] text-on-surface-variant">
-                            <span>Next billing date</span>
-                            <span className="text-white font-semibold">March 12, 2024</span>
+                        {user?.premium_status === 'PREMIUM' && user?.premium_expired_at && (
+                          <div className="text-[10px] text-on-surface-variant flex flex-col gap-1.5">
+                            {user?.premium_auto_renew === false ? (
+                              <div className="p-2.5 rounded-xl bg-error/15 border border-error/30 text-error leading-normal text-left">
+                                <span className="material-symbols-outlined text-xs mr-1 select-none">warning</span>
+                                {t('premium_cancelled_notice').replace('{date}', new Date(user.premium_expired_at).toLocaleDateString('vi-VN'))}
+                              </div>
+                            ) : (
+                              <div className="flex justify-between items-center">
+                                <span>{t('next_billing_date')}</span>
+                                <span className="text-white font-semibold">{new Date(user.premium_expired_at).toLocaleDateString('vi-VN')}</span>
+                              </div>
+                            )}
                           </div>
                         )}
                         
                         {user?.premium_status === 'PREMIUM' ? (
-                          <button 
-                            onClick={handleCancelPremium}
-                            className="text-on-surface-variant hover:text-error text-xs font-bold py-2.5 border border-white/10 rounded-xl transition-all cursor-pointer"
-                          >
-                            {t('cancel_premium')}
-                          </button>
+                          user?.premium_auto_renew === false ? (
+                            <button 
+                              onClick={handleReactivatePremium}
+                              className="bg-electric-gradient text-white text-xs font-bold py-2.5 rounded-xl transition-all hover:scale-102 cursor-pointer text-center flex items-center justify-center gap-1.5 shadow-lg shadow-primary-container/20"
+                            >
+                              <span className="material-symbols-outlined text-sm">autorenew</span>
+                              {t('reactivate_renew')}
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={handleCancelPremium}
+                              className="text-on-surface-variant hover:text-error text-xs font-bold py-2.5 border border-white/10 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                            >
+                              <span className="material-symbols-outlined text-sm">cancel</span>
+                              {t('cancel_premium')}
+                            </button>
+                          )
                         ) : (
                           <button 
                             onClick={() => navigate('/subscription-plans')}
@@ -703,43 +733,219 @@ export default function Settings() {
                       </div>
                     </div>
 
-                    {/* Payment Gateways / Methods */}
-                    <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-4 shadow-xl">
-                      <h3 className="text-sm font-bold text-white border-b border-white/5 pb-3">{t('payment_methods')}</h3>
+                    {/* Active Payment Method */}
+                    <div className="glass-panel p-6 rounded-3xl border border-white/5 relative overflow-hidden flex flex-col justify-between shadow-xl min-h-[220px]">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[80px] opacity-10 pointer-events-none"></div>
                       
-                      <div className="flex flex-col gap-2.5">
-                        {/* MoMo Card */}
-                        <div className="flex items-center justify-between p-3.5 bg-white/5 rounded-xl border border-white/5">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-[#A50064] flex items-center justify-center font-bold text-white text-xs shrink-0">MoMo</div>
-                            <div>
-                              <p className="text-xs font-bold text-white">MoMo Wallet</p>
-                              <p className="text-[10px] text-on-surface-variant mt-0.5">090****567</p>
-                            </div>
-                          </div>
-                          <span className="text-[9px] uppercase font-bold text-status-success">Linked</span>
-                        </div>
-
-                        {/* VNPAY Card */}
-                        <div className="flex items-center justify-between p-3.5 bg-white/5 rounded-xl border border-white/5 opacity-55">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-[#005BAA] flex items-center justify-center font-bold text-white text-[10px] shrink-0">VNPAY</div>
-                            <div>
-                              <p className="text-xs font-bold text-white">VNPAY QR</p>
-                              <p className="text-[10px] text-on-surface-variant mt-0.5">Unlinked</p>
-                            </div>
-                          </div>
-                          <button className="text-tertiary font-bold text-[10px] uppercase hover:underline">Link</button>
-                        </div>
+                      <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                        <h3 className="text-xs font-bold text-white uppercase tracking-wider">{t('current_method')}</h3>
+                        {user?.premium_status === 'PREMIUM' && (
+                          <span className="text-status-success text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 select-none">
+                            <span className="material-symbols-outlined text-xs">verified</span>
+                            {t('verified')}
+                          </span>
+                        )}
                       </div>
 
-                      <button className="w-full border-2 border-dashed border-white/10 hover:border-white/20 text-on-surface-variant hover:text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all cursor-pointer text-xs">
-                        <span className="material-symbols-outlined text-sm">add</span>
-                        {t('add_payment_method')}
-                      </button>
+                      {user?.premium_status === 'PREMIUM' ? (
+                        <div className="flex items-center gap-4 py-3">
+                          <div className="w-12 h-12 bg-[#A50064] rounded-xl flex items-center justify-center shadow-lg shrink-0 font-bold text-white text-sm select-none">
+                            MoMo
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold text-white">Ví MoMo</h4>
+                            <p className="text-[10px] text-on-surface-variant mt-0.5">{t('last_linked_prefix')} {t('12 Th08, 2023')}</p>
+                            <p className="text-xs text-white font-mono mt-1 font-semibold">098****321</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="py-4 text-center">
+                          <p className="text-xs text-on-surface-variant">{t('no_payment_method')}</p>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2.5 mt-2">
+                        {user?.premium_status === 'PREMIUM' ? (
+                          <>
+                            <button 
+                              onClick={() => alert(t('payment_method_removed'))}
+                              className="flex-1 py-2 rounded-xl border border-white/10 text-on-surface-variant hover:text-white transition cursor-pointer text-[10px] font-bold"
+                            >
+                              {t('remove')}
+                            </button>
+                            <button 
+                              onClick={() => navigate('/subscription-plans')}
+                              className="flex-1 py-2 rounded-xl bg-white text-background hover:bg-white/90 transition cursor-pointer text-[10px] font-bold"
+                            >
+                              {t('change')}
+                            </button>
+                          </>
+                        ) : (
+                          <button 
+                            onClick={() => navigate('/subscription-plans')}
+                            className="w-full py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl transition cursor-pointer text-[10px] font-bold"
+                          >
+                            {t('setup_payment')}
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                   </div>
+
+                  {/* Add New Methods */}
+                  <div className="flex flex-col gap-4">
+                    <h2 className="text-sm font-bold text-white">{t('add_new_method')}</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* VNPAY Card */}
+                      <div 
+                        onClick={() => navigate('/subscription-plans')}
+                        className="glass-panel p-5 rounded-2xl cursor-pointer hover:scale-102 transition duration-300 flex flex-col justify-between min-h-[160px]"
+                      >
+                        <div>
+                          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden mb-3">
+                            <img 
+                              className="w-7 h-auto" 
+                              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCY9ZpD0ymz5mgXX4fMiZV68-WhyDv6aSJmsx2QJH2UK8DW9S8_Vg177MXGdZYY_u67Ej7ScWN4i_pcJmtbraIxHOA80jmbvwQCyoi8Z49rIdZMYXkUuK_Om2xiKPeFknAwBBBBQDOjNTArrIUwldX2rDHxjeylal7BIBXBoRt56idmD0FsUdfmi53oaE5Ac4bIG9DTfuExxKeL1JrGOBU92cO-7knD2BvmBarovS_nsII2nowAwx_wWWx-xGDNa0QU_ipcZSJD3A" 
+                              alt="VNPAY" 
+                            />
+                          </div>
+                          <h4 className="text-xs font-bold text-white">{t('vnpay_gateway')}</h4>
+                          <p className="text-[10px] text-on-surface-variant mt-1 leading-normal">{t('vnpay_desc')}</p>
+                        </div>
+                        <div className="text-secondary-container text-[10px] font-bold flex items-center gap-1 mt-3">
+                          {t('connect_now')}
+                          <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                        </div>
+                      </div>
+
+                      {/* Credit Card */}
+                      <div 
+                        onClick={() => navigate('/subscription-plans')}
+                        className="glass-panel p-5 rounded-2xl cursor-pointer hover:scale-102 transition duration-300 flex flex-col justify-between min-h-[160px]"
+                      >
+                        <div>
+                          <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center mb-3">
+                            <span className="material-symbols-outlined text-secondary-container">credit_card</span>
+                          </div>
+                          <h4 className="text-xs font-bold text-white">{t('credit_card')}</h4>
+                          <p className="text-[10px] text-on-surface-variant mt-1 leading-normal">{t('credit_card_desc')}</p>
+                        </div>
+                        <div className="text-secondary-container text-[10px] font-bold flex items-center gap-1 mt-3">
+                          {t('add_card')}
+                          <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                        </div>
+                      </div>
+
+                      {/* Other Methods */}
+                      <div 
+                        onClick={() => navigate('/subscription-plans')}
+                        className="glass-panel p-5 rounded-2xl border-dashed border-white/20 hover:border-white/40 cursor-pointer transition flex flex-col justify-center items-center text-center min-h-[160px]"
+                      >
+                        <div className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center mb-2.5">
+                          <span className="material-symbols-outlined text-on-surface-variant">add</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{t('other_methods')}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Transaction History */}
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-sm font-bold text-white">{t('transaction_history')}</h2>
+                      <button 
+                        onClick={() => alert(t('loading_invoices'))}
+                        className="text-[10px] text-on-surface-variant hover:text-white underline font-semibold"
+                      >
+                        {t('download_invoice')}
+                      </button>
+                    </div>
+
+                    <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-white/5 border-b border-white/5 text-on-surface-variant font-bold">
+                            <th className="p-3.5">{t('table_desc')}</th>
+                            <th className="p-3.5">{t('table_date')}</th>
+                            <th className="p-3.5">{t('table_amount')}</th>
+                            <th className="p-3.5 text-right">{t('table_status')}</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          <tr className="hover:bg-white/[0.01]">
+                            <td className="p-3.5">
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded bg-status-success/15 flex items-center justify-center shrink-0">
+                                  <span className="material-symbols-outlined text-status-success text-base">workspace_premium</span>
+                                </div>
+                                <span className="font-semibold text-white">{t('premium_personal_1m')}</span>
+                              </div>
+                            </td>
+                            <td className="p-3.5 text-on-surface-variant font-mono">{t('date_history_1')}</td>
+                            <td className="p-3.5 text-white font-bold font-mono">59,000đ</td>
+                            <td className="p-3.5 text-right">
+                              <span className="text-[9px] px-2 py-0.5 rounded-full font-bold bg-status-success/10 text-status-success uppercase">
+                                {t('success')}
+                              </span>
+                            </td>
+                          </tr>
+                          <tr className="hover:bg-white/[0.01]">
+                            <td className="p-3.5">
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded bg-status-success/15 flex items-center justify-center shrink-0">
+                                  <span className="material-symbols-outlined text-status-success text-base">workspace_premium</span>
+                                </div>
+                                <span className="font-semibold text-white">{t('premium_personal_1m')}</span>
+                              </div>
+                            </td>
+                            <td className="p-3.5 text-on-surface-variant font-mono">{t('date_history_2')}</td>
+                            <td className="p-3.5 text-white font-bold font-mono">59,000đ</td>
+                            <td className="p-3.5 text-right">
+                              <span className="text-[9px] px-2 py-0.5 rounded-full font-bold bg-status-success/10 text-status-success uppercase">
+                                {t('success')}
+                              </span>
+                            </td>
+                          </tr>
+                          <tr className="hover:bg-white/[0.01]">
+                            <td className="p-3.5">
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded bg-status-error/15 flex items-center justify-center shrink-0">
+                                  <span className="material-symbols-outlined text-status-error text-base">error</span>
+                                </div>
+                                <span className="font-semibold text-white">{t('premium_personal_1m')}</span>
+                              </div>
+                            </td>
+                            <td className="p-3.5 text-on-surface-variant font-mono">{t('date_history_3')}</td>
+                            <td className="p-3.5 text-white font-bold font-mono">59,000đ</td>
+                            <td className="p-3.5 text-right">
+                              <span className="text-[9px] px-2 py-0.5 rounded-full font-bold bg-status-error/10 text-status-error uppercase">
+                                {t('failed')}
+                              </span>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Help Section */}
+                  <div className="p-6 rounded-2xl bg-electric-gradient/10 border border-secondary/20 flex flex-col md:flex-row items-center gap-6 mt-2">
+                    <div className="w-12 h-12 rounded-full bg-secondary-container/20 flex items-center justify-center shrink-0 border border-secondary-container/30">
+                      <span className="material-symbols-outlined text-secondary-container text-2xl">help_center</span>
+                    </div>
+                    <div className="text-center md:text-left flex-1">
+                      <h4 className="text-sm font-bold text-white">{t('need_help')}</h4>
+                      <p className="text-xs text-on-surface-variant mt-1.5 leading-normal">{t('help_desc')}</p>
+                    </div>
+                    <button 
+                      onClick={() => alert('Đang kết nối với hỗ trợ...')}
+                      className="px-6 py-2.5 rounded-full border border-white/20 hover:bg-white/5 transition font-bold text-xs cursor-pointer"
+                    >
+                      {t('contact_now')}
+                    </button>
+                  </div>
+
                 </div>
               )}
 
@@ -764,9 +970,9 @@ export default function Settings() {
                   <div className="w-10 h-10 flex items-center justify-center">
                     <Logo className="w-10 h-10" />
                   </div>
-                  <h3 className="text-base font-bold text-white mt-1">Thay đổi Email</h3>
+                  <h3 className="text-base font-bold text-white mt-1">{t('change_email')}</h3>
                   <p className="text-xs text-on-surface-variant max-w-[260px] mx-auto leading-relaxed">
-                    Nhập địa chỉ email mới mà bạn muốn sử dụng cho tài khoản Melodies.
+                    {t('enter_new_email_desc')}
                   </p>
                 </div>
 
@@ -778,7 +984,7 @@ export default function Settings() {
 
                 {/* Input with Mail Icon */}
                 <div className="flex flex-col gap-1 text-left mt-2">
-                  <label className="text-[10px] uppercase font-bold text-on-surface-variant ml-1">Email mới</label>
+                  <label className="text-[10px] uppercase font-bold text-on-surface-variant ml-1">{t('new_email_label')}</label>
                   <div className="relative flex items-center">
                     <span className="material-symbols-outlined absolute left-3.5 text-on-surface-variant text-sm select-none">mail</span>
                     <input 
@@ -798,7 +1004,7 @@ export default function Settings() {
                   disabled={loadingEmailStep}
                   className="w-full h-11 bg-electric-gradient text-white text-xs font-bold rounded-xl active:scale-98 transition shadow-lg cursor-pointer mt-3"
                 >
-                  {loadingEmailStep ? 'Đang gửi...' : 'Gửi mã xác thực'}
+                  {loadingEmailStep ? t('sending_code') : t('send_verification_code')}
                 </button>
 
                 {/* Cancel link */}
@@ -807,7 +1013,7 @@ export default function Settings() {
                   onClick={() => setShowEmailModal(false)}
                   className="text-xs text-on-surface-variant hover:text-white transition cursor-pointer select-none font-bold mt-1"
                 >
-                  Hủy bỏ
+                  {t('btn_cancel')}
                 </button>
               </form>
             )}
@@ -820,9 +1026,9 @@ export default function Settings() {
                   <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center border border-white/10">
                     <span className="material-symbols-outlined text-xl text-secondary-container">mail</span>
                   </div>
-                  <h3 className="text-base font-bold text-white mt-1">Xác thực Email mới</h3>
+                  <h3 className="text-base font-bold text-white mt-1">{t('verify_new_email')}</h3>
                   <p className="text-xs text-on-surface-variant max-w-[260px] mx-auto leading-relaxed">
-                    Chúng tôi đã gửi mã xác thực 6 chữ số đến email mới của bạn. Vui lòng nhập mã bên dưới.
+                    {t('otp_sent_new_email_desc')}
                   </p>
                 </div>
 
@@ -854,21 +1060,21 @@ export default function Settings() {
                   disabled={loadingEmailStep}
                   className="w-full h-11 bg-electric-gradient text-white text-xs font-bold rounded-xl active:scale-98 transition shadow-lg cursor-pointer mt-2"
                 >
-                  {loadingEmailStep ? 'Đang xác nhận...' : 'Xác nhận thay đổi'}
+                  {loadingEmailStep ? t('confirming') : t('confirm_change')}
                 </button>
 
                 {/* Resend status */}
                 <div className="text-xs text-on-surface-variant mt-2 select-none">
-                  <span>Không nhận được mã? </span>
+                  <span>{t('no_code_received')} </span>
                   {resendTimer > 0 ? (
-                    <span className="text-secondary-container font-semibold">Gửi lại mã ({resendTimer}s)</span>
+                    <span className="text-secondary-container font-semibold">{t('resend_code')} ({resendTimer}s)</span>
                   ) : (
                     <button 
                       type="button" 
                       onClick={handleResendOtp}
                       className="text-secondary-container hover:text-white font-bold cursor-pointer transition"
                     >
-                      Gửi lại mã
+                      {t('resend_code')}
                     </button>
                   )}
                 </div>
@@ -883,9 +1089,9 @@ export default function Settings() {
                   <div className="w-12 h-12 bg-gradient-to-br from-[#8B5CF6] to-[#3B82F6] rounded-full flex items-center justify-center text-white shadow-lg">
                     <span className="material-symbols-outlined text-2xl">check</span>
                   </div>
-                  <h3 className="text-base font-bold text-white mt-2">Thay đổi Email thành công!</h3>
+                  <h3 className="text-base font-bold text-white mt-2">{t('email_change_success')}</h3>
                   <p className="text-xs text-on-surface-variant max-w-[270px] mx-auto leading-relaxed">
-                    Địa chỉ email của bạn đã được cập nhật. Bạn sẽ cần sử dụng email mới này để đăng nhập vào lần sau.
+                    {t('email_updated_notice')}
                   </p>
                 </div>
 
@@ -895,7 +1101,7 @@ export default function Settings() {
                   onClick={() => setShowEmailModal(false)}
                   className="w-full h-11 bg-electric-gradient text-white text-xs font-bold rounded-xl active:scale-98 transition shadow-lg cursor-pointer mt-4"
                 >
-                  Quay lại Hồ sơ
+                  {t('back_to_profile')}
                 </button>
               </div>
             )}

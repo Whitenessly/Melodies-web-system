@@ -4,11 +4,13 @@ import Sidebar from '../components/Sidebar.jsx';
 import Header from '../components/Header.jsx';
 import MusicPlayer from '../components/MusicPlayer.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
 import { api } from '../utils/api.js';
 
 export default function ArtistDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [artistSongs, setArtistSongs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +46,8 @@ export default function ArtistDashboard() {
     loadArtistData();
   }, [user]);
 
+  const daysKeys = ['day_mon', 'day_tue', 'day_wed', 'day_thu', 'day_fri', 'day_sat', 'day_sun'];
+
   return (
     <div className="min-h-screen bg-background text-white flex">
       <Sidebar />
@@ -57,10 +61,10 @@ export default function ArtistDashboard() {
             <div>
               <h1 className="font-display-lg text-2xl font-bold tracking-tight text-white flex items-center gap-2">
                 <span className="material-symbols-outlined text-secondary-container">mic</span>
-                Kênh Nghệ sĩ: Studio Sáng tạo
+                {t('artist_dashboard_title')}
               </h1>
               <p className="text-xs text-on-surface-variant mt-1.5">
-                Quản lý các bài hát đã tải lên, theo dõi thống kê lượt phát và chỉ số tăng trưởng người hâm mộ.
+                {t('artist_dashboard_subtitle')}
               </p>
             </div>
             
@@ -69,14 +73,14 @@ export default function ArtistDashboard() {
               className="electric-btn text-white text-xs font-bold px-5 py-3 rounded-xl hover:scale-102 transition cursor-pointer flex items-center gap-2 shadow-lg"
             >
               <span className="material-symbols-outlined text-base">publish</span>
-              Tải lên tác phẩm mới
+              {t('upload_new_song_btn')}
             </button>
           </div>
 
           {loading ? (
             <div className="flex-1 flex flex-col items-center justify-center text-secondary-container gap-3 min-h-[40vh]">
               <span className="material-symbols-outlined text-4xl animate-spin">sync</span>
-              <p className="text-sm font-semibold">Tải số liệu phân tích...</p>
+              <p className="text-sm font-semibold">{t('loading_analytics')}</p>
             </div>
           ) : (
             <>
@@ -88,7 +92,7 @@ export default function ArtistDashboard() {
                     <span className="material-symbols-outlined text-2xl">play_circle</span>
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant">Tổng lượt nghe</p>
+                    <p className="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant">{t('total_streams')}</p>
                     <p className="text-2xl font-extrabold text-white mt-1">{totalStreams.toLocaleString()}</p>
                   </div>
                 </div>
@@ -98,7 +102,7 @@ export default function ArtistDashboard() {
                     <span className="material-symbols-outlined text-2xl">favorite</span>
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant">Tổng lượt thích</p>
+                    <p className="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant">{t('total_likes')}</p>
                     <p className="text-2xl font-extrabold text-white mt-1">{totalLikes.toLocaleString()}</p>
                   </div>
                 </div>
@@ -108,7 +112,7 @@ export default function ArtistDashboard() {
                     <span className="material-symbols-outlined text-2xl">group</span>
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant">Người theo dõi</p>
+                    <p className="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant">{t('artist_followers')}</p>
                     <p className="text-2xl font-extrabold text-white mt-1">{followers.toLocaleString()}</p>
                   </div>
                 </div>
@@ -118,21 +122,20 @@ export default function ArtistDashboard() {
               {/* simulated analytics chart layout */}
               <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-6">
                 <div>
-                  <h3 className="text-sm font-bold text-white">Xu hướng phát nhạc trong tuần</h3>
-                  <p className="text-[10px] text-on-surface-variant mt-0.5">Biểu diễn số liệu thống kê lượt nghe tích lũy hàng ngày.</p>
+                  <h3 className="text-sm font-bold text-white">{t('weekly_trends')}</h3>
+                  <p className="text-[10px] text-on-surface-variant mt-0.5">{t('weekly_trends_desc')}</p>
                 </div>
                 
                 {/* Visual Chart Bars */}
                 <div className="h-48 flex items-end justify-between px-4 pb-2 border-b border-white/5 gap-4">
                   {[45, 60, 55, 80, 110, 95, 140].map((val, idx) => {
-                    const days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
                     return (
                       <div key={idx} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer">
                         <div 
                           className="w-full rounded-t bg-gradient-to-t from-secondary-container to-primary-container group-hover:brightness-110 transition-all duration-500"
                           style={{ height: `${val}px` }}
                         />
-                        <span className="text-[9px] font-semibold text-on-surface-variant group-hover:text-white transition">{days[idx]}</span>
+                        <span className="text-[9px] font-semibold text-on-surface-variant group-hover:text-white transition">{t(daysKeys[idx])}</span>
                       </div>
                     );
                   })}
@@ -143,7 +146,7 @@ export default function ArtistDashboard() {
               <div className="flex flex-col gap-4">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <span className="material-symbols-outlined text-secondary-container">list</span>
-                  Tác phẩm của bạn ({artistSongs.length})
+                  {t('your_releases')} ({artistSongs.length})
                 </h3>
 
                 {artistSongs.length > 0 ? (
@@ -151,11 +154,11 @@ export default function ArtistDashboard() {
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
                         <tr className="bg-white/5 border-b border-white/5 text-on-surface-variant font-bold">
-                          <th className="p-4">Bài hát</th>
-                          <th className="p-4">Thể loại</th>
-                          <th className="p-4 text-center">Lượt nghe</th>
-                          <th className="p-4 text-center">Yêu thích</th>
-                          <th className="p-4 text-center">Trạng thái</th>
+                          <th className="p-4">{t('table_song')}</th>
+                          <th className="p-4">{t('table_genre')}</th>
+                          <th className="p-4 text-center">{t('table_streams')}</th>
+                          <th className="p-4 text-center">{t('table_likes')}</th>
+                          <th className="p-4 text-center">{t('table_status')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
@@ -193,7 +196,7 @@ export default function ArtistDashboard() {
                   </div>
                 ) : (
                   <div className="glass-panel p-8 text-center rounded-2xl border border-white/5">
-                    <p className="text-xs text-on-surface-variant">Chưa có bài hát nào được đăng tải.</p>
+                    <p className="text-xs text-on-surface-variant">{t('no_songs_uploaded')}</p>
                   </div>
                 )}
               </div>

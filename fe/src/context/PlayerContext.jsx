@@ -168,7 +168,7 @@ export const PlayerProvider = ({ children }) => {
     }
   };
 
-  const playSong = async (song, newQueue = null, indexInQueue = -1) => {
+  const playSong = async (song, newQueue = null, indexInQueue = -1, bypassAd = false) => {
     // If ad is playing, block switching songs
     if (isAdPlaying) return;
 
@@ -187,14 +187,10 @@ export const PlayerProvider = ({ children }) => {
     listenTimeRef.current = 0;
     streamRegisteredRef.current = false;
 
-    // Check if we need to trigger an Ad for Free user
-    if (user && user.premium_status !== 'PREMIUM') {
-      const count = songsPlayedCount + 1;
-      if (count >= 4) { // play ad after 3 songs (on the 4th song trigger)
-        triggerAudioAd(song, newQueue, indexInQueue);
-        return;
-      }
-      setSongsPlayedCount(count);
+    // Check if we need to trigger an Ad for Free user when transitioning between different songs
+    if (user && user.premium_status !== 'PREMIUM' && !bypassAd && currentSong && currentSong._id !== song._id) {
+      triggerAudioAd(song, newQueue, indexInQueue);
+      return;
     }
 
     setCurrentSong(song);
@@ -255,10 +251,10 @@ export const PlayerProvider = ({ children }) => {
     if (pending) {
       const { pendingSong, pendingQueue, pendingIndex } = pending;
       audioRef.current.pendingData = null;
-      playSong(pendingSong, pendingQueue, pendingIndex);
+      playSong(pendingSong, pendingQueue, pendingIndex, true);
     } else {
       // If no pending, play next
-      playNext();
+      playNext(true);
     }
   };
 
@@ -273,24 +269,24 @@ export const PlayerProvider = ({ children }) => {
     }
   };
 
-  const playNext = () => {
+  const playNext = (bypassAd = false) => {
     if (isAdPlaying) return;
     const nextIdx = getNextIndex();
     if (nextIdx !== -1 && queue[nextIdx]) {
-      playSong(queue[nextIdx], queue, nextIdx);
+      playSong(queue[nextIdx], queue, nextIdx, bypassAd);
     } else {
       setIsPlaying(false);
     }
   };
 
-  const playPrev = () => {
+  const playPrev = (bypassAd = false) => {
     if (isAdPlaying) return;
     let prevIdx = currentIndex - 1;
     if (prevIdx < 0) {
       prevIdx = loopMode === 'all' ? queue.length - 1 : 0;
     }
     if (queue[prevIdx]) {
-      playSong(queue[prevIdx], queue, prevIdx);
+      playSong(queue[prevIdx], queue, prevIdx, bypassAd);
     }
   };
 
