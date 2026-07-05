@@ -4,12 +4,14 @@ import Sidebar from '../components/Sidebar.jsx';
 import Header from '../components/Header.jsx';
 import MusicPlayer from '../components/MusicPlayer.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
 import { api } from '../utils/api.js';
 
 export default function PaymentConfirm() {
   const navigate = useNavigate();
   const location = useLocation();
   const { fetchProfile } = useAuth();
+  const { t } = useLanguage();
 
   const [orderId, setOrderId] = useState('');
   const [gateway, setGateway] = useState('');
@@ -19,54 +21,46 @@ export default function PaymentConfirm() {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const order = params.get('orderId');
-    const gate = params.get('gateway');
-    const stat = params.get('status') || 'PENDING';
-    
-    if (order) setOrderId(order);
-    if (gate) setGateway(gate);
-    if (stat) setStatus(stat);
+    const order_id = params.get('orderId');
+    const pay_gateway = params.get('gateway');
+    const pay_status = params.get('status');
 
-    // Auto verify payment if URL redirected with SUCCESS status
-    if (stat === 'SUCCESS' && order && gate) {
-      const autoVerify = async () => {
-        setLoading(true);
-        setMessage('');
-        try {
-          const res = await api.post('/payments/verify', {
-            orderId: order,
-            gateway: gate,
-            status: 'SUCCESS'
-          });
-          setMessage(res.message || 'Thanh toán thành công! Gói cước của bạn đã được nâng cấp.');
-          await fetchProfile();
-        } catch (err) {
-          setMessage(err.message || 'Xác thực thanh toán thất bại.');
-        } finally {
-          setLoading(false);
-        }
-      };
-      autoVerify();
+    if (order_id) setOrderId(order_id);
+    if (pay_gateway) setGateway(pay_gateway);
+    if (pay_status) setStatus(pay_status);
+
+    if (pay_status === 'SUCCESS' && order_id && pay_gateway) {
+      autoVerify(order_id, pay_gateway);
     }
-  }, [location.search]);
+  }, [location]);
+
+  const autoVerify = async (orderIdVal, gatewayVal) => {
+    try {
+      const res = await api.post('/payments/verify', {
+        orderId: orderIdVal,
+        gateway: gatewayVal,
+        status: 'SUCCESS'
+      });
+      setMessage(res.message || 'Thanh toán thành công và kích hoạt Premium!');
+      await fetchProfile();
+    } catch (err) {
+      setMessage(t('payment_failed') + err.message);
+    }
+  };
 
   const handleVerifyPayment = async () => {
     setLoading(true);
-    setMessage('');
     try {
       const res = await api.post('/payments/verify', {
         orderId,
         gateway,
         status: 'SUCCESS'
       });
-      
       setStatus('SUCCESS');
-      setMessage(res.message || 'Thanh toán thành công! Gói cước của bạn đã được nâng cấp.');
-      
-      // Refresh Auth Context User state to premium immediately
+      setMessage(res.message || 'Thanh toán thành công!');
       await fetchProfile();
     } catch (err) {
-      setMessage(err.message || 'Xác thực thanh toán thất bại.');
+      setMessage(t('payment_failed') + err.message);
     } finally {
       setLoading(false);
     }
@@ -97,30 +91,32 @@ export default function PaymentConfirm() {
 
             <div>
               <h1 className="font-display-lg text-2xl font-bold text-white tracking-tight">
-                {status === 'SUCCESS' ? 'Đã Thanh toán thành công' : 'Đang chờ Thanh toán'}
+                {status === 'SUCCESS' ? t('payment_success') : t('payment_pending')}
               </h1>
               <p className="text-xs text-on-surface-variant mt-1.5">
-                Mô phỏng Giao dịch thông qua Cổng {gateway ? gateway.toUpperCase() : 'Momo/VNPay'} Sandbox
+                {t('simulated_transaction_prefix')} {gateway ? gateway.toUpperCase() : 'Momo/VNPay'} Sandbox
               </p>
             </div>
 
             {/* Invoice parameters */}
             <div className="bg-white/5 p-4 rounded-2xl border border-white/5 text-left text-xs flex flex-col gap-3">
               <div className="flex justify-between">
-                <span className="text-on-surface-variant">Mã Đơn hàng:</span>
-                <span className="font-mono font-bold text-white">{orderId || 'Chưa cập nhật'}</span>
+                <span className="text-on-surface-variant">{t('order_id_label')}</span>
+                <span className="font-mono font-bold text-white">{orderId || t('not_updated')}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-on-surface-variant">Phương thức:</span>
-                <span className="font-bold text-white capitalize">{gateway || 'Ví Điện Tử'}</span>
+                <span className="text-on-surface-variant">{t('payment_method_label')}</span>
+                <span className="font-bold text-white capitalize">
+                  {gateway === 'stripe' ? t('credit_card') : (gateway || t('e_wallet'))}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-on-surface-variant">Số tiền:</span>
+                <span className="text-on-surface-variant">{t('amount_label')}</span>
                 <span className="font-bold text-tertiary">59.000 VND</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-on-surface-variant">Thời hạn gói:</span>
-                <span className="font-bold text-white">30 ngày (Kể từ khi kích hoạt)</span>
+                <span className="text-on-surface-variant">{t('plan_duration_label')}</span>
+                <span className="font-bold text-white">{t('duration_30_days')}</span>
               </div>
             </div>
 
@@ -136,7 +132,7 @@ export default function PaymentConfirm() {
                   />
                 </div>
                 <p className="text-[10px] text-on-surface-variant leading-relaxed px-4">
-                  Quét mã QR bằng ứng dụng MoMo/VNPay giả lập hoặc click nút bên dưới để hoàn tất giao dịch.
+                  {t('scan_qr_desc')}
                 </p>
               </div>
             )}
@@ -144,7 +140,7 @@ export default function PaymentConfirm() {
             {/* Notification message */}
             {message && (
               <p className={`text-xs font-semibold ${status === 'SUCCESS' ? 'text-status-success' : 'text-status-error'}`}>
-                {message}
+                {t(message)}
               </p>
             )}
 
@@ -159,7 +155,7 @@ export default function PaymentConfirm() {
                   {loading ? (
                     <span className="material-symbols-outlined text-sm animate-spin">sync</span>
                   ) : (
-                    'Xác nhận đã chuyển khoản thành công'
+                    t('confirm_payment_success')
                   )}
                 </button>
               ) : (
@@ -167,7 +163,7 @@ export default function PaymentConfirm() {
                   onClick={() => navigate('/home')}
                   className="w-full h-11 rounded-xl bg-white/10 text-white font-bold text-xs hover:bg-white/15 transition cursor-pointer"
                 >
-                  Bắt đầu nghe nhạc Premium
+                  {t('start_listening_premium')}
                 </button>
               )}
             </div>

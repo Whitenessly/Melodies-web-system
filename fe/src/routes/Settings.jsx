@@ -53,6 +53,11 @@ export default function Settings() {
   const [passwordError, setPasswordError] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
 
+  // Delete account states
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
   // Update profile handler
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -208,16 +213,23 @@ export default function Settings() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    const confirmDelete = window.confirm(t('confirm_delete_account') || 'CẢNH BÁO: Hành động này không thể hoàn tác. Bạn có chắc muốn xóa vĩnh viễn tài khoản của mình?');
-    if (!confirmDelete) return;
+  const handleDeleteAccount = () => {
+    setShowDeleteModal(true);
+    setDeleteError('');
+  };
 
+  const confirmDeleteAccount = async () => {
+    setDeletingAccount(true);
+    setDeleteError('');
     try {
       await api.delete('/auth/me');
       logout();
+      setShowDeleteModal(false);
       navigate('/auth');
     } catch (err) {
-      alert(err.message);
+      setDeleteError(err.message || 'Không thể xóa tài khoản lúc này.');
+    } finally {
+      setDeletingAccount(false);
     }
   };
 
@@ -245,6 +257,28 @@ export default function Settings() {
       alert(t('payment_failed') + err.message);
     }
   };
+
+  const [transactions, setTransactions] = useState([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'subscription') {
+      const fetchTransactions = async () => {
+        setLoadingTransactions(true);
+        try {
+          const res = await api.get('/payments/history');
+          if (Array.isArray(res)) {
+            setTransactions(res);
+          }
+        } catch (err) {
+          console.error('Failed to fetch transactions:', err);
+        } finally {
+          setLoadingTransactions(false);
+        }
+      };
+      fetchTransactions();
+    }
+  }, [activeTab]);
 
   return (
     <div className="min-h-screen bg-background text-white flex">
@@ -318,7 +352,7 @@ export default function Settings() {
           </div>
 
           {/* Settings Tab Panel Content (Right Pane) */}
-          <main className="flex-1 p-8 overflow-y-auto min-w-0">
+          <main className="flex-1 p-8 pb-32 overflow-y-auto min-w-0">
             <div className="max-w-3xl">
 
               {/* 1. Account Section */}
@@ -747,18 +781,38 @@ export default function Settings() {
                         )}
                       </div>
 
-                      {user?.premium_status === 'PREMIUM' ? (
-                        <div className="flex items-center gap-4 py-3">
-                          <div className="w-12 h-12 bg-[#A50064] rounded-xl flex items-center justify-center shadow-lg shrink-0 font-bold text-white text-sm select-none">
-                            MoMo
+                      {user?.premium_status === 'PREMIUM' ? (() => {
+                        const defaultMethod = user?.paymentMethods?.find(pm => pm.isDefault);
+                        if (defaultMethod) {
+                          const brandUpper = defaultMethod.brand ? defaultMethod.brand.toUpperCase() : 'CARD';
+                          const brandDisplay = brandUpper === 'MASTERCARD' ? 'MC' : brandUpper;
+                          return (
+                            <div className="flex items-center gap-4 py-3">
+                              <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg shrink-0 font-bold text-white text-xs select-none uppercase">
+                                {brandDisplay}
+                              </div>
+                              <div>
+                                <h4 className="text-xs font-bold text-white">Thẻ {brandUpper}</h4>
+                                <p className="text-[10px] text-on-surface-variant mt-0.5">Chủ thẻ: {defaultMethod.cardholderName ? defaultMethod.cardholderName.toUpperCase() : ''}</p>
+                                <p className="text-xs text-white font-mono mt-1 font-semibold">•••• •••• •••• {defaultMethod.last4}</p>
+                              </div>
+                            </div>
+                          );
+                        }
+                        // Fallback to default MoMo if no card payment method is found
+                        return (
+                          <div className="flex items-center gap-4 py-3">
+                            <div className="w-12 h-12 bg-[#A50064] rounded-xl flex items-center justify-center shadow-lg shrink-0 font-bold text-white text-sm select-none">
+                              MoMo
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-bold text-white">Ví MoMo</h4>
+                              <p className="text-[10px] text-on-surface-variant mt-0.5">{t('last_linked_prefix')} {t('12 Th08, 2023')}</p>
+                              <p className="text-xs text-white font-mono mt-1 font-semibold">098****321</p>
+                            </div>
                           </div>
-                          <div>
-                            <h4 className="text-xs font-bold text-white">Ví MoMo</h4>
-                            <p className="text-[10px] text-on-surface-variant mt-0.5">{t('last_linked_prefix')} {t('12 Th08, 2023')}</p>
-                            <p className="text-xs text-white font-mono mt-1 font-semibold">098****321</p>
-                          </div>
-                        </div>
-                      ) : (
+                        );
+                      })() : (
                         <div className="py-4 text-center">
                           <p className="text-xs text-on-surface-variant">{t('no_payment_method')}</p>
                         </div>
@@ -793,62 +847,64 @@ export default function Settings() {
 
                   </div>
 
-                  {/* Add New Methods */}
-                  <div className="flex flex-col gap-4">
-                    <h2 className="text-sm font-bold text-white">{t('add_new_method')}</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* VNPAY Card */}
-                      <div 
-                        onClick={() => navigate('/subscription-plans')}
-                        className="glass-panel p-5 rounded-2xl cursor-pointer hover:scale-102 transition duration-300 flex flex-col justify-between min-h-[160px]"
-                      >
-                        <div>
-                          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden mb-3">
-                            <img 
-                              className="w-7 h-auto" 
-                              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCY9ZpD0ymz5mgXX4fMiZV68-WhyDv6aSJmsx2QJH2UK8DW9S8_Vg177MXGdZYY_u67Ej7ScWN4i_pcJmtbraIxHOA80jmbvwQCyoi8Z49rIdZMYXkUuK_Om2xiKPeFknAwBBBBQDOjNTArrIUwldX2rDHxjeylal7BIBXBoRt56idmD0FsUdfmi53oaE5Ac4bIG9DTfuExxKeL1JrGOBU92cO-7knD2BvmBarovS_nsII2nowAwx_wWWx-xGDNa0QU_ipcZSJD3A" 
-                              alt="VNPAY" 
-                            />
+                  {/* Add New Methods (Temporarily hidden) */}
+                  {false && (
+                    <div className="flex flex-col gap-4">
+                      <h2 className="text-sm font-bold text-white">{t('add_new_method')}</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* VNPAY Card */}
+                        <div 
+                          onClick={() => navigate('/subscription-plans')}
+                          className="glass-panel p-5 rounded-2xl cursor-pointer hover:scale-102 transition duration-300 flex flex-col justify-between min-h-[160px]"
+                        >
+                          <div>
+                            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden mb-3">
+                              <img 
+                                className="w-7 h-auto" 
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCY9ZpD0ymz5mgXX4fMiZV68-WhyDv6aSJmsx2QJH2UK8DW9S8_Vg177MXGdZYY_u67Ej7ScWN4i_pcJmtbraIxHOA80jmbvwQCyoi8Z49rIdZMYXkUuK_Om2xiKPeFknAwBBBBQDOjNTArrIUwldX2rDHxjeylal7BIBXBoRt56idmD0FsUdfmi53oaE5Ac4bIG9DTfuExxKeL1JrGOBU92cO-7knD2BvmBarovS_nsII2nowAwx_wWWx-xGDNa0QU_ipcZSJD3A" 
+                                alt="VNPAY" 
+                              />
+                            </div>
+                            <h4 className="text-xs font-bold text-white">{t('vnpay_gateway')}</h4>
+                            <p className="text-[10px] text-on-surface-variant mt-1 leading-normal">{t('vnpay_desc')}</p>
                           </div>
-                          <h4 className="text-xs font-bold text-white">{t('vnpay_gateway')}</h4>
-                          <p className="text-[10px] text-on-surface-variant mt-1 leading-normal">{t('vnpay_desc')}</p>
-                        </div>
-                        <div className="text-secondary-container text-[10px] font-bold flex items-center gap-1 mt-3">
-                          {t('connect_now')}
-                          <span className="material-symbols-outlined text-xs">arrow_forward</span>
-                        </div>
-                      </div>
-
-                      {/* Credit Card */}
-                      <div 
-                        onClick={() => navigate('/subscription-plans')}
-                        className="glass-panel p-5 rounded-2xl cursor-pointer hover:scale-102 transition duration-300 flex flex-col justify-between min-h-[160px]"
-                      >
-                        <div>
-                          <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center mb-3">
-                            <span className="material-symbols-outlined text-secondary-container">credit_card</span>
+                          <div className="text-secondary-container text-[10px] font-bold flex items-center gap-1 mt-3">
+                            {t('connect_now')}
+                            <span className="material-symbols-outlined text-xs">arrow_forward</span>
                           </div>
-                          <h4 className="text-xs font-bold text-white">{t('credit_card')}</h4>
-                          <p className="text-[10px] text-on-surface-variant mt-1 leading-normal">{t('credit_card_desc')}</p>
                         </div>
-                        <div className="text-secondary-container text-[10px] font-bold flex items-center gap-1 mt-3">
-                          {t('add_card')}
-                          <span className="material-symbols-outlined text-xs">arrow_forward</span>
-                        </div>
-                      </div>
 
-                      {/* Other Methods */}
-                      <div 
-                        onClick={() => navigate('/subscription-plans')}
-                        className="glass-panel p-5 rounded-2xl border-dashed border-white/20 hover:border-white/40 cursor-pointer transition flex flex-col justify-center items-center text-center min-h-[160px]"
-                      >
-                        <div className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center mb-2.5">
-                          <span className="material-symbols-outlined text-on-surface-variant">add</span>
+                        {/* Credit Card */}
+                        <div 
+                          onClick={() => navigate('/subscription-plans')}
+                          className="glass-panel p-5 rounded-2xl cursor-pointer hover:scale-102 transition duration-300 flex flex-col justify-between min-h-[160px]"
+                        >
+                          <div>
+                            <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center mb-3">
+                              <span className="material-symbols-outlined text-secondary-container">credit_card</span>
+                            </div>
+                            <h4 className="text-xs font-bold text-white">{t('credit_card')}</h4>
+                            <p className="text-[10px] text-on-surface-variant mt-1 leading-normal">{t('credit_card_desc')}</p>
+                          </div>
+                          <div className="text-secondary-container text-[10px] font-bold flex items-center gap-1 mt-3">
+                            {t('add_card')}
+                            <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                          </div>
                         </div>
-                        <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{t('other_methods')}</span>
+
+                        {/* Other Methods */}
+                        <div 
+                          onClick={() => navigate('/subscription-plans')}
+                          className="glass-panel p-5 rounded-2xl border-dashed border-white/20 hover:border-white/40 cursor-pointer transition flex flex-col justify-center items-center text-center min-h-[160px]"
+                        >
+                          <div className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center mb-2.5">
+                            <span className="material-symbols-outlined text-on-surface-variant">add</span>
+                          </div>
+                          <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{t('other_methods')}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Transaction History */}
                   <div className="flex flex-col gap-4">
@@ -873,57 +929,57 @@ export default function Settings() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                          <tr className="hover:bg-white/[0.01]">
-                            <td className="p-3.5">
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded bg-status-success/15 flex items-center justify-center shrink-0">
-                                  <span className="material-symbols-outlined text-status-success text-base">workspace_premium</span>
-                                </div>
-                                <span className="font-semibold text-white">{t('premium_personal_1m')}</span>
-                              </div>
-                            </td>
-                            <td className="p-3.5 text-on-surface-variant font-mono">{t('date_history_1')}</td>
-                            <td className="p-3.5 text-white font-bold font-mono">59,000đ</td>
-                            <td className="p-3.5 text-right">
-                              <span className="text-[9px] px-2 py-0.5 rounded-full font-bold bg-status-success/10 text-status-success uppercase">
-                                {t('success')}
-                              </span>
-                            </td>
-                          </tr>
-                          <tr className="hover:bg-white/[0.01]">
-                            <td className="p-3.5">
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded bg-status-success/15 flex items-center justify-center shrink-0">
-                                  <span className="material-symbols-outlined text-status-success text-base">workspace_premium</span>
-                                </div>
-                                <span className="font-semibold text-white">{t('premium_personal_1m')}</span>
-                              </div>
-                            </td>
-                            <td className="p-3.5 text-on-surface-variant font-mono">{t('date_history_2')}</td>
-                            <td className="p-3.5 text-white font-bold font-mono">59,000đ</td>
-                            <td className="p-3.5 text-right">
-                              <span className="text-[9px] px-2 py-0.5 rounded-full font-bold bg-status-success/10 text-status-success uppercase">
-                                {t('success')}
-                              </span>
-                            </td>
-                          </tr>
-                          <tr className="hover:bg-white/[0.01]">
-                            <td className="p-3.5">
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded bg-status-error/15 flex items-center justify-center shrink-0">
-                                  <span className="material-symbols-outlined text-status-error text-base">error</span>
-                                </div>
-                                <span className="font-semibold text-white">{t('premium_personal_1m')}</span>
-                              </div>
-                            </td>
-                            <td className="p-3.5 text-on-surface-variant font-mono">{t('date_history_3')}</td>
-                            <td className="p-3.5 text-white font-bold font-mono">59,000đ</td>
-                            <td className="p-3.5 text-right">
-                              <span className="text-[9px] px-2 py-0.5 rounded-full font-bold bg-status-error/10 text-status-error uppercase">
-                                {t('failed')}
-                              </span>
-                            </td>
-                          </tr>
+                          {loadingTransactions ? (
+                            <tr>
+                              <td colSpan="4" className="p-6 text-center text-on-surface-variant text-xs">
+                                Đang tải lịch sử giao dịch...
+                              </td>
+                            </tr>
+                          ) : transactions.length === 0 ? (
+                            <tr>
+                              <td colSpan="4" className="p-6 text-center text-on-surface-variant text-xs">
+                                Chưa có giao dịch nào được thực hiện.
+                              </td>
+                            </tr>
+                          ) : (
+                            transactions.map((tx) => {
+                              const isSuccess = tx.status === 'SUCCESS';
+                              const formattedDate = new Date(tx.completed_at || tx.createdAt).toLocaleDateString('vi-VN', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                              });
+                              const formattedAmount = tx.amount ? tx.amount.toLocaleString('vi-VN') + 'đ' : '0đ';
+                              
+                              return (
+                                <tr key={tx._id} className="hover:bg-white/[0.01]">
+                                  <td className="p-3.5">
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-7 h-7 rounded flex items-center justify-center shrink-0 ${
+                                        isSuccess ? 'bg-status-success/15' : 'bg-status-error/15'
+                                      }`}>
+                                        <span className={`material-symbols-outlined text-base ${
+                                          isSuccess ? 'text-status-success' : 'text-status-error'
+                                        }`}>
+                                          {isSuccess ? 'workspace_premium' : 'error'}
+                                        </span>
+                                      </div>
+                                      <span className="font-semibold text-white">Gói Premium Cá nhân (1 Tháng)</span>
+                                    </div>
+                                  </td>
+                                  <td className="p-3.5 text-on-surface-variant font-mono">{formattedDate}</td>
+                                  <td className="p-3.5 text-white font-bold font-mono">{formattedAmount}</td>
+                                  <td className="p-3.5 text-right">
+                                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                                      isSuccess ? 'bg-status-success/10 text-status-success' : 'bg-status-error/10 text-status-error'
+                                    }`}>
+                                      {isSuccess ? t('success') : t('failed')}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -1106,6 +1162,61 @@ export default function Settings() {
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Modal Overlay */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 z-[100] animate-fade-in">
+          <div className="glass-panel w-full max-w-sm p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-5 text-center relative animate-scale-in">
+            <button 
+              type="button"
+              onClick={() => setShowDeleteModal(false)}
+              className="absolute right-4 top-4 text-on-surface-variant hover:text-white transition cursor-pointer select-none"
+            >
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
+
+            <div className="w-12 h-12 rounded-full bg-status-error/15 border border-status-error/30 flex items-center justify-center text-status-error self-center mt-2">
+              <span className="material-symbols-outlined text-2xl">warning</span>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <h3 className="text-base font-bold text-white">Xóa tài khoản vĩnh viễn?</h3>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Hành động này không thể hoàn tác. Tất cả dữ liệu cá nhân, danh sách phát đã thích và lịch sử nghe nhạc của bạn sẽ bị xóa vĩnh viễn khỏi hệ thống.
+              </p>
+            </div>
+
+            {deleteError && (
+              <div className="bg-status-error/10 border border-status-error/20 text-status-error px-3 py-2 rounded-xl text-[10px] text-left">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2 mt-2">
+              <button 
+                type="button" 
+                disabled={deletingAccount}
+                onClick={confirmDeleteAccount}
+                className="w-full h-11 bg-status-error hover:bg-status-error/90 text-white text-xs font-bold rounded-xl active:scale-98 transition shadow-lg cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                {deletingAccount ? (
+                  <span className="material-symbols-outlined text-sm animate-spin">sync</span>
+                ) : (
+                  'Tôi hiểu, hãy xóa tài khoản'
+                )}
+              </button>
+              <button 
+                type="button"
+                disabled={deletingAccount}
+                onClick={() => setShowDeleteModal(false)}
+                className="w-full h-11 bg-white/5 hover:bg-white/10 text-white text-xs font-bold rounded-xl active:scale-98 transition cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+            </div>
           </div>
         </div>
       )}

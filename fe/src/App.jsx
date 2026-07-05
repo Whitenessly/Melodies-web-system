@@ -18,6 +18,7 @@ import Settings from './routes/Settings';
 import SubscriptionPlans from './routes/SubscriptionPlans';
 import PaymentConfirm from './routes/PaymentConfirm';
 import PaymentHistory from './routes/PaymentHistory';
+import PaymentCC from './routes/PaymentCC';
 
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -105,6 +106,11 @@ function AppRoutes() {
       <Route path="/payment-history" element={
         <ProtectedRoute>
           <PaymentHistory />
+        </ProtectedRoute>
+      } />
+      <Route path="/payment-cc" element={
+        <ProtectedRoute>
+          <PaymentCC />
         </ProtectedRoute>
       } />
 

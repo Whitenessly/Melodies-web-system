@@ -15,7 +15,8 @@ import {
   trackAdClick, 
   getPlans, 
   updatePlanPrice, 
-  updatePaymentConfig 
+  updatePaymentConfig,
+  getPaymentConfig
 } from '../controllers/adminController.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
@@ -44,6 +45,7 @@ router.put('/ads/:id', updateAd);
 router.delete('/ads/:id', deleteAd);
 
 router.put('/plans/:id', updatePlanPrice);
+router.get('/payment-config/:gateway', getPaymentConfig);
 router.post('/payment-config', updatePaymentConfig);
 
 export default router;

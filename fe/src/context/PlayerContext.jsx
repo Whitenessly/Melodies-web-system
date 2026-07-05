@@ -170,7 +170,7 @@ export const PlayerProvider = ({ children }) => {
 
   const playSong = async (song, newQueue = null, indexInQueue = -1, bypassAd = false) => {
     // If ad is playing, block switching songs
-    if (isAdPlaying) return;
+    if (isAdPlaying && !bypassAd) return;
 
     // Reset resumeTimeRef on manual play
     resumeTimeRef.current = 0;

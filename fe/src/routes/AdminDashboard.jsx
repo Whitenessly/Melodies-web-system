@@ -148,6 +148,9 @@ export default function AdminDashboard() {
   const [momoSecret, setMomoSecret] = useState('');
   const [vnpayMerchant, setVnpayMerchant] = useState('');
   const [vnpaySecret, setVnpaySecret] = useState('');
+  const [stripePublishable, setStripePublishable] = useState('');
+  const [stripeSecret, setStripeSecret] = useState('');
+  const [planPrices, setPlanPrices] = useState({});
 
   const loadData = async () => {
     setLoading(true);
@@ -168,6 +171,12 @@ export default function AdminDashboard() {
         const plansData = await api.get('/admin/plans');
         setPlans(plansData);
         
+        const priceMap = {};
+        plansData.forEach(p => {
+          priceMap[p.planId] = p.price;
+        });
+        setPlanPrices(priceMap);
+        
         // Fetch payment configs
         const momoConfig = await api.get('/admin/payment-config/momo');
         if (momoConfig) {
@@ -178,6 +187,11 @@ export default function AdminDashboard() {
         if (vnpayConfig) {
           setVnpayMerchant(vnpayConfig.merchantId || '');
           setVnpaySecret(vnpayConfig.secretKey || '');
+        }
+        const stripeConfig = await api.get('/admin/payment-config/stripe');
+        if (stripeConfig) {
+          setStripePublishable(stripeConfig.publishableKey || '');
+          setStripeSecret(stripeConfig.secretKey || '');
         }
       }
     } catch (err) {
@@ -283,20 +297,27 @@ export default function AdminDashboard() {
   };
 
   // Pricing Config
-  const handleUpdatePrice = async (planId, priceId, newPrice) => {
+  const handleSavePrices = async () => {
     try {
-      const updated = await api.put(`/admin/plans/${priceId}`, { price: parseInt(newPrice) });
-      setPlans(prev => prev.map(p => p._id === priceId ? updated.plan : p));
-      alert(t('msg_plan_updated'));
+      for (const plan of plans) {
+        const newPrice = planPrices[plan.planId];
+        if (newPrice !== undefined && newPrice !== plan.price) {
+          await api.put(`/admin/plans/${plan._id}`, { price: newPrice });
+        }
+      }
+      alert('Đã cập nhật biểu phí gói dịch vụ thành công!');
+      // Reload plans to refresh state
+      const plansData = await api.get('/admin/plans');
+      setPlans(plansData);
     } catch (err) {
-      alert(err.message);
+      alert('Cập nhật biểu phí thất bại: ' + err.message);
     }
   };
 
-  const handleSavePaymentConfig = async (gateway, secretKey, merchantId) => {
+  const handleSavePaymentConfig = async (gateway, secretKey, merchantId, publishableKey = '') => {
     try {
-      await api.post('/admin/payment-config', { gateway, secretKey, merchantId });
-      alert(gateway === 'momo' ? t('msg_momo_updated') : t('msg_vnpay_updated'));
+      await api.post('/admin/payment-config', { gateway, secretKey, merchantId, publishableKey });
+      alert(`Đã cập nhật thành công cấu hình cổng thanh toán ${gateway.toUpperCase()}!`);
     } catch (err) {
       alert(err.message);
     }
@@ -633,8 +654,8 @@ export default function AdminDashboard() {
                           <div className="flex items-center gap-3">
                             <input 
                               type="number" 
-                              defaultValue={plan.price}
-                              onBlur={(e) => handleUpdatePrice(plan.planId, plan._id, e.target.value)}
+                              value={planPrices[plan.planId] !== undefined ? planPrices[plan.planId] : plan.price}
+                              onChange={(e) => setPlanPrices(prev => ({ ...prev, [plan.planId]: parseInt(e.target.value) || 0 }))}
                               className="w-24 h-9 px-2 text-right bg-background border border-white/5 rounded-lg text-xs font-mono font-bold"
                             />
                             <span className="text-[10px] text-on-surface-variant">VND</span>
@@ -642,6 +663,13 @@ export default function AdminDashboard() {
                         </div>
                       ))}
                     </div>
+                    <button 
+                      type="button" 
+                      onClick={handleSavePrices}
+                      className="text-[10px] font-bold px-4 py-2 bg-secondary-container text-black rounded-xl hover:bg-secondary-container/90 transition cursor-pointer self-end mt-2"
+                    >
+                      Lưu biểu phí gói
+                    </button>
                   </div>
 
                   {/* Payment Sandbox API configurations */}
@@ -698,6 +726,31 @@ export default function AdminDashboard() {
                         className="text-[9px] font-bold px-3 py-1.5 bg-[#005BAA]/20 text-[#005BAA] rounded-lg mt-2 w-max hover:bg-[#005BAA]/30 transition cursor-pointer"
                       >
                         {t('btn_update_vnpay')}
+                      </button>
+                    </div>
+
+                    {/* Stripe config */}
+                    <div className="flex flex-col gap-3 p-4 bg-white/5 border border-white/5 rounded-2xl">
+                      <h4 className="text-xs font-bold text-primary flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-sm">credit_card</span>
+                        Stripe Credit Card Credentials
+                      </h4>
+                      <div className="grid grid-cols-2 gap-3 mt-1">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-on-surface-variant">Publishable Key</label>
+                          <input type="text" value={stripePublishable} onChange={e => setStripePublishable(e.target.value)} className="h-9 px-3 bg-background border border-white/5 rounded-lg text-[10px] text-white" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-on-surface-variant">Secret Key</label>
+                          <input type="password" value={stripeSecret} onChange={e => setStripeSecret(e.target.value)} className="h-9 px-3 bg-background border border-white/5 rounded-lg text-[10px] text-white" />
+                        </div>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => handleSavePaymentConfig('stripe', stripeSecret, '', stripePublishable)}
+                        className="text-[9px] font-bold px-3 py-1.5 bg-primary/20 text-primary rounded-lg mt-2 w-max hover:bg-primary/30 transition cursor-pointer"
+                      >
+                        Cập nhật Stripe Config
                       </button>
                     </div>
 

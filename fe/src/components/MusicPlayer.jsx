@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router';
 import { usePlayer } from '../context/PlayerContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -96,6 +97,17 @@ export default function MusicPlayer() {
     }
   };
 
+  const handleAdClick = () => {
+    if (isAdPlaying && activeAd) {
+      if (activeAd.targetUrl) {
+        window.open(activeAd.targetUrl, '_blank');
+      }
+      api.post(`/admin/ads/${activeAd._id}/click`).catch(err => {
+        console.error('Failed to register ad click:', err.message);
+      });
+    }
+  };
+
   const handleLoopToggle = () => {
     if (loopMode === 'none') setLoopMode('all');
     else if (loopMode === 'all') setLoopMode('single');
@@ -140,8 +152,8 @@ export default function MusicPlayer() {
         {/* Left Side: Thumbnail & Track Info */}
         <div className="flex items-center gap-4 w-[28%] min-w-[200px]">
           <div 
-            onClick={() => !isAdPlaying && navigate('/player')}
-            className="w-16 h-16 rounded-xl overflow-hidden bg-white/5 cursor-pointer relative group flex-shrink-0 border border-white/5"
+            onClick={isAdPlaying ? handleAdClick : () => navigate('/player')}
+            className={`w-16 h-16 rounded-xl overflow-hidden bg-white/5 cursor-pointer relative group flex-shrink-0 border border-white/5 ${isAdPlaying ? 'hover:ring-2 hover:ring-secondary-container transition-all duration-200' : ''}`}
           >
             <img 
               src={isAdPlaying ? (activeAd?.imageUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100') : (currentSong?.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100')} 
@@ -157,7 +169,7 @@ export default function MusicPlayer() {
           
           <div className="flex-1 min-w-0">
             <p 
-              onClick={() => !isAdPlaying && navigate('/player')}
+              onClick={isAdPlaying ? handleAdClick : () => navigate('/player')}
               className="text-sm font-bold text-white truncate hover:underline cursor-pointer"
             >
               {isAdPlaying ? activeAd?.title : currentSong?.title}
@@ -338,8 +350,7 @@ export default function MusicPlayer() {
 
       </div>
 
-      {/* Add song to Playlist Modal Overlay */}
-      {showAddPlaylistModal && (
+      {showAddPlaylistModal && createPortal(
         <div className="fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center p-6 z-[100] animate-fade-in">
           <div className="glass-panel w-full max-w-sm p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4">
             <div className="flex justify-between items-center border-b border-white/5 pb-3">
@@ -384,7 +395,8 @@ export default function MusicPlayer() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

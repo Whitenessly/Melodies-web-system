@@ -4,6 +4,8 @@ import Comment from '../models/Comment.js';
 import Ad from '../models/Ad.js';
 import SubscriptionPlan from '../models/SubscriptionPlan.js';
 import Notification from '../models/Notification.js';
+import { saveBase64File } from '../utils/file.js';
+import PaymentConfig from '../models/PaymentConfig.js';
 
 export async function getDashboardStats(req, res) {
   try {
@@ -183,18 +185,28 @@ export async function getRandomAd(req, res) {
 
 export async function createAd(req, res) {
   try {
-    const { title, type, clientName, budgetLimit, audioUrl, imageUrl, targetUrl, location } = req.body;
-    if (!title || !type || !clientName || !budgetLimit) {
+    const { title, clientName, budgetLimit, audioData, imageData, targetUrl, location } = req.body;
+    if (!title || !clientName || !budgetLimit) {
       return res.status(400).json({ message: 'Missing required ad campaign information' });
+    }
+
+    let finalAudioUrl = '';
+    let finalImageUrl = '';
+
+    if (audioData) {
+      finalAudioUrl = saveBase64File(audioData, 'ads', 'mp3');
+    }
+    if (imageData) {
+      finalImageUrl = saveBase64File(imageData, 'ads', 'png');
     }
 
     const ad = new Ad({
       title,
-      type,
+      type: 'audio',
       clientName,
       budgetLimit,
-      audioUrl: audioUrl || '',
-      imageUrl: imageUrl || '',
+      audioUrl: finalAudioUrl,
+      imageUrl: finalImageUrl,
       targetUrl: targetUrl || '',
       location: location || 'Global',
       status: 'active'
@@ -273,12 +285,36 @@ export async function updatePlanPrice(req, res) {
   }
 }
 
-export async function updatePaymentConfig(req, res) {
+export async function getPaymentConfig(req, res) {
   try {
-    const { secretKey, merchantId, gateway } = req.body;
+    const { gateway } = req.params;
     if (!gateway) return res.status(400).json({ message: 'Gateway is required' });
     
-    // In local development simulation, we log this and success
+    const config = await PaymentConfig.findOne({ gateway });
+    if (!config) {
+      return res.json({ gateway, merchantId: '', secretKey: '', publishableKey: '' });
+    }
+    return res.json(config);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+export async function updatePaymentConfig(req, res) {
+  try {
+    const { secretKey, merchantId, publishableKey, gateway } = req.body;
+    if (!gateway) return res.status(400).json({ message: 'Gateway is required' });
+    
+    let config = await PaymentConfig.findOne({ gateway });
+    if (!config) {
+      config = new PaymentConfig({ gateway });
+    }
+    
+    if (merchantId !== undefined) config.merchantId = merchantId;
+    if (secretKey !== undefined) config.secretKey = secretKey;
+    if (publishableKey !== undefined) config.publishableKey = publishableKey;
+    
+    await config.save();
     console.log(`🔐 CONFIG UPDATE - Gateway: ${gateway}, MerchantID: ${merchantId}, SecretKey: [HIDDEN]`);
     return res.json({ message: `Successfully updated payment credentials configuration for ${gateway} Sandbox!` });
   } catch (err) {

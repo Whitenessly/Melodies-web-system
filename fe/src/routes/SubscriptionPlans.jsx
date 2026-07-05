@@ -14,8 +14,27 @@ export default function SubscriptionPlans() {
 
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedGateway, setSelectedGateway] = useState('momo'); // 'momo', 'vnpay'
+  const [selectedGateway, setSelectedGateway] = useState('momo'); // 'momo', 'vnpay', 'stripe'
   const [openFaq, setOpenFaq] = useState(null);
+  const [gateways, setGateways] = useState({
+    momo: { enabled: false },
+    vnpay: { enabled: false },
+    stripe: { enabled: false, publishableKey: '' }
+  });
+
+  const loadGateways = async () => {
+    try {
+      const res = await api.get('/payments/gateways');
+      setGateways(res);
+      
+      // Automatically select first enabled gateway
+      if (res.momo?.enabled) setSelectedGateway('momo');
+      else if (res.vnpay?.enabled) setSelectedGateway('vnpay');
+      else if (res.stripe?.enabled) setSelectedGateway('stripe');
+    } catch (err) {
+      console.log('Failed to load gateways configuration:', err);
+    }
+  };
 
   const loadPlans = async () => {
     try {
@@ -58,6 +77,7 @@ export default function SubscriptionPlans() {
 
   useEffect(() => {
     loadPlans();
+    loadGateways();
   }, []);
 
   const handleSubscribe = async (plan) => {
@@ -68,6 +88,11 @@ export default function SubscriptionPlans() {
 
     if (user?.premium_status === 'PREMIUM') {
       alert(t('already_premium'));
+      return;
+    }
+
+    if (selectedGateway === 'stripe') {
+      navigate(`/payment-cc?planId=${plan.planId}`);
       return;
     }
 
@@ -135,10 +160,11 @@ export default function SubscriptionPlans() {
             <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider text-center">
               {t('choose_gateway')}
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <button 
+                disabled={!gateways.momo?.enabled}
                 onClick={() => setSelectedGateway('momo')}
-                className={`py-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                className={`py-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${
                   selectedGateway === 'momo' ? 'bg-[#A50064] text-white shadow-lg shadow-[#A50064]/20' : 'bg-white/5 text-on-surface-variant hover:text-white'
                 }`}
               >
@@ -146,13 +172,24 @@ export default function SubscriptionPlans() {
                 {t('momo_wallet')}
               </button>
               <button 
+                disabled={!gateways.vnpay?.enabled}
                 onClick={() => setSelectedGateway('vnpay')}
-                className={`py-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                className={`py-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${
                   selectedGateway === 'vnpay' ? 'bg-[#005BAA] text-white shadow-lg shadow-[#005BAA]/20' : 'bg-white/5 text-on-surface-variant hover:text-white'
                 }`}
               >
                 <span className="material-symbols-outlined text-sm select-none">account_balance_wallet</span>
                 {t('vnpay_gateway')}
+              </button>
+              <button 
+                disabled={!gateways.stripe?.enabled}
+                onClick={() => setSelectedGateway('stripe')}
+                className={`py-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${
+                  selectedGateway === 'stripe' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 text-on-surface-variant hover:text-white'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm select-none">credit_card</span>
+                {t('credit_card')}
               </button>
             </div>
           </div>
@@ -213,7 +250,9 @@ export default function SubscriptionPlans() {
                     </div>
 
                     <div className="flex items-baseline gap-1 mb-8 relative z-10">
-                      <span className="text-4xl font-extrabold text-white">59.000đ</span>
+                      <span className="text-4xl font-extrabold text-white">
+                        {premiumPlan.price ? (premiumPlan.price).toLocaleString('vi-VN') + 'đ' : '59.000đ'}
+                      </span>
                       <span className="text-xs text-on-surface-variant">/{t('vnd_per_month').split(' / ')[1]}</span>
                     </div>
 
