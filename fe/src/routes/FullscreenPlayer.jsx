@@ -42,6 +42,7 @@ export default function FullscreenPlayer() {
   const [commentRating, setCommentRating] = useState(5);
   const [activePopupComment, setActivePopupComment] = useState(null);
   const [lyricsLines, setLyricsLines] = useState([]);
+  const [artistInfo, setArtistInfo] = useState(null);
 
   const [isLiked, setIsLiked] = useState(false);
   const [showAddPlaylistModal, setShowAddPlaylistModal] = useState(false);
@@ -109,17 +110,30 @@ export default function FullscreenPlayer() {
     }
   };
 
+  const loadArtistInfo = async () => {
+    if (!currentSong) return;
+    const id = currentSong.artistId?._id || currentSong.artistId;
+    if (!id) return;
+    try {
+      const data = await api.get(`/users/${id}`);
+      setArtistInfo(data);
+    } catch (err) {
+      console.log('Failed to fetch artist info:', err.message);
+    }
+  };
+
   useEffect(() => {
     if (currentSong) {
       loadComments();
+      loadArtistInfo();
       // Format lyrics lines
       if (currentSong.lyrics) {
         setLyricsLines(currentSong.lyrics.split('\n'));
       } else {
-        setLyricsLines(['Chưa có lời bài hát cho tác phẩm này.']);
+        setLyricsLines([t('no_lyrics')]);
       }
     }
-  }, [currentSong]);
+  }, [currentSong, t]);
 
   // Real-time floating pop-ups: check if a comment exists at the current second
   useEffect(() => {
@@ -233,7 +247,7 @@ export default function FullscreenPlayer() {
         >
           <span className="material-symbols-outlined">expand_more</span>
         </button>
-        <span className="text-xs uppercase font-bold tracking-widest text-on-surface-variant">Đang Phát</span>
+        <span className="text-xs uppercase font-bold tracking-widest text-on-surface-variant">{t('now_playing')}</span>
         <button 
           onClick={handleDownloadDRM}
           className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/5 hover:bg-white/10 transition rounded-xl text-xs font-bold text-white cursor-pointer"
@@ -297,7 +311,7 @@ export default function FullscreenPlayer() {
           {/* Tab Menu */}
           <div className="flex bg-white/5 p-1 rounded-xl border border-white/5">
             <button className="flex-1 py-2 rounded-lg text-xs font-bold bg-white/10 text-white">
-              {t('lyrics')} / Lyrics
+              {t('lyrics')}
             </button>
           </div>
 
@@ -324,7 +338,7 @@ export default function FullscreenPlayer() {
             </span>
             <input 
               type="text"
-              placeholder="Để lại bình luận tại giây này..."
+              placeholder={t('comment_placeholder')}
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               className="flex-1 h-10 bg-transparent text-sm text-white placeholder-on-surface-variant outline-none px-2"
@@ -333,7 +347,7 @@ export default function FullscreenPlayer() {
               type="submit"
               className="electric-btn text-white text-xs font-bold px-4 py-2 rounded-xl hover:scale-102 transition cursor-pointer flex-shrink-0"
             >
-              Gửi
+              {t('send_comment')}
             </button>
           </form>
         </div>
@@ -516,11 +530,54 @@ export default function FullscreenPlayer() {
 
       </div>
 
+      {/* Artist Info Section */}
+      {artistInfo && (
+        <div className="relative z-10 max-w-4xl mx-auto w-full mt-8 mb-12 glass-panel p-6 rounded-3xl border border-white/5 flex flex-col sm:flex-row items-center gap-6 shadow-xl animate-fade-in">
+          {/* Ambient blur backdrop local */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-5 pointer-events-none rounded-3xl"
+            style={{ backgroundImage: `url(${artistInfo.avatarUrl || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=200'})` }}
+          />
+          
+          {/* Artist Avatar */}
+          <div className="w-20 h-20 rounded-full overflow-hidden border border-white/10 shrink-0 bg-secondary-container flex items-center justify-center font-bold text-2xl relative shadow-md">
+            {artistInfo.avatarUrl ? (
+              <img src={artistInfo.avatarUrl} alt={artistInfo.name} className="w-full h-full object-cover" />
+            ) : (
+              artistInfo.name?.charAt(0).toUpperCase()
+            )}
+          </div>
+
+          {/* Artist Metadata */}
+          <div className="flex-1 text-center sm:text-left min-w-0 relative z-10">
+            <span className="text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 bg-secondary-container/20 border border-secondary-container/30 rounded text-secondary-container w-max mx-auto sm:mx-0">
+              {t('artist_label')}
+            </span>
+            <h3 className="font-display-lg text-lg font-extrabold text-white mt-1.5">{artistInfo.name}</h3>
+            <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed line-clamp-2">
+              {artistInfo.bio || t('no_description')}
+            </p>
+            <p className="text-[10px] text-on-surface-variant font-medium mt-1">
+              {artistInfo.followersCount || 0} {t('followers_suffix')}
+            </p>
+          </div>
+
+          {/* Navigate Button */}
+          <button 
+            onClick={() => navigate(`/artist-detail?id=${artistInfo._id}`)}
+            className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold text-xs cursor-pointer active:scale-98 transition shrink-0 shadow-lg relative z-10 flex items-center gap-1.5"
+          >
+            <span>{t('artist_page')}</span>
+            <span className="material-symbols-outlined text-sm">arrow_forward</span>
+          </button>
+        </div>
+      )}
+
       {showAddPlaylistModal && createPortal(
         <div className="fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center p-6 z-[100] animate-fade-in">
           <div className="glass-panel w-full max-w-sm p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4">
             <div className="flex justify-between items-center border-b border-white/5 pb-3">
-              <h3 className="text-sm font-bold text-white">Thêm vào Playlist</h3>
+              <h3 className="text-sm font-bold text-white">{t('add_to_playlist')}</h3>
               <button 
                 type="button"
                 onClick={() => setShowAddPlaylistModal(false)}
@@ -541,13 +598,13 @@ export default function FullscreenPlayer() {
                     <img src={pl.thumbnailUrl || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100'} className="w-8 h-8 rounded object-cover" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-white truncate">{pl.title}</p>
-                      <p className="text-[10px] text-on-surface-variant mt-0.5">{pl.songs?.length || 0} bài hát</p>
+                      <p className="text-[10px] text-on-surface-variant mt-0.5">{pl.songs?.length || 0} {t('songs')}</p>
                     </div>
                   </button>
                 ))
               ) : (
                 <div className="text-center py-4">
-                  <p className="text-xs text-on-surface-variant">Bạn chưa tạo danh sách phát nào.</p>
+                  <p className="text-xs text-on-surface-variant">{t('no_playlists_yet')}</p>
                   <button 
                     onClick={() => {
                       setShowAddPlaylistModal(false);
@@ -555,7 +612,7 @@ export default function FullscreenPlayer() {
                     }}
                     className="text-xs text-primary font-bold hover:underline mt-2 cursor-pointer"
                   >
-                    Tạo Playlist mới
+                    {t('create_new_playlist_prompt')}
                   </button>
                 </div>
               )}

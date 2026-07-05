@@ -54,6 +54,11 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('melodies_resume_song_id');
+    localStorage.removeItem('melodies_resume_time');
+    localStorage.removeItem('melodies_resume_queue');
+    localStorage.removeItem('melodies_resume_index');
+    localStorage.removeItem('melodies_volume');
     setUser(null);
   };
 

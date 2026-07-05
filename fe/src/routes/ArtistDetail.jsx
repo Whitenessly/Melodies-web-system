@@ -115,7 +115,7 @@ export default function ArtistDetail() {
 
             <div className="relative z-10 flex-1 text-center md:text-left">
               <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 bg-secondary-container/10 border border-secondary-container/20 rounded text-secondary-container w-max mx-auto md:mx-0">
-                Verified Artist
+                {t('verified_artist')}
               </span>
               <h1 className="font-display-lg text-3xl font-extrabold tracking-tight text-white mt-2">{artist.name}</h1>
               <p className="text-xs text-on-surface-variant mt-1.5">{artist.followersCount || 0} {t('followers')}</p>
@@ -127,7 +127,7 @@ export default function ArtistDetail() {
                 isFollowing ? 'bg-white/10 text-white hover:bg-white/15' : 'electric-btn text-white'
               }`}
             >
-              {isFollowing ? 'Following' : 'Follow Artist'}
+              {isFollowing ? t('following_btn') : t('follow_artist')}
             </button>
           </div>
 

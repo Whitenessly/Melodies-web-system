@@ -34,6 +34,7 @@ export default function Settings() {
   const [resendTimer, setResendTimer] = useState(59);
   const [emailStepError, setEmailStepError] = useState('');
   const [loadingEmailStep, setLoadingEmailStep] = useState(false);
+  const [receivedOtp, setReceivedOtp] = useState('');
   const otpRefs = useRef([]);
   const timerRef = useRef(null);
 
@@ -120,7 +121,10 @@ export default function Settings() {
     setEmailStepError('');
 
     try {
-      await api.post('/auth/me/request-email-change', { newEmail });
+      const res = await api.post('/auth/change-email-request', { newEmail });
+      if (res.otp) {
+        setReceivedOtp(res.otp);
+      }
       setLoadingEmailStep(false);
       setEmailStep(2);
       startResendTimer();
@@ -143,11 +147,11 @@ export default function Settings() {
     }
 
     try {
-      const updatedUser = await api.post('/auth/me/verify-email-change', {
+      const res = await api.post('/auth/change-email-verify', {
         newEmail,
-        code
+        otp: code
       });
-      updateProfileState(updatedUser);
+      updateProfileState(res.user);
       setLoadingEmailStep(false);
       setEmailStep(3);
       if (timerRef.current) clearInterval(timerRef.current);
@@ -160,7 +164,10 @@ export default function Settings() {
   const handleResendOtp = async () => {
     setEmailStepError('');
     try {
-      await api.post('/auth/me/request-email-change', { newEmail });
+      const res = await api.post('/auth/change-email-request', { newEmail });
+      if (res.otp) {
+        setReceivedOtp(res.otp);
+      }
       startResendTimer();
     } catch (err) {
       setEmailStepError(err.message);
@@ -308,7 +315,7 @@ export default function Settings() {
                 }`}
               >
                 <span className="material-symbols-outlined text-lg">person</span>
-                <span>{t('account_info').split(' ')[0]}</span>
+                <span>{t('account_info').split(' ')[0]}{t('account_info').split(' ')[1]?.toLowerCase() === 'tin' ? ' tin' : ''}</span>
               </button>
               
               <button 
@@ -456,6 +463,7 @@ export default function Settings() {
                               setEmailStep(1);
                               setNewEmail('');
                               setVerificationCode(['', '', '', '', '', '']);
+                              setReceivedOtp('');
                               setEmailStepError('');
                             }}
                             className="absolute right-2 px-3.5 py-1.5 bg-white/10 hover:bg-white/15 text-white rounded-lg text-[10px] font-bold cursor-pointer transition select-none"
@@ -1086,6 +1094,12 @@ export default function Settings() {
                   <p className="text-xs text-on-surface-variant max-w-[260px] mx-auto leading-relaxed">
                     {t('otp_sent_new_email_desc')}
                   </p>
+                  {receivedOtp && (
+                    <div className="mt-3 bg-secondary-container/15 border border-secondary-container/30 text-secondary-container rounded-xl px-4 py-2 text-xs font-mono select-all flex items-center justify-center gap-1.5 animate-pulse">
+                      <span className="material-symbols-outlined text-sm">key</span>
+                      <span>[Sandbox OTP]: <strong className="text-white tracking-wider">{receivedOtp}</strong></span>
+                    </div>
+                  )}
                 </div>
 
                 {emailStepError && (

@@ -37,11 +37,11 @@ export default function PaymentCC() {
         if (res.stripe?.enabled && res.stripe?.publishableKey) {
           setPublishableKey(res.stripe.publishableKey);
         } else {
-          setErrorMessage('Cổng thanh toán Stripe chưa được cấu hình. Vui lòng quay lại sau.');
+          setErrorMessage(t('stripe_not_configured'));
         }
       } catch (err) {
         console.error('Failed to fetch Stripe configuration:', err);
-        setErrorMessage('Không thể tải cấu hình thanh toán.');
+        setErrorMessage(t('failed_load_config'));
       } finally {
         setLoadingConfig(false);
       }
@@ -83,7 +83,7 @@ export default function PaymentCC() {
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
     if (!publishableKey) {
-      setErrorMessage('Không có Stripe Publishable Key.');
+      setErrorMessage(t('no_stripe_pub_key'));
       return;
     }
 
@@ -93,7 +93,7 @@ export default function PaymentCC() {
     try {
       // Validate expiry format
       if (!/^\d{2}\/\d{2}$/.test(cardExpiry)) {
-        throw new Error('Định dạng ngày hết hạn không hợp lệ (MM/YY).');
+        throw new Error(t('expiry_invalid'));
       }
 
       const expMonth = cardExpiry.split('/')[0];
@@ -136,10 +136,10 @@ export default function PaymentCC() {
         setSuccessData(chargeRes.transaction);
         await fetchProfile(); // refresh premium status
       } else {
-        throw new Error(chargeRes.message || 'Thanh toán thất bại.');
+        throw new Error(chargeRes.message || t('payment_failed_err'));
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Có lỗi xảy ra khi xử lý giao dịch.');
+      setErrorMessage(err.message || t('payment_failed_err'));
     } finally {
       setLoading(false);
     }
@@ -163,7 +163,7 @@ export default function PaymentCC() {
               
               <div className="text-center flex flex-col gap-2">
                 <h1 className="font-display-lg text-2xl font-bold text-white tracking-tight">Melodies</h1>
-                <p className="text-xs text-on-surface-variant">Thanh toán an toàn cho trải nghiệm âm nhạc không giới hạn.</p>
+                <p className="text-xs text-on-surface-variant">{t('payment_secure_desc')}</p>
               </div>
 
               {errorMessage && (
@@ -212,13 +212,13 @@ export default function PaymentCC() {
                 {/* Cardholder name and Expiry */}
                 <div className="flex justify-between items-end relative z-10 text-white drop-shadow-md">
                   <div>
-                    <span className="text-[8px] uppercase tracking-wider text-white/60 block">Chủ thẻ</span>
+                    <span className="text-[8px] uppercase tracking-wider text-white/60 block">{t('cardholder_name_preview')}</span>
                     <span className="text-xs font-mono font-bold tracking-wider truncate max-w-[200px] inline-block uppercase">
                       {cardName || 'NAME ON CARD'}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[8px] uppercase tracking-wider text-white/60 block">Hết hạn</span>
+                    <span className="text-[8px] uppercase tracking-wider text-white/60 block">{t('card_expiry_preview')}</span>
                     <span className="text-xs font-mono font-bold tracking-wider">
                       {cardExpiry || 'MM/YY'}
                     </span>
@@ -226,10 +226,9 @@ export default function PaymentCC() {
                 </div>
               </div>
 
-              {/* CARD DETAILS FORM */}
               <form onSubmit={handlePaymentSubmit} className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] uppercase font-bold text-on-surface-variant ml-1">Tên chủ thẻ</label>
+                  <label className="text-[10px] uppercase font-bold text-on-surface-variant ml-1">{t('cardholder_name_label')}</label>
                   <div className="relative">
                     <input 
                       type="text" 
@@ -244,7 +243,7 @@ export default function PaymentCC() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] uppercase font-bold text-on-surface-variant ml-1">Số thẻ</label>
+                  <label className="text-[10px] uppercase font-bold text-on-surface-variant ml-1">{t('card_number_label')}</label>
                   <div className="relative">
                     <input 
                       type="text" 
@@ -264,7 +263,7 @@ export default function PaymentCC() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] uppercase font-bold text-on-surface-variant ml-1">Ngày hết hạn (MM/YY)</label>
+                    <label className="text-[10px] uppercase font-bold text-on-surface-variant ml-1">{t('expiry_date_label')}</label>
                     <input 
                       type="text" 
                       required 
@@ -275,7 +274,7 @@ export default function PaymentCC() {
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] uppercase font-bold text-on-surface-variant ml-1">Mã CVV</label>
+                    <label className="text-[10px] uppercase font-bold text-on-surface-variant ml-1">{t('cvv_code_label')}</label>
                     <div className="relative">
                       <input 
                         type="password" 
@@ -298,11 +297,11 @@ export default function PaymentCC() {
                   {loading ? (
                     <>
                       <span className="material-symbols-outlined text-sm animate-spin">sync</span>
-                      <span>Đang xử lý giao dịch...</span>
+                      <span>{t('processing_transaction')}</span>
                     </>
                   ) : (
                     <>
-                      <span>Thanh Toán Ngay</span>
+                      <span>{t('pay_now_btn')}</span>
                       <span className="material-symbols-outlined text-sm select-none">arrow_forward</span>
                     </>
                   )}
@@ -310,7 +309,7 @@ export default function PaymentCC() {
 
                 <p className="text-[9px] text-center text-status-success font-semibold flex items-center justify-center gap-1 mt-1">
                   <span className="material-symbols-outlined text-xs select-none">verified_user</span>
-                  BẢO MẬT SSL 256-BIT MÃ HÓA
+                  {t('ssl_security_notice')}
                 </p>
               </form>
             </div>
@@ -326,32 +325,32 @@ export default function PaymentCC() {
               </div>
 
               <div>
-                <h1 className="font-display-lg text-2xl font-bold text-white tracking-tight">Thanh toán thành công!</h1>
+                <h1 className="font-display-lg text-2xl font-bold text-white tracking-tight">{t('payment_success_title')}</h1>
                 <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
-                  Gói đăng ký Premium của bạn hiện đã được kích hoạt. Hãy tận hưởng trải nghiệm âm nhạc không giới hạn.
+                  {t('payment_success_desc')}
                 </p>
               </div>
 
               {/* Bill invoice details box */}
               <div className="bg-white/5 p-4.5 rounded-2xl border border-white/5 text-left text-xs flex flex-col gap-3.5 font-inter">
                 <div className="flex justify-between items-center">
-                  <span className="text-on-surface-variant">DỊCH VỤ</span>
+                  <span className="text-on-surface-variant">{t('invoice_service')}</span>
                   <span className="font-bold text-white">VibeStream Premium</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-on-surface-variant">MÃ GIAO DỊCH</span>
+                  <span className="text-on-surface-variant">{t('invoice_transaction_id')}</span>
                   <span className="font-mono font-bold text-white/90">#{successData.orderId?.toUpperCase()}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-on-surface-variant">PHƯƠNG THỨC</span>
+                  <span className="text-on-surface-variant">{t('invoice_method')}</span>
                   <span className="font-bold text-white flex items-center gap-1 uppercase">
                     💳 {successData.cardBrand} **** {successData.last4}
                   </span>
                 </div>
                 <div className="flex justify-between items-center pt-2.5 border-t border-white/5">
-                  <span className="text-on-surface-variant font-medium">TỔNG TIỀN</span>
+                  <span className="text-on-surface-variant font-medium">{t('invoice_total')}</span>
                   <span className="font-bold text-status-success text-sm">
-                    {(successData.amount).toLocaleString('vi-VN')}đ/tháng
+                    {(successData.amount).toLocaleString('vi-VN')} {t('billing_and_plans').includes('Billing') ? 'VND/month' : 'đ/tháng'}
                   </span>
                 </div>
               </div>
@@ -362,20 +361,20 @@ export default function PaymentCC() {
                   onClick={() => navigate('/home')}
                   className="w-full h-11 rounded-xl bg-electric-gradient text-white font-bold text-xs hover:scale-102 transition cursor-pointer shadow-lg shadow-primary/20"
                 >
-                  Quay lại Trang chủ
+                  {t('back_to_home')}
                 </button>
                 <button 
                   type="button"
                   onClick={() => navigate('/settings')}
                   className="text-[11px] text-on-surface-variant hover:text-white font-semibold transition"
                 >
-                  Xem chi tiết hóa đơn
+                  {t('view_invoice_details')}
                 </button>
               </div>
 
               <div className="text-[9px] text-on-surface-variant/40 flex items-center justify-center gap-1 border-t border-white/5 pt-4">
                 <span className="material-symbols-outlined text-xs select-none">lock</span>
-                <span>Giao dịch an toàn & bảo mật</span>
+                <span>{t('secure_transaction_footer')}</span>
               </div>
             </div>
           )}

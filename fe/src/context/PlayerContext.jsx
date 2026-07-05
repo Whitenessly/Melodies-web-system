@@ -12,7 +12,10 @@ export const PlayerProvider = ({ children }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(0.8);
+  const [volume, setVolume] = useState(() => {
+    const savedVolume = localStorage.getItem('melodies_volume');
+    return savedVolume !== null ? parseFloat(savedVolume) : 0.8;
+  });
   const [isMuted, setIsMuted] = useState(false);
   const [queue, setQueue] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
@@ -49,7 +52,28 @@ export const PlayerProvider = ({ children }) => {
   // Sync volume
   useEffect(() => {
     audioRef.current.volume = isMuted ? 0 : volume;
+    localStorage.setItem('melodies_volume', volume.toString());
   }, [volume, isMuted]);
+
+  // Reset player state on logout
+  useEffect(() => {
+    if (!user) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+      }
+      setCurrentSong(null);
+      setIsPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
+      setVolume(0.8);
+      setIsMuted(false);
+      setQueue([]);
+      setCurrentIndex(-1);
+      listenTimeRef.current = 0;
+      streamRegisteredRef.current = false;
+    }
+  }, [user]);
 
   // Load resume details from localStorage (soft storage cold start)
   useEffect(() => {
