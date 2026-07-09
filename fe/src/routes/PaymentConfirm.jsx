@@ -74,16 +74,16 @@ export default function PaymentConfirm() {
         
         <main className="md:ml-sidebar-width flex-1 p-8 overflow-y-auto flex items-center justify-center">
           
-          <div className="w-full max-w-md glass-panel p-8 rounded-3xl border border-white/5 shadow-2xl flex flex-col gap-6 text-center">
+          <div className="w-full max-w-md bg-[#121212]/40 border border-white/5 p-8 rounded-3xl shadow-2xl flex flex-col gap-6 text-center">
             
             {/* Status Icon */}
             <div className="flex justify-center">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center border ${
                 status === 'SUCCESS' 
-                  ? 'bg-status-success/10 text-status-success' 
-                  : 'bg-status-warning/10 text-status-warning animate-pulse'
+                  ? 'bg-primary/10 text-primary border-primary/20' 
+                  : 'bg-amber-500/10 text-amber-500 border-amber-500/20 animate-pulse'
               }`}>
-                <span className="material-symbols-outlined text-4xl">
+                <span className="material-symbols-outlined text-4xl select-none font-bold">
                   {status === 'SUCCESS' ? 'check_circle' : 'qr_code_scanner'}
                 </span>
               </div>
@@ -93,13 +93,13 @@ export default function PaymentConfirm() {
               <h1 className="font-display-lg text-2xl font-bold text-white tracking-tight">
                 {status === 'SUCCESS' ? t('payment_success') : t('payment_pending')}
               </h1>
-              <p className="text-xs text-on-surface-variant mt-1.5">
+              <p className="text-xs text-on-surface-variant mt-1.5 font-medium">
                 {t('simulated_transaction_prefix')} {gateway ? gateway.toUpperCase() : 'Momo/VNPay'} Sandbox
               </p>
             </div>
 
             {/* Invoice parameters */}
-            <div className="bg-white/5 p-4 rounded-2xl border border-white/5 text-left text-xs flex flex-col gap-3">
+            <div className="bg-[#121212]/30 p-4 rounded-2xl border border-white/5 text-left text-xs flex flex-col gap-3 font-medium">
               <div className="flex justify-between">
                 <span className="text-on-surface-variant">{t('order_id_label')}</span>
                 <span className="font-mono font-bold text-white">{orderId || t('not_updated')}</span>
@@ -112,7 +112,7 @@ export default function PaymentConfirm() {
               </div>
               <div className="flex justify-between">
                 <span className="text-on-surface-variant">{t('amount_label')}</span>
-                <span className="font-bold text-tertiary">59.000 VND</span>
+                <span className="font-bold text-primary">59.000 VND</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-on-surface-variant">{t('plan_duration_label')}</span>
@@ -123,7 +123,7 @@ export default function PaymentConfirm() {
             {/* Simulated scan qr code section */}
             {status !== 'SUCCESS' && (
               <div className="flex flex-col items-center gap-3">
-                <div className="w-40 h-40 bg-white p-3 rounded-2xl flex items-center justify-center border border-white/10">
+                <div className="w-40 h-40 bg-white p-3 rounded-2xl flex items-center justify-center border border-white/5 shadow-md">
                   {/* Mock QR image */}
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=melodies-order-${orderId}`} 
@@ -131,7 +131,7 @@ export default function PaymentConfirm() {
                     className="w-full h-full"
                   />
                 </div>
-                <p className="text-[10px] text-on-surface-variant leading-relaxed px-4">
+                <p className="text-[10px] text-on-surface-variant leading-relaxed px-4 font-medium">
                   {t('scan_qr_desc')}
                 </p>
               </div>
@@ -139,7 +139,7 @@ export default function PaymentConfirm() {
 
             {/* Notification message */}
             {message && (
-              <p className={`text-xs font-semibold ${status === 'SUCCESS' ? 'text-status-success' : 'text-status-error'}`}>
+              <p className={`text-xs font-semibold ${status === 'SUCCESS' ? 'text-primary' : 'text-red-500'}`}>
                 {t(message)}
               </p>
             )}
@@ -150,7 +150,7 @@ export default function PaymentConfirm() {
                 <button 
                   onClick={handleVerifyPayment}
                   disabled={loading}
-                  className="w-full h-11 rounded-xl electric-btn text-white font-bold text-xs hover:scale-102 transition cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full h-11 rounded-full bg-primary text-black font-extrabold text-xs hover:scale-105 active:scale-95 transition cursor-pointer flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
                 >
                   {loading ? (
                     <span className="material-symbols-outlined text-sm animate-spin">sync</span>
@@ -161,7 +161,7 @@ export default function PaymentConfirm() {
               ) : (
                 <button 
                   onClick={() => navigate('/home')}
-                  className="w-full h-11 rounded-xl bg-white/10 text-white font-bold text-xs hover:bg-white/15 transition cursor-pointer"
+                  className="w-full h-11 rounded-full bg-primary text-black font-extrabold text-xs hover:scale-105 active:scale-95 transition cursor-pointer shadow-lg"
                 >
                   {t('start_listening_premium')}
                 </button>

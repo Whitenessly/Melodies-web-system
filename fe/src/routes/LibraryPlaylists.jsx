@@ -103,25 +103,25 @@ export default function LibraryPlaylists() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="font-display-lg text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                <span className="material-symbols-outlined text-secondary-container">library_music</span>
+                <span className="material-symbols-outlined text-primary">library_music</span>
                 {t('music_library')}
               </h1>
-              <p className="text-xs text-on-surface-variant mt-1.5">
+              <p className="text-xs text-on-surface-variant mt-1.5 font-medium">
                 {t('library_subtitle')}
               </p>
             </div>
             
             <button 
               onClick={() => setShowModal(true)}
-              className="electric-btn text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:scale-102 transition cursor-pointer flex items-center gap-2 shadow-lg"
+              className="bg-white hover:bg-zinc-200 text-black text-xs font-bold px-5 py-2.5 rounded-full hover:scale-105 transition cursor-pointer flex items-center gap-2 shadow-lg"
             >
-              <span className="material-symbols-outlined text-base">add_box</span>
+              <span className="material-symbols-outlined text-base font-bold">add</span>
               {t('create_playlist')}
             </button>
           </div>
 
           {loading ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-secondary-container gap-3 min-h-[30vh]">
+            <div className="flex-1 flex flex-col items-center justify-center text-primary gap-3 min-h-[30vh]">
               <span className="material-symbols-outlined text-4xl animate-spin">sync</span>
             </div>
           ) : (
@@ -129,12 +129,13 @@ export default function LibraryPlaylists() {
               {/* Liked Songs Special Bento card */}
               <div 
                 onClick={() => navigate('/playlist-detail?id=liked')}
-                className="p-6 rounded-3xl bg-gradient-to-br from-[#8A3FFC] to-[#2E5BFF] flex flex-col justify-between cursor-pointer hover:scale-102 transition shadow-xl min-h-[180px] relative overflow-hidden group"
+                className="p-6 rounded-2xl bg-gradient-to-br from-tertiary to-primary/60 flex flex-col justify-between cursor-pointer hover:scale-105 hover:-translate-y-1 transition duration-300 shadow-xl min-h-[200px] relative overflow-hidden group border border-white/5"
               >
-                <span className="material-symbols-outlined absolute -bottom-4 -right-4 text-8xl opacity-15 group-hover:scale-110 transition">favorite</span>
+                <span className="material-symbols-outlined absolute -bottom-4 -right-4 text-9xl opacity-20 group-hover:scale-110 transition duration-300">favorite</span>
                 <div>
-                  <h3 className="font-display-lg text-lg font-bold text-white uppercase tracking-wider">{t('liked_songs')}</h3>
-                  <p className="text-xs text-white/70 mt-1">{t('liked_songs_desc')}</p>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-white bg-white/20 px-2.5 py-1 rounded-full backdrop-blur-sm self-start">Special Collection</span>
+                  <h3 className="font-display-lg text-xl font-bold text-white uppercase tracking-wider mt-4">{t('liked_songs')}</h3>
+                  <p className="text-xs text-white/85 mt-2 font-medium">{t('liked_songs_desc')}</p>
                 </div>
                 <p className="text-xs font-extrabold text-white">{likedSongsCount} {t('songs_count')}</p>
               </div>
@@ -144,18 +145,23 @@ export default function LibraryPlaylists() {
                 <div 
                   key={playlist._id}
                   onClick={() => navigate(`/playlist-detail?id=${playlist._id}`)}
-                  className="glass-panel p-5 rounded-3xl border border-white/5 flex flex-col gap-4 cursor-pointer hover:scale-102 transition shadow-lg min-h-[180px] group"
+                  className="music-grid-card group flex flex-col min-h-[220px]"
                 >
-                  <img 
-                    src={playlist.thumbnailUrl || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=120'} 
-                    alt="" 
-                    className="w-12 h-12 rounded-xl object-cover border border-white/5" 
-                  />
-                  <div>
-                    <h3 className="text-sm font-bold text-white group-hover:text-secondary-container transition line-clamp-1">{playlist.title}</h3>
-                    <p className="text-[10px] text-on-surface-variant line-clamp-2 mt-1">{playlist.description || t('no_description')}</p>
+                  <div className="w-full aspect-square rounded-xl overflow-hidden bg-zinc-800 border border-white/5 mb-4 relative shadow-md">
+                    <img 
+                      src={playlist.thumbnailUrl || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=250'} 
+                      alt="" 
+                      className="w-full h-full object-cover transition duration-300 group-hover:scale-105" 
+                    />
                   </div>
-                  <p className="text-[10px] font-bold text-on-surface-variant mt-auto">{playlist.songs?.length || 0} {t('songs')} • {t(playlist.visibility)}</p>
+                  <div>
+                    <h3 className="text-sm font-bold text-white group-hover:text-primary transition line-clamp-1 duration-150">{playlist.title}</h3>
+                    <p className="text-xs text-on-surface-variant line-clamp-2 mt-1 font-medium">{playlist.description || t('no_description')}</p>
+                  </div>
+                  <p className="text-[10px] font-bold text-on-surface-variant mt-auto pt-3 border-t border-white/5 flex items-center justify-between">
+                    <span>{playlist.songs?.length || 0} {t('songs')}</span>
+                    <span className="uppercase text-[9px] px-2 py-0.5 bg-white/5 border border-white/10 rounded">{t(playlist.visibility)}</span>
+                  </p>
                 </div>
               ))}
             </div>
@@ -167,47 +173,47 @@ export default function LibraryPlaylists() {
 
       {/* Creation modal overlay */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-6 z-[100] animate-fade-in">
-          <form onSubmit={handleCreatePlaylist} className="glass-panel w-full max-w-sm p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4">
-            <div className="flex justify-between items-center border-b border-white/5 pb-2">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 z-[100]">
+          <form onSubmit={handleCreatePlaylist} className="glass-panel w-full max-w-md p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-white/5 pb-3">
               <h3 className="text-sm font-bold text-white">{t('create_playlist')}</h3>
               <button 
                 type="button" 
                 onClick={() => setShowModal(false)}
-                className="text-on-surface-variant hover:text-white cursor-pointer flex items-center justify-center"
+                className="text-on-surface-variant hover:text-white cursor-pointer transition duration-150"
               >
                 <span className="material-symbols-outlined text-lg">close</span>
               </button>
             </div>
             
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold text-on-surface-variant">{t('playlist_name')}</label>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[9px] uppercase font-bold text-on-surface-variant ml-1">{t('playlist_name')}</label>
               <input 
                 type="text" 
                 required 
                 placeholder="My Playlist" 
                 value={title} 
                 onChange={e => setTitle(e.target.value)} 
-                className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" 
+                className="w-full h-11 px-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200" 
               />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold text-on-surface-variant">{t('short_description')}</label>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[9px] uppercase font-bold text-on-surface-variant ml-1">{t('short_description')}</label>
               <input 
                 type="text" 
                 placeholder={t('playlist_desc_placeholder')} 
                 value={desc} 
                 onChange={e => setDesc(e.target.value)} 
-                className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" 
+                className="w-full h-11 px-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200" 
               />
             </div>
 
             {/* Cover Image Upload (Image instead of URL) */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-[9px] uppercase font-bold text-on-surface-variant">Ảnh đại diện Playlist</label>
-              <div className="flex flex-col gap-3 p-4 bg-white/5 border border-white/5 rounded-2xl">
-                <label className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold cursor-pointer transition select-none self-start">
+              <label className="text-[9px] uppercase font-bold text-on-surface-variant ml-1">Ảnh đại diện Playlist</label>
+              <div className="flex flex-col gap-3 p-4 bg-[#121212] border border-white/5 rounded-2xl">
+                <label className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold cursor-pointer transition duration-200 select-none self-start">
                   <span className="material-symbols-outlined text-base">upload_file</span>
                   <span>Chọn ảnh</span>
                   <input 
@@ -227,7 +233,7 @@ export default function LibraryPlaylists() {
                     </div>
                     <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-electric-gradient transition-all duration-100" 
+                        className="h-full bg-primary transition-all duration-100" 
                         style={{ width: `${uploadProgress}%` }}
                       />
                     </div>
@@ -244,7 +250,7 @@ export default function LibraryPlaylists() {
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] font-bold text-white truncate">{fileName || 'playlist-cover.jpg'}</p>
-                      <p className="text-[9px] text-status-success font-bold uppercase tracking-wider mt-0.5">Upload complete</p>
+                      <p className="text-[9px] text-primary font-extrabold uppercase tracking-wider mt-0.5">Upload complete</p>
                     </div>
                     <button 
                       type="button"
@@ -261,21 +267,21 @@ export default function LibraryPlaylists() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold text-on-surface-variant">{t('privacy')}</label>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[9px] uppercase font-bold text-on-surface-variant ml-1">{t('privacy')}</label>
               <select 
                 value={visibility} 
                 onChange={e => setVisibility(e.target.value)} 
-                className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white [&>option]:bg-surface"
+                className="w-full h-11 px-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white [&>option]:bg-surface transition duration-200 cursor-pointer"
               >
                 <option value="public">{t('public')}</option>
                 <option value="private">{t('private')}</option>
               </select>
             </div>
 
-            <div className="flex justify-end mt-3 pt-3 border-t border-white/5 gap-2">
-              <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 rounded-xl text-xs bg-white/5 hover:bg-white/10 text-white cursor-pointer">{t('cancel')}</button>
-              <button type="submit" className="px-4 py-2 rounded-xl text-xs electric-btn text-white font-bold cursor-pointer">{t('create')}</button>
+            <div className="flex justify-end mt-4 pt-4 border-t border-white/5 gap-2">
+              <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 rounded-full text-xs bg-white/5 hover:bg-white/10 text-white cursor-pointer font-bold transition duration-150">{t('cancel')}</button>
+              <button type="submit" className="px-6 py-2.5 rounded-full text-xs bg-primary text-black font-bold cursor-pointer hover:scale-105 active:scale-95 transition duration-150">{t('create')}</button>
             </div>
           </form>
         </div>

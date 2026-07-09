@@ -135,13 +135,13 @@ export default function Auth() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6 relative overflow-hidden">
       {/* Background glow graphics */}
-      <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-secondary-container/10 blur-[150px] animate-pulse" />
-      <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-tertiary-container/10 blur-[150px] animate-pulse" style={{ animationDelay: '2s' }} />
+      <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-primary/5 blur-[150px] animate-pulse" />
+      <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-primary/5 blur-[150px] animate-pulse" style={{ animationDelay: '2s' }} />
 
       {/* Toast Notification Container */}
       {successMsg && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white/5 backdrop-blur-xl border border-white/10 px-6 py-3.5 rounded-full flex items-center gap-3 shadow-2xl z-50 animate-fade-in transition-all">
-          <div className="w-8 h-8 rounded-full bg-status-success/20 flex items-center justify-center text-status-success shrink-0">
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#121212] border border-white/10 px-6 py-3.5 rounded-full flex items-center gap-3 shadow-2xl z-50 animate-fade-in transition-all">
+          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
             <span className="material-symbols-outlined text-lg">check_circle</span>
           </div>
           <p className="text-xs font-semibold text-white">{successMsg}</p>
@@ -149,22 +149,22 @@ export default function Auth() {
       )}
 
       {/* Main card */}
-      <div className="w-full max-w-md glass-panel p-8 rounded-3xl relative z-10 shadow-2xl border border-white/5 flex flex-col gap-6 transition-all duration-300">
+      <div className="w-full max-w-md bg-[#121212]/40 border border-white/5 p-8 rounded-3xl relative z-10 shadow-2xl flex flex-col gap-6 transition-all duration-300">
         
         {/* Brand logo header */}
         <div className="flex flex-col items-center gap-2 text-center">
           <div className="flex flex-col items-center gap-3 justify-center">
-            <Logo className="w-16 h-16 animate-pulse drop-shadow-xl" />
+            <Logo className="w-16 h-16 animate-pulse drop-shadow-xl text-primary" />
             <h1 className="font-display-lg text-3xl font-extrabold tracking-tight text-white mt-1">Melodies</h1>
           </div>
-          <p className="text-xs text-on-surface-variant">Your Premium Music streaming companion</p>
+          <p className="text-xs text-on-surface-variant font-medium">Your Premium Music streaming companion</p>
         </div>
 
         {/* ==================== A. LOGIN & REGISTER MODE ==================== */}
         {(authMode === 'login' || authMode === 'register') && (
           <>
             {/* Tab triggers */}
-            <div className="flex bg-white/5 p-1 rounded-xl border border-white/5">
+            <div className="flex bg-[#121212]/60 p-1 rounded-xl border border-white/5">
               <button 
                 type="button"
                 onClick={() => { setAuthMode('login'); setError(''); setSuccessMsg(''); }}
@@ -203,7 +203,7 @@ export default function Auth() {
                       placeholder="Enter your name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full h-11 pl-11 pr-4 bg-white/5 border border-white/5 rounded-xl text-sm text-white placeholder-on-surface-variant focus:border-white/10 focus:bg-white/10 transition"
+                      className="w-full h-11 pl-11 pr-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200"
                     />
                   </div>
                 </div>
@@ -219,7 +219,7 @@ export default function Auth() {
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full h-11 pl-11 pr-4 bg-white/5 border border-white/5 rounded-xl text-sm text-white placeholder-on-surface-variant focus:border-white/10 focus:bg-white/10 transition"
+                    className="w-full h-11 pl-11 pr-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200"
                   />
                 </div>
               </div>
@@ -234,7 +234,7 @@ export default function Auth() {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full h-11 pl-11 pr-4 bg-white/5 border border-white/5 rounded-xl text-sm text-white placeholder-on-surface-variant focus:border-white/10 focus:bg-white/10 transition"
+                    className="w-full h-11 pl-11 pr-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200"
                   />
                 </div>
                 
@@ -259,27 +259,27 @@ export default function Auth() {
                 <div className="flex flex-col gap-1.5 animate-fade-in">
                   <label className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant ml-1">Account Role</label>
                   <div className="flex gap-4">
-                    <label className="flex-1 flex items-center gap-2 bg-white/5 px-4 py-3 rounded-xl border border-white/5 cursor-pointer hover:bg-white/10 transition select-none">
+                    <label className={`flex-1 flex items-center gap-2 px-4 py-3 rounded-xl border cursor-pointer hover:bg-white/[0.04] transition select-none ${role === 'listener' ? 'border-primary bg-primary/10 text-primary' : 'border-white/5 bg-white/5 text-on-surface-variant'}`}>
                       <input 
                         type="radio" 
                         name="role" 
                         value="listener" 
                         checked={role === 'listener'}
                         onChange={() => setRole('listener')}
-                        className="accent-secondary-container"
+                        className="accent-primary"
                       />
-                      <span className="text-xs font-semibold text-white">Listener</span>
+                      <span className="text-xs font-bold">Listener</span>
                     </label>
-                    <label className="flex-1 flex items-center gap-2 bg-white/5 px-4 py-3 rounded-xl border border-white/5 cursor-pointer hover:bg-white/10 transition select-none">
+                    <label className={`flex-1 flex items-center gap-2 px-4 py-3 rounded-xl border cursor-pointer hover:bg-white/[0.04] transition select-none ${role === 'artist' ? 'border-primary bg-primary/10 text-primary' : 'border-white/5 bg-white/5 text-on-surface-variant'}`}>
                       <input 
                         type="radio" 
                         name="role" 
                         value="artist" 
                         checked={role === 'artist'}
                         onChange={() => setRole('artist')}
-                        className="accent-secondary-container"
+                        className="accent-primary"
                       />
-                      <span className="text-xs font-semibold text-white">Artist</span>
+                      <span className="text-xs font-bold">Artist</span>
                     </label>
                   </div>
                 </div>
@@ -288,7 +288,7 @@ export default function Auth() {
               <button 
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 rounded-xl electric-btn text-white font-bold text-sm hover:scale-102 transition cursor-pointer mt-2 shadow-lg flex items-center justify-center gap-2"
+                className="w-full h-11 rounded-full bg-primary text-black font-extrabold text-sm hover:scale-105 active:scale-95 transition cursor-pointer mt-2 shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {loading ? (
                   <span className="material-symbols-outlined text-lg animate-spin">sync</span>
@@ -305,7 +305,7 @@ export default function Auth() {
           <div className="animate-fade-in flex flex-col gap-4">
             <div className="text-center">
               <h2 className="text-xl font-bold text-white tracking-tight">Forgot Password</h2>
-              <p className="text-xs text-on-surface-variant mt-1.5 max-w-[280px] mx-auto leading-relaxed">
+              <p className="text-xs text-on-surface-variant mt-1.5 max-w-[280px] mx-auto leading-relaxed font-medium">
                 Enter your email address to receive a recovery code.
               </p>
             </div>
@@ -328,7 +328,7 @@ export default function Auth() {
                     placeholder="name@example.com"
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
-                    className="w-full h-11 pl-11 pr-4 bg-white/5 border border-white/5 rounded-xl text-sm text-white placeholder-on-surface-variant focus:border-white/10 focus:bg-white/10 transition"
+                    className="w-full h-11 pl-11 pr-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200"
                   />
                 </div>
               </div>
@@ -336,14 +336,14 @@ export default function Auth() {
               <button 
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 rounded-xl bg-electric-gradient text-white font-bold text-sm hover:scale-102 transition cursor-pointer mt-2 shadow-lg flex items-center justify-center gap-2"
+                className="w-full h-11 rounded-full bg-primary text-black font-extrabold text-sm hover:scale-105 active:scale-95 transition cursor-pointer mt-2 shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {loading ? (
                   <span className="material-symbols-outlined text-lg animate-spin">sync</span>
                 ) : (
                   <>
                     <span>Send Recovery Code</span>
-                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                    <span className="material-symbols-outlined text-sm font-bold">arrow_forward</span>
                   </>
                 )}
               </button>
@@ -356,7 +356,7 @@ export default function Auth() {
                   setError('');
                   setSuccessMsg('');
                 }}
-                className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-white transition cursor-pointer"
+                className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-white transition cursor-pointer font-bold"
               >
                 <span className="material-symbols-outlined text-base">arrow_back</span>
                 <span>Back to Log In</span>
@@ -370,16 +370,16 @@ export default function Auth() {
           <div className="animate-fade-in flex flex-col gap-4">
             <div className="text-center">
               <h2 className="text-xl font-bold text-white tracking-tight">Verify OTP</h2>
-              <p className="text-xs text-on-surface-variant mt-1.5 max-w-[280px] mx-auto leading-relaxed">
+              <p className="text-xs text-on-surface-variant mt-1.5 max-w-[280px] mx-auto leading-relaxed font-medium">
                 Enter the 6-digit OTP code sent to your email.
               </p>
             </div>
 
             {/* Sandbox Helper display */}
             {otpReceived && (
-              <div className="bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl text-center text-xs">
-                <span className="text-on-surface-variant">Sandbox Testing OTP: </span>
-                <span className="text-tertiary font-bold text-sm tracking-widest">{otpReceived}</span>
+              <div className="bg-[#121212] border border-white/10 px-4 py-2.5 rounded-xl text-center text-xs">
+                <span className="text-on-surface-variant font-medium">Sandbox Testing OTP: </span>
+                <span className="text-primary font-bold text-sm tracking-widest">{otpReceived}</span>
               </div>
             )}
 
@@ -402,7 +402,7 @@ export default function Auth() {
                     placeholder="Enter 6-digit OTP"
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value)}
-                    className="w-full h-11 pl-11 pr-4 bg-white/5 border border-white/5 rounded-xl text-sm text-white placeholder-on-surface-variant focus:border-white/10 focus:bg-white/10 transition text-center tracking-widest font-mono font-bold"
+                    className="w-full h-11 pl-11 pr-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200 text-center tracking-widest font-mono font-bold"
                   />
                 </div>
               </div>
@@ -410,14 +410,14 @@ export default function Auth() {
               <button 
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 rounded-xl bg-electric-gradient text-white font-bold text-sm hover:scale-102 transition cursor-pointer mt-2 shadow-lg flex items-center justify-center gap-2"
+                className="w-full h-11 rounded-full bg-primary text-black font-extrabold text-sm hover:scale-105 active:scale-95 transition cursor-pointer mt-2 shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {loading ? (
                   <span className="material-symbols-outlined text-lg animate-spin">sync</span>
                 ) : (
                   <>
                     <span>Verify Code</span>
-                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                    <span className="material-symbols-outlined text-sm font-bold">arrow_forward</span>
                   </>
                 )}
               </button>
@@ -430,7 +430,7 @@ export default function Auth() {
                   setError('');
                   setSuccessMsg('');
                 }}
-                className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-white transition cursor-pointer"
+                className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-white transition cursor-pointer font-bold"
               >
                 <span className="material-symbols-outlined text-base">arrow_back</span>
                 <span>Back</span>
@@ -444,7 +444,7 @@ export default function Auth() {
           <div className="animate-fade-in flex flex-col gap-4">
             <div className="text-center">
               <h2 className="text-xl font-bold text-white tracking-tight">Reset Password</h2>
-              <p className="text-xs text-on-surface-variant mt-1.5 max-w-[280px] mx-auto leading-relaxed">
+              <p className="text-xs text-on-surface-variant mt-1.5 max-w-[280px] mx-auto leading-relaxed font-medium">
                 Enter a new password for your account.
               </p>
             </div>
@@ -467,7 +467,7 @@ export default function Auth() {
                     placeholder="••••••••"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full h-11 pl-11 pr-4 bg-white/5 border border-white/5 rounded-xl text-sm text-white placeholder-on-surface-variant focus:border-white/10 focus:bg-white/10 transition"
+                    className="w-full h-11 pl-11 pr-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200"
                   />
                 </div>
               </div>
@@ -482,7 +482,7 @@ export default function Auth() {
                     placeholder="••••••••"
                     value={confirmNewPassword}
                     onChange={(e) => setConfirmNewPassword(e.target.value)}
-                    className="w-full h-11 pl-11 pr-4 bg-white/5 border border-white/5 rounded-xl text-sm text-white placeholder-on-surface-variant focus:border-white/10 focus:bg-white/10 transition"
+                    className="w-full h-11 pl-11 pr-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200"
                   />
                 </div>
               </div>
@@ -490,7 +490,7 @@ export default function Auth() {
               <button 
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 rounded-xl bg-electric-gradient text-white font-bold text-sm hover:scale-102 transition cursor-pointer mt-2 shadow-lg flex items-center justify-center gap-2"
+                className="w-full h-11 rounded-full bg-primary text-black font-extrabold text-sm hover:scale-105 active:scale-95 transition cursor-pointer mt-2 shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {loading ? (
                   <span className="material-symbols-outlined text-lg animate-spin">sync</span>
@@ -511,7 +511,7 @@ export default function Auth() {
                   setConfirmNewPassword('');
                   setSuccessMsg('');
                 }}
-                className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-white transition cursor-pointer"
+                className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-white transition cursor-pointer font-bold"
               >
                 <span className="material-symbols-outlined text-base">arrow_back</span>
                 <span>Back to Log In</span>
@@ -522,10 +522,10 @@ export default function Auth() {
 
         {/* Visual Decorative Detail */}
         <div className="flex justify-center items-end h-8 gap-0.5 mt-2">
-          <div className="w-[3px] bg-secondary animate-[bar-dance_1.2s_infinite_ease-in-out]" style={{ animationDelay: '0.1s' }} />
-          <div className="w-[3px] bg-tertiary animate-[bar-dance_1.2s_infinite_ease-in-out]" style={{ animationDelay: '0.3s' }} />
-          <div className="w-[3px] bg-secondary animate-[bar-dance_1.2s_infinite_ease-in-out]" style={{ animationDelay: '0.5s' }} />
-          <div className="w-[3px] bg-tertiary animate-[bar-dance_1.2s_infinite_ease-in-out]" style={{ animationDelay: '0.7s' }} />
+          <div className="w-[3px] bg-primary animate-[bar-dance_1.2s_infinite_ease-in-out]" style={{ animationDelay: '0.1s' }} />
+          <div className="w-[3px] bg-primary/60 animate-[bar-dance_1.2s_infinite_ease-in-out]" style={{ animationDelay: '0.3s' }} />
+          <div className="w-[3px] bg-primary animate-[bar-dance_1.2s_infinite_ease-in-out]" style={{ animationDelay: '0.5s' }} />
+          <div className="w-[3px] bg-primary/60 animate-[bar-dance_1.2s_infinite_ease-in-out]" style={{ animationDelay: '0.7s' }} />
         </div>
 
       </div>

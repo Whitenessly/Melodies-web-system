@@ -345,12 +345,12 @@ export default function Settings() {
 
             {/* Premium Upgrade Promotion Widget at the bottom */}
             {user?.premium_status === 'FREE' && (
-              <div className="mt-auto hidden md:block glass-panel p-4 rounded-2xl border border-white/5">
+              <div className="mt-auto hidden md:block bg-[#121212]/40 border border-white/5 p-4 rounded-2xl">
                 <p className="text-[9px] uppercase font-bold text-on-surface-variant mb-1">Level Up</p>
                 <p className="text-xs font-bold text-white mb-3">Melodies Premium</p>
                 <button 
                   onClick={() => navigate('/subscription-plans')}
-                  className="bg-electric-gradient text-white text-[10px] font-bold w-full py-2 rounded-xl active:scale-95 transition-transform cursor-pointer shadow-lg shadow-primary-container/20"
+                  className="bg-primary text-black text-[10px] font-extrabold w-full py-2.5 rounded-full hover:scale-105 active:scale-95 transition cursor-pointer shadow-lg"
                 >
                   {t('upgrade_to_premium_badge')}
                 </button>
@@ -367,12 +367,12 @@ export default function Settings() {
                 <div className="animate-fade-in flex flex-col gap-6">
                   <div>
                     <h1 className="font-display-lg text-2xl font-extrabold text-white">{t('account_info')}</h1>
-                    <p className="text-xs text-on-surface-variant mt-1">{t('update_profile_desc')}</p>
+                    <p className="text-xs text-on-surface-variant mt-1 font-medium">{t('update_profile_desc')}</p>
                   </div>
 
-                  <form onSubmit={handleUpdateProfile} className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-6 shadow-xl">
+                  <form onSubmit={handleUpdateProfile} className="bg-[#121212]/40 border border-white/5 p-6 rounded-3xl flex flex-col gap-6 shadow-xl">
                     {profileSuccess && (
-                      <div className="bg-status-success/15 border border-status-success/30 text-status-success px-4 py-3 rounded-xl text-xs flex items-center gap-2">
+                      <div className="bg-primary/10 border border-primary/20 text-primary px-4 py-3 rounded-xl text-xs flex items-center gap-2 animate-fade-in">
                         <span className="material-symbols-outlined text-base">check_circle</span>
                         <span>{t('profile_updated')}</span>
                       </div>
@@ -381,7 +381,7 @@ export default function Settings() {
                     {/* Avatar Display Section */}
                     <div className="flex items-center gap-6 border-b border-white/5 pb-6">
                       <div className="relative group">
-                        <div className="w-24 h-24 rounded-full overflow-hidden border-[4px] border-[#2A2A2A] bg-secondary-container flex items-center justify-center font-bold text-3xl shadow-md">
+                        <div className="w-24 h-24 rounded-full overflow-hidden border-[4px] border-zinc-800 bg-zinc-800 flex items-center justify-center font-bold text-3xl shadow-md">
                           {avatarUrl ? (
                             <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
                           ) : (
@@ -391,11 +391,11 @@ export default function Settings() {
                       </div>
                       <div className="flex flex-col items-start">
                         <h3 className="text-sm font-bold text-white">{name || 'Alex Nguyen'}</h3>
-                        <p className="text-[10px] text-on-surface-variant mt-1">{t('joined_date')}</p>
+                        <p className="text-[10px] text-on-surface-variant mt-1 font-medium">{t('joined_date')}</p>
                         
                         {!avatarUploading ? (
                           <div className="flex items-center gap-3">
-                            <label className="border border-white/20 hover:border-white/40 bg-[#1E1E1E] hover:bg-white/5 text-white rounded-full text-xs font-bold px-6 py-2.5 mt-3 cursor-pointer transition select-none flex items-center justify-center w-fit shadow-md">
+                            <label className="border border-white/10 bg-white/5 hover:bg-white/10 text-white rounded-full text-xs font-bold px-5 py-2 mt-3 cursor-pointer transition select-none flex items-center justify-center w-fit shadow-md">
                               {t('change_photo')}
                               <input 
                                 type="file" 
@@ -411,7 +411,7 @@ export default function Settings() {
                                   setAvatarUrl('');
                                   setAvatarFileName('');
                                 }}
-                                className="border border-error/20 hover:border-error/40 bg-error/5 hover:bg-error/10 text-error rounded-full text-xs font-bold px-6 py-2.5 mt-3 cursor-pointer transition select-none flex items-center justify-center w-fit shadow-md"
+                                className="border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-500 rounded-full text-xs font-bold px-5 py-2 mt-3 cursor-pointer transition select-none flex items-center justify-center w-fit shadow-md"
                               >
                                 {t('remove')}
                               </button>
@@ -419,13 +419,13 @@ export default function Settings() {
                           </div>
                         ) : (
                           <div className="w-48 flex flex-col gap-1 mt-3">
-                            <div className="flex justify-between items-center text-[10px] text-on-surface-variant font-mono">
+                            <div className="flex justify-between items-center text-[10px] text-on-surface-variant font-mono font-bold">
                               <span>{t('uploading')}</span>
                               <span>{avatarUploadProgress}%</span>
                             </div>
-                            <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                            <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                               <div 
-                                className="h-full bg-electric-gradient transition-all duration-100" 
+                                className="h-full bg-primary transition-all duration-100" 
                                 style={{ width: `${avatarUploadProgress}%` }}
                               />
                             </div>
@@ -443,7 +443,7 @@ export default function Settings() {
                           required
                           value={name} 
                           onChange={e => setName(e.target.value)} 
-                          className="w-full h-11 px-4 bg-white/5 border border-white/5 rounded-xl text-xs text-white focus:border-white/10 focus:bg-white/10 transition" 
+                          className="w-full h-11 px-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200" 
                         />
                       </div>
 
@@ -454,7 +454,7 @@ export default function Settings() {
                             type="email" 
                             disabled 
                             value={user?.email || ''} 
-                            className="w-full h-11 pl-4 pr-24 bg-white/5 border border-white/5 rounded-xl text-xs text-on-surface-variant/40 cursor-not-allowed" 
+                            className="w-full h-11 pl-4 pr-24 bg-[#121212] border border-white/5 rounded-xl text-xs text-on-surface-variant/40 cursor-not-allowed font-medium" 
                           />
                           <button 
                             type="button"
@@ -466,7 +466,7 @@ export default function Settings() {
                               setReceivedOtp('');
                               setEmailStepError('');
                             }}
-                            className="absolute right-2 px-3.5 py-1.5 bg-white/10 hover:bg-white/15 text-white rounded-lg text-[10px] font-bold cursor-pointer transition select-none"
+                            className="absolute right-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white rounded-full text-[10px] font-bold cursor-pointer transition select-none border border-white/10"
                           >
                             {t('change')}
                           </button>
@@ -478,7 +478,7 @@ export default function Settings() {
                       <button 
                         type="submit" 
                         disabled={loadingProfile}
-                        className="bg-electric-gradient text-white text-xs font-bold px-6 py-3 rounded-xl hover:shadow-[0_0_20px_rgba(46,91,255,0.4)] transition-all active:scale-95 cursor-pointer"
+                        className="bg-primary text-black text-xs font-extrabold px-6 py-2.5 rounded-full hover:scale-105 active:scale-95 transition duration-200 cursor-pointer shadow-lg disabled:opacity-50"
                       >
                         {loadingProfile ? (
                           <span className="material-symbols-outlined text-sm animate-spin">sync</span>
@@ -503,16 +503,16 @@ export default function Settings() {
 
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                     {/* Left Column (Main Form) */}
-                    <form onSubmit={handleChangePassword} className="lg:col-span-2 glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-5 shadow-xl">
+                    <form onSubmit={handleChangePassword} className="lg:col-span-2 bg-[#121212]/40 border border-white/5 p-6 rounded-3xl flex flex-col gap-5 shadow-xl">
                       {passwordSuccess && (
-                        <div className="bg-status-success/15 border border-status-success/30 text-status-success px-4 py-3 rounded-xl text-xs flex items-center gap-2">
+                        <div className="bg-primary/10 border border-primary/20 text-primary px-4 py-3 rounded-xl text-xs flex items-center gap-2 animate-fade-in">
                           <span className="material-symbols-outlined text-base">check_circle</span>
                           <span>{t('password_updated_success')}</span>
                         </div>
                       )}
 
                       {passwordError && (
-                        <div className="bg-error/15 border border-error/30 text-error px-4 py-3 rounded-xl text-xs flex items-center gap-2">
+                        <div className="bg-red-500/10 border border-red-500/25 text-red-500 px-4 py-3 rounded-xl text-xs flex items-center gap-2 animate-fade-in">
                           <span className="material-symbols-outlined text-base">warning</span>
                           <span>{passwordError}</span>
                         </div>
@@ -528,7 +528,7 @@ export default function Settings() {
                             placeholder="••••••••"
                             value={currentPassword}
                             onChange={e => setCurrentPassword(e.target.value)}
-                            className="w-full h-11 pl-10 pr-4 bg-white/5 border border-white/5 rounded-xl text-xs text-white focus:border-white/10 focus:bg-white/10 transition" 
+                            className="w-full h-11 pl-10 pr-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200" 
                           />
                         </div>
                       </div>
@@ -539,10 +539,10 @@ export default function Settings() {
                           {newPassword && (
                             <span className={`text-[9px] font-bold tracking-wider ${
                               newPassword.length >= 8 && /[A-Z]/.test(newPassword) && /[0-9!@#$%^&*(),.?":{}|<>]/.test(newPassword)
-                                ? 'text-status-success' 
+                                ? 'text-primary' 
                                 : newPassword.length >= 6 
-                                ? 'text-status-warning' 
-                                : 'text-error'
+                                ? 'text-amber-500' 
+                                : 'text-red-500'
                             }`}>
                               STRENGTH: {
                                 newPassword.length >= 8 && /[A-Z]/.test(newPassword) && /[0-9!@#$%^&*(),.?":{}|<>]/.test(newPassword)
@@ -562,7 +562,7 @@ export default function Settings() {
                             placeholder={t('new_password_placeholder')}
                             value={newPassword}
                             onChange={e => setNewPassword(e.target.value)}
-                            className="w-full h-11 pl-10 pr-10 bg-white/5 border border-white/5 rounded-xl text-xs text-white focus:border-white/10 focus:bg-white/10 transition" 
+                            className="w-full h-11 pl-10 pr-10 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200" 
                           />
                           <button 
                             type="button" 
@@ -586,7 +586,7 @@ export default function Settings() {
                             placeholder={t('confirm_password_placeholder')}
                             value={confirmPassword}
                             onChange={e => setConfirmPassword(e.target.value)}
-                            className="w-full h-11 pl-10 pr-4 bg-white/5 border border-white/5 rounded-xl text-xs text-white focus:border-white/10 focus:bg-white/10 transition" 
+                            className="w-full h-11 pl-10 pr-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200" 
                           />
                         </div>
                       </div>
@@ -595,7 +595,7 @@ export default function Settings() {
                         <button 
                           type="submit" 
                           disabled={loadingPassword}
-                          className="bg-electric-gradient text-white text-xs font-bold px-8 py-3.5 rounded-full hover:shadow-[0_0_25px_rgba(46,91,255,0.5)] transition-all active:scale-95 cursor-pointer w-fit"
+                          className="bg-primary text-black text-xs font-extrabold px-6 py-2.5 rounded-full hover:scale-105 active:scale-95 transition duration-200 cursor-pointer w-fit shadow-lg disabled:opacity-50"
                         >
                           {loadingPassword ? (
                             <span className="material-symbols-outlined text-sm animate-spin">sync</span>
@@ -609,46 +609,46 @@ export default function Settings() {
                     {/* Right Column (Requirements & Tips) */}
                     <div className="flex flex-col gap-6">
                       {/* Password Requirements Card */}
-                      <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-4 shadow-xl">
+                      <div className="bg-[#121212]/40 border border-white/5 p-6 rounded-3xl flex flex-col gap-4 shadow-xl">
                         <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">{t('password_requirements')}</h3>
                         <ul className="flex flex-col gap-3 text-xs text-white">
                           <li className="flex items-center gap-2.5">
                             <span className={`material-symbols-outlined text-base shrink-0 select-none ${
-                              newPassword.length >= 8 ? 'text-status-success' : 'text-on-surface-variant/40'
+                              newPassword.length >= 8 ? 'text-primary' : 'text-on-surface-variant/40'
                             }`}>
                               {newPassword.length >= 8 ? 'check_circle' : 'radio_button_unchecked'}
                             </span>
-                            <span className={newPassword.length >= 8 ? 'text-white' : 'text-on-surface-variant'}>
+                            <span className={newPassword.length >= 8 ? 'text-white' : 'text-on-surface-variant font-medium'}>
                               {t('req_min_chars')}
                             </span>
                           </li>
                           <li className="flex items-center gap-2.5">
                             <span className={`material-symbols-outlined text-base shrink-0 select-none ${
-                              /[A-Z]/.test(newPassword) ? 'text-status-success' : 'text-on-surface-variant/40'
+                              /[A-Z]/.test(newPassword) ? 'text-primary' : 'text-on-surface-variant/40'
                             }`}>
                               {/[A-Z]/.test(newPassword) ? 'check_circle' : 'radio_button_unchecked'}
                             </span>
-                            <span className={/[A-Z]/.test(newPassword) ? 'text-white' : 'text-on-surface-variant'}>
+                            <span className={/[A-Z]/.test(newPassword) ? 'text-white' : 'text-on-surface-variant font-medium'}>
                               {t('req_uppercase')}
                             </span>
                           </li>
                           <li className="flex items-center gap-2.5">
                             <span className={`material-symbols-outlined text-base shrink-0 select-none ${
-                              /[0-9!@#$%^&*(),.?":{}|<>]/.test(newPassword) ? 'text-status-success' : 'text-on-surface-variant/40'
+                              /[0-9!@#$%^&*(),.?":{}|<>]/.test(newPassword) ? 'text-primary' : 'text-on-surface-variant/40'
                             }`}>
                               {/[0-9!@#$%^&*(),.?":{}|<>]/.test(newPassword) ? 'check_circle' : 'radio_button_unchecked'}
                             </span>
-                            <span className={/[0-9!@#$%^&*(),.?":{}|<>]/.test(newPassword) ? 'text-white' : 'text-on-surface-variant'}>
+                            <span className={/[0-9!@#$%^&*(),.?":{}|<>]/.test(newPassword) ? 'text-white' : 'text-on-surface-variant font-medium'}>
                               {t('req_number_symbol')}
                             </span>
                           </li>
                           <li className="flex items-center gap-2.5">
                             <span className={`material-symbols-outlined text-base shrink-0 select-none ${
-                              confirmPassword && newPassword === confirmPassword ? 'text-status-success' : 'text-on-surface-variant/40'
+                              confirmPassword && newPassword === confirmPassword ? 'text-primary' : 'text-on-surface-variant/40'
                             }`}>
                               {confirmPassword && newPassword === confirmPassword ? 'check_circle' : 'radio_button_unchecked'}
                             </span>
-                            <span className={confirmPassword && newPassword === confirmPassword ? 'text-white' : 'text-on-surface-variant'}>
+                            <span className={confirmPassword && newPassword === confirmPassword ? 'text-white' : 'text-on-surface-variant font-medium'}>
                               {t('req_match')}
                             </span>
                           </li>
@@ -656,22 +656,22 @@ export default function Settings() {
                       </div>
 
                       {/* Pro Tip Card */}
-                      <div className="glass-panel p-6 rounded-3xl border border-white/5 flex gap-4 shadow-xl relative overflow-hidden">
-                        <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-[#2E5BFF]"></div>
-                        <div className="w-10 h-10 bg-[#2E5BFF]/10 rounded-full flex items-center justify-center shrink-0 border border-[#2E5BFF]/20">
-                          <span className="material-symbols-outlined text-[#2E5BFF] text-lg">shield</span>
+                      <div className="bg-[#121212]/40 border border-white/5 p-6 rounded-3xl flex gap-4 shadow-xl relative overflow-hidden">
+                        <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-primary"></div>
+                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center shrink-0 border border-primary/20">
+                          <span className="material-symbols-outlined text-primary text-lg">shield</span>
                         </div>
                         <div className="flex flex-col gap-1">
                           <h4 className="text-xs font-bold text-white">{t('pro_tip')}</h4>
-                          <p className="text-[10px] text-on-surface-variant leading-relaxed">
+                          <p className="text-[10px] text-on-surface-variant leading-relaxed font-medium">
                             {t('2fa_tip_desc')}
                           </p>
                           <button 
                             type="button" 
-                            className="text-secondary-container hover:text-white font-bold text-[10px] mt-1 cursor-pointer flex items-center gap-1 self-start"
+                            className="text-primary hover:text-white font-bold text-[10px] mt-1 cursor-pointer flex items-center gap-1 self-start"
                           >
                             <span>{t('configure_2fa')}</span>
-                            <span className="material-symbols-outlined text-[10px]">arrow_forward</span>
+                            <span className="material-symbols-outlined text-[10px] font-bold">arrow_forward</span>
                           </button>
                         </div>
                       </div>
@@ -679,14 +679,14 @@ export default function Settings() {
                   </div>
 
                   {/* Danger Zone */}
-                  <div className="p-6 bg-error-container/10 border border-error/20 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+                  <div className="p-6 bg-red-500/5 border border-red-500/20 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
                     <div>
-                      <h4 className="text-sm font-bold text-error">{t('danger_zone')}</h4>
-                      <p className="text-xs text-on-surface-variant mt-1">{t('delete_account_desc')}</p>
+                      <h4 className="text-sm font-bold text-red-500">{t('danger_zone')}</h4>
+                      <p className="text-xs text-on-surface-variant mt-1 font-medium">{t('delete_account_desc')}</p>
                     </div>
                     <button 
                       onClick={handleDeleteAccount}
-                      className="text-error font-bold border border-error/30 px-5 py-2.5 rounded-xl hover:bg-error/10 transition-all cursor-pointer text-xs"
+                      className="text-red-500 font-extrabold border border-red-500/30 px-5 py-2.5 rounded-full hover:bg-red-500/10 transition-all cursor-pointer text-xs"
                     >
                       {t('delete_account')}
                     </button>
@@ -700,29 +700,29 @@ export default function Settings() {
                   {/* Title & Description */}
                   <div>
                     <h1 className="font-display-lg text-2xl font-extrabold text-white">{t('billing_and_plans')}</h1>
-                    <p className="text-xs text-on-surface-variant mt-1">{t('billing_subtitle')}</p>
+                    <p className="text-xs text-on-surface-variant mt-1 font-medium">{t('billing_subtitle')}</p>
                   </div>
 
                   {/* Top Row: Plan details & Active method */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
                     {/* Current Active Plan Card */}
-                    <div className="glass-panel p-6 rounded-3xl border border-white/5 relative overflow-hidden flex flex-col justify-between shadow-xl min-h-[220px]">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-electric-gradient blur-[80px] opacity-20 pointer-events-none"></div>
+                    <div className="bg-[#121212]/40 border border-white/5 p-6 rounded-3xl relative overflow-hidden flex flex-col justify-between shadow-xl min-h-[220px]">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[80px] opacity-20 pointer-events-none"></div>
                       
                       <div>
-                        <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full inline-block mb-3 ${
+                        <span className={`text-[9px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full inline-block mb-3 ${
                           user?.premium_status === 'PREMIUM' 
-                            ? 'bg-status-success/20 text-status-success' 
+                            ? 'bg-primary/10 text-primary' 
                             : 'bg-white/10 text-on-surface-variant'
                         }`}>
                           {user?.premium_status === 'PREMIUM' ? t('active') : t('inactive')}
                         </span>
                         
-                        <h3 className="text-lg font-extrabold text-electric-gradient mb-1">
+                        <h3 className="text-lg font-extrabold text-white mb-1">
                           {user?.premium_status === 'PREMIUM' ? 'Melodies Premium' : 'Melodies Free'}
                         </h3>
-                        <p className="text-xs text-on-surface-variant leading-relaxed">
+                        <p className="text-xs text-on-surface-variant leading-relaxed font-medium">
                           {user?.premium_status === 'PREMIUM' 
                             ? t('premium_monthly_desc') 
                             : t('free_plan_desc')}
@@ -731,10 +731,10 @@ export default function Settings() {
 
                       <div className="flex flex-col gap-3 mt-4">
                         {user?.premium_status === 'PREMIUM' && user?.premium_expired_at && (
-                          <div className="text-[10px] text-on-surface-variant flex flex-col gap-1.5">
+                          <div className="text-[10px] text-on-surface-variant flex flex-col gap-1.5 font-medium">
                             {user?.premium_auto_renew === false ? (
-                              <div className="p-2.5 rounded-xl bg-error/15 border border-error/30 text-error leading-normal text-left">
-                                <span className="material-symbols-outlined text-xs mr-1 select-none">warning</span>
+                              <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 leading-normal text-left">
+                                <span className="material-symbols-outlined text-xs mr-1 select-none font-bold">warning</span>
                                 {t('premium_cancelled_notice').replace('{date}', new Date(user.premium_expired_at).toLocaleDateString('vi-VN'))}
                               </div>
                             ) : (
@@ -750,24 +750,24 @@ export default function Settings() {
                           user?.premium_auto_renew === false ? (
                             <button 
                               onClick={handleReactivatePremium}
-                              className="bg-electric-gradient text-white text-xs font-bold py-2.5 rounded-xl transition-all hover:scale-102 cursor-pointer text-center flex items-center justify-center gap-1.5 shadow-lg shadow-primary-container/20"
+                              className="bg-primary text-black text-xs font-extrabold py-2.5 rounded-full transition-all hover:scale-105 cursor-pointer text-center flex items-center justify-center gap-1.5 shadow-lg"
                             >
-                              <span className="material-symbols-outlined text-sm">autorenew</span>
+                              <span className="material-symbols-outlined text-sm font-bold">autorenew</span>
                               {t('reactivate_renew')}
                             </button>
                           ) : (
                             <button 
                               onClick={handleCancelPremium}
-                              className="text-on-surface-variant hover:text-error text-xs font-bold py-2.5 border border-white/10 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                              className="text-on-surface-variant hover:text-red-500 text-xs font-bold py-2.5 border border-white/10 rounded-full transition-all cursor-pointer flex items-center justify-center gap-1.5"
                             >
-                              <span className="material-symbols-outlined text-sm">cancel</span>
+                              <span className="material-symbols-outlined text-sm font-bold">cancel</span>
                               {t('cancel_premium')}
                             </button>
                           )
                         ) : (
                           <button 
                             onClick={() => navigate('/subscription-plans')}
-                            className="bg-electric-gradient text-white text-xs font-bold py-2.5 rounded-xl transition-all hover:scale-102 cursor-pointer text-center"
+                            className="bg-primary text-black text-xs font-extrabold py-2.5 rounded-full transition-all hover:scale-105 cursor-pointer text-center"
                           >
                             {t('upgrade_now')}
                           </button>
@@ -1023,25 +1023,25 @@ export default function Settings() {
 
       {/* Change Email Modal Overlay */}
       {showEmailModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-6 z-[100] animate-fade-in">
-          <div className="glass-panel w-full max-w-sm p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-5 text-center relative">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center p-6 z-[100] animate-fade-in">
+          <div className="bg-[#121212]/90 w-full max-w-sm p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-5 text-center relative">
             
             {/* Step 1: Thay đổi Email */}
             {emailStep === 1 && (
               <form onSubmit={handleRequestEmailChange} className="flex flex-col gap-4">
                 {/* Logo & Header */}
                 <div className="flex flex-col items-center gap-3">
-                  <div className="w-10 h-10 flex items-center justify-center">
+                  <div className="w-10 h-10 flex items-center justify-center text-primary">
                     <Logo className="w-10 h-10" />
                   </div>
                   <h3 className="text-base font-bold text-white mt-1">{t('change_email')}</h3>
-                  <p className="text-xs text-on-surface-variant max-w-[260px] mx-auto leading-relaxed">
+                  <p className="text-xs text-on-surface-variant max-w-[260px] mx-auto leading-relaxed font-medium">
                     {t('enter_new_email_desc')}
                   </p>
                 </div>
 
                 {emailStepError && (
-                  <div className="bg-error/10 border border-error/20 text-error px-3 py-2 rounded-xl text-[10px] text-left">
+                  <div className="bg-red-500/10 border border-red-500/25 text-red-500 px-3 py-2 rounded-xl text-[10px] text-left">
                     {emailStepError}
                   </div>
                 )}
@@ -1057,7 +1057,7 @@ export default function Settings() {
                       placeholder="example@email.com" 
                       value={newEmail} 
                       onChange={e => setNewEmail(e.target.value)} 
-                      className="w-full h-11 pl-10 pr-4 bg-white/5 border border-white/5 rounded-xl text-xs text-white focus:border-white/10 transition" 
+                      className="w-full h-11 pl-10 pr-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200" 
                     />
                   </div>
                 </div>
@@ -1066,7 +1066,7 @@ export default function Settings() {
                 <button 
                   type="submit" 
                   disabled={loadingEmailStep}
-                  className="w-full h-11 bg-electric-gradient text-white text-xs font-bold rounded-xl active:scale-98 transition shadow-lg cursor-pointer mt-3"
+                  className="w-full h-11 bg-primary text-black text-xs font-extrabold rounded-full hover:scale-105 active:scale-95 transition shadow-lg cursor-pointer mt-3 disabled:opacity-50"
                 >
                   {loadingEmailStep ? t('sending_code') : t('send_verification_code')}
                 </button>
@@ -1088,22 +1088,22 @@ export default function Settings() {
                 {/* Logo & Header */}
                 <div className="flex flex-col items-center gap-3">
                   <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center border border-white/10">
-                    <span className="material-symbols-outlined text-xl text-secondary-container">mail</span>
+                    <span className="material-symbols-outlined text-xl text-primary font-bold">mail</span>
                   </div>
                   <h3 className="text-base font-bold text-white mt-1">{t('verify_new_email')}</h3>
-                  <p className="text-xs text-on-surface-variant max-w-[260px] mx-auto leading-relaxed">
+                  <p className="text-xs text-on-surface-variant max-w-[260px] mx-auto leading-relaxed font-medium">
                     {t('otp_sent_new_email_desc')}
                   </p>
                   {receivedOtp && (
-                    <div className="mt-3 bg-secondary-container/15 border border-secondary-container/30 text-secondary-container rounded-xl px-4 py-2 text-xs font-mono select-all flex items-center justify-center gap-1.5 animate-pulse">
-                      <span className="material-symbols-outlined text-sm">key</span>
+                    <div className="mt-3 bg-primary/10 border border-primary/20 text-primary rounded-xl px-4 py-2 text-xs font-mono select-all flex items-center justify-center gap-1.5 animate-pulse">
+                      <span className="material-symbols-outlined text-sm font-bold">key</span>
                       <span>[Sandbox OTP]: <strong className="text-white tracking-wider">{receivedOtp}</strong></span>
                     </div>
                   )}
                 </div>
 
                 {emailStepError && (
-                  <div className="bg-error/10 border border-error/20 text-error px-3 py-2 rounded-xl text-[10px] text-left">
+                  <div className="bg-red-500/10 border border-red-500/25 text-red-500 px-3 py-2 rounded-xl text-[10px] text-left">
                     {emailStepError}
                   </div>
                 )}
@@ -1118,7 +1118,7 @@ export default function Settings() {
                       value={verificationCode[i] || ''}
                       onChange={(e) => handleOtpChange(e.target.value, i)}
                       onKeyDown={(e) => handleOtpKeyDown(e, i)}
-                      className="w-10 h-12 text-center bg-white/5 border border-white/10 rounded-xl text-base font-bold text-white focus:border-secondary-container focus:bg-white/10 transition"
+                      className="w-10 h-12 text-center bg-[#121212] border border-white/10 rounded-xl text-base font-bold text-white focus:border-primary focus:bg-white/5 transition"
                       ref={(el) => (otpRefs.current[i] = el)}
                     />
                   ))}
@@ -1128,21 +1128,21 @@ export default function Settings() {
                 <button 
                   type="submit" 
                   disabled={loadingEmailStep}
-                  className="w-full h-11 bg-electric-gradient text-white text-xs font-bold rounded-xl active:scale-98 transition shadow-lg cursor-pointer mt-2"
+                  className="w-full h-11 bg-primary text-black text-xs font-extrabold rounded-full hover:scale-105 active:scale-95 transition shadow-lg cursor-pointer mt-2 disabled:opacity-50"
                 >
                   {loadingEmailStep ? t('confirming') : t('confirm_change')}
                 </button>
 
                 {/* Resend status */}
-                <div className="text-xs text-on-surface-variant mt-2 select-none">
+                <div className="text-xs text-on-surface-variant mt-2 select-none font-medium">
                   <span>{t('no_code_received')} </span>
                   {resendTimer > 0 ? (
-                    <span className="text-secondary-container font-semibold">{t('resend_code')} ({resendTimer}s)</span>
+                    <span className="text-primary font-bold">{t('resend_code')} ({resendTimer}s)</span>
                   ) : (
                     <button 
                       type="button" 
                       onClick={handleResendOtp}
-                      className="text-secondary-container hover:text-white font-bold cursor-pointer transition"
+                      className="text-primary hover:text-white font-extrabold cursor-pointer transition"
                     >
                       {t('resend_code')}
                     </button>
@@ -1156,11 +1156,11 @@ export default function Settings() {
               <div className="flex flex-col gap-4 py-2">
                 {/* Success Icon */}
                 <div className="flex flex-col items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#8B5CF6] to-[#3B82F6] rounded-full flex items-center justify-center text-white shadow-lg">
-                    <span className="material-symbols-outlined text-2xl">check</span>
+                  <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center text-primary shadow-lg">
+                    <span className="material-symbols-outlined text-2xl font-bold">check</span>
                   </div>
                   <h3 className="text-base font-bold text-white mt-2">{t('email_change_success')}</h3>
-                  <p className="text-xs text-on-surface-variant max-w-[270px] mx-auto leading-relaxed">
+                  <p className="text-xs text-on-surface-variant max-w-[270px] mx-auto leading-relaxed font-medium">
                     {t('email_updated_notice')}
                   </p>
                 </div>
@@ -1169,7 +1169,7 @@ export default function Settings() {
                 <button 
                   type="button" 
                   onClick={() => setShowEmailModal(false)}
-                  className="w-full h-11 bg-electric-gradient text-white text-xs font-bold rounded-xl active:scale-98 transition shadow-lg cursor-pointer mt-4"
+                  className="w-full h-11 bg-primary text-black text-xs font-extrabold rounded-full hover:scale-105 active:scale-95 transition shadow-lg cursor-pointer mt-4"
                 >
                   {t('back_to_profile')}
                 </button>
@@ -1182,29 +1182,29 @@ export default function Settings() {
 
       {/* Delete Account Modal Overlay */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 z-[100] animate-fade-in">
-          <div className="glass-panel w-full max-w-sm p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-5 text-center relative animate-scale-in">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-6 z-[100] animate-fade-in">
+          <div className="bg-[#121212]/90 w-full max-w-sm p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-5 text-center relative animate-scale-in">
             <button 
               type="button"
               onClick={() => setShowDeleteModal(false)}
               className="absolute right-4 top-4 text-on-surface-variant hover:text-white transition cursor-pointer select-none"
             >
-              <span className="material-symbols-outlined text-lg">close</span>
+              <span className="material-symbols-outlined text-lg font-bold">close</span>
             </button>
 
-            <div className="w-12 h-12 rounded-full bg-status-error/15 border border-status-error/30 flex items-center justify-center text-status-error self-center mt-2">
-              <span className="material-symbols-outlined text-2xl">warning</span>
+            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 self-center mt-2">
+              <span className="material-symbols-outlined text-2xl font-bold">warning</span>
             </div>
 
             <div className="flex flex-col gap-2">
               <h3 className="text-base font-bold text-white">Xóa tài khoản vĩnh viễn?</h3>
-              <p className="text-xs text-on-surface-variant leading-relaxed">
+              <p className="text-xs text-on-surface-variant leading-relaxed font-medium">
                 Hành động này không thể hoàn tác. Tất cả dữ liệu cá nhân, danh sách phát đã thích và lịch sử nghe nhạc của bạn sẽ bị xóa vĩnh viễn khỏi hệ thống.
               </p>
             </div>
 
             {deleteError && (
-              <div className="bg-status-error/10 border border-status-error/20 text-status-error px-3 py-2 rounded-xl text-[10px] text-left">
+              <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-3 py-2 rounded-xl text-[10px] text-left">
                 {deleteError}
               </div>
             )}
@@ -1214,7 +1214,7 @@ export default function Settings() {
                 type="button" 
                 disabled={deletingAccount}
                 onClick={confirmDeleteAccount}
-                className="w-full h-11 bg-status-error hover:bg-status-error/90 text-white text-xs font-bold rounded-xl active:scale-98 transition shadow-lg cursor-pointer flex items-center justify-center gap-1.5"
+                className="w-full h-11 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-full active:scale-98 transition shadow-lg cursor-pointer flex items-center justify-center gap-1.5"
               >
                 {deletingAccount ? (
                   <span className="material-symbols-outlined text-sm animate-spin">sync</span>
@@ -1226,7 +1226,7 @@ export default function Settings() {
                 type="button"
                 disabled={deletingAccount}
                 onClick={() => setShowDeleteModal(false)}
-                className="w-full h-11 bg-white/5 hover:bg-white/10 text-white text-xs font-bold rounded-xl active:scale-98 transition cursor-pointer"
+                className="w-full h-11 bg-white/5 hover:bg-white/10 text-white text-xs font-bold rounded-full active:scale-98 transition cursor-pointer"
               >
                 Hủy bỏ
               </button>

@@ -190,10 +190,10 @@ export default function UploadManage() {
         <main className="md:ml-sidebar-width flex-1 p-8 overflow-y-auto flex flex-col gap-6">
           <div>
             <h1 className="font-display-lg text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-              <span className="material-symbols-outlined text-secondary-container">publish</span>
+              <span className="material-symbols-outlined text-primary">publish</span>
               {t('upload_new_release_title')}
             </h1>
-            <p className="text-xs text-on-surface-variant mt-1.5">
+            <p className="text-xs text-on-surface-variant mt-1.5 font-medium">
               {t('upload_release_desc')}
             </p>
           </div>
@@ -208,7 +208,7 @@ export default function UploadManage() {
           <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
             {/* Metadata Fields (Left 2 cols) */}
-            <div className="lg:col-span-2 glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-5">
+            <div className="lg:col-span-2 bg-[#121212]/40 border border-white/5 p-6 rounded-3xl flex flex-col gap-5">
               
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant ml-1">{t('track_title_label')}</label>
@@ -218,7 +218,7 @@ export default function UploadManage() {
                   placeholder={t('track_title_placeholder')}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full h-11 px-4 bg-white/5 border border-white/5 rounded-xl text-sm text-white placeholder-on-surface-variant focus:border-white/10 focus:bg-white/10 transition"
+                  className="w-full h-11 px-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200"
                 />
               </div>
 
@@ -228,7 +228,7 @@ export default function UploadManage() {
                   <select 
                     value={genre}
                     onChange={(e) => setGenre(e.target.value)}
-                    className="w-full h-11 px-4 bg-white/5 border border-white/5 rounded-xl text-sm text-white focus:border-white/10 focus:bg-white/10 transition [&>option]:bg-surface [&>option]:text-white"
+                    className="w-full h-11 px-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white [&>option]:bg-surface [&>option]:text-white transition duration-200 cursor-pointer"
                   >
                     <option value="Electronic">Electronic</option>
                     <option value="Brutalist">Brutalist</option>
@@ -248,7 +248,7 @@ export default function UploadManage() {
                       placeholder={t('custom_genre_placeholder')}
                       value={customGenre}
                       onChange={(e) => setCustomGenre(e.target.value)}
-                      className="w-full h-11 px-4 bg-white/5 border border-white/5 rounded-xl text-sm text-white placeholder-on-surface-variant focus:border-white/10 focus:bg-white/10 transition"
+                      className="w-full h-11 px-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200"
                     />
                   </div>
                 )}
@@ -261,7 +261,7 @@ export default function UploadManage() {
                   rows="8"
                   value={lyrics}
                   onChange={(e) => setLyrics(e.target.value)}
-                  className="w-full p-4 bg-white/5 border border-white/5 rounded-xl text-sm text-white placeholder-on-surface-variant focus:border-white/10 focus:bg-white/10 transition resize-none"
+                  className="w-full p-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200 resize-none"
                 />
               </div>
 
@@ -272,11 +272,11 @@ export default function UploadManage() {
               
               {/* Audio Drag Area */}
               {audioStatus === 'idle' && (
-                <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-4 text-center items-center justify-center min-h-[220px]">
-                  <span className="material-symbols-outlined text-4xl text-secondary-container animate-pulse">audiotrack</span>
+                <div className="bg-white/[0.01] border border-dashed border-white/10 hover:border-white/20 p-6 rounded-3xl flex flex-col gap-4 text-center items-center justify-center min-h-[220px] transition duration-200">
+                  <span className="material-symbols-outlined text-4xl text-primary animate-pulse">audiotrack</span>
                   <div>
                     <p className="text-xs font-bold text-white">{t('audio_file_label')}</p>
-                    <p className="text-[10px] text-on-surface-variant mt-1">{t('drag_drop_select')}</p>
+                    <p className="text-[10px] text-on-surface-variant mt-1 font-medium">{t('drag_drop_select')}</p>
                   </div>
                   <input 
                     type="file"
@@ -287,7 +287,7 @@ export default function UploadManage() {
                   />
                   <label 
                     htmlFor="audio-upload-input"
-                    className="px-4 py-2 bg-white/5 hover:bg-white/10 transition border border-white/5 rounded-xl text-[10px] font-bold text-white cursor-pointer select-none"
+                    className="px-5 py-2.5 bg-white/5 hover:bg-white/10 transition border border-white/10 rounded-full text-[10px] font-bold text-white cursor-pointer select-none"
                   >
                     {t('choose_file_btn')}
                   </label>
@@ -295,31 +295,31 @@ export default function UploadManage() {
               )}
 
               {audioStatus === 'uploading' && (
-                <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-4 text-center items-center justify-center min-h-[220px]">
-                  <span className="material-symbols-outlined text-4xl text-secondary-container animate-spin">sync</span>
+                <div className="bg-[#121212]/40 border border-white/5 p-6 rounded-3xl flex flex-col gap-4 text-center items-center justify-center min-h-[220px]">
+                  <span className="material-symbols-outlined text-4xl text-primary animate-spin">sync</span>
                   <div className="w-full px-4">
                     <p className="text-xs font-bold text-white mb-2">{t('uploading_audio')}</p>
                     <div className="w-full bg-white/5 border border-white/5 rounded-full h-2 overflow-hidden">
                       <div 
-                        className="h-full bg-gradient-to-r from-secondary-container to-primary-container transition-all duration-300"
+                        className="h-full bg-primary transition-all duration-300"
                         style={{ width: `${audioProgress}%` }}
                       />
                     </div>
-                    <p className="text-[10px] text-on-surface-variant mt-1">{audioProgress}%</p>
+                    <p className="text-[10px] text-on-surface-variant mt-1 font-mono">{audioProgress}%</p>
                   </div>
                 </div>
               )}
 
               {audioStatus === 'success' && (
-                <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-4 text-center items-center justify-center min-h-[220px] relative overflow-hidden">
-                  <span className="material-symbols-outlined text-4xl text-status-success">check_circle</span>
+                <div className="bg-[#121212]/40 border border-white/5 p-6 rounded-3xl flex flex-col gap-4 text-center items-center justify-center min-h-[220px] relative overflow-hidden">
+                  <span className="material-symbols-outlined text-4xl text-[#1db954]">check_circle</span>
                   <div>
-                    <p className="text-xs font-bold text-status-success">{t('upload_success')}</p>
-                    <p className="text-[10px] text-white mt-2 truncate max-w-[200px]" title={audioFile?.name}>
+                    <p className="text-xs font-bold text-[#1db954]">{t('upload_success')}</p>
+                    <p className="text-[10px] text-white mt-2 truncate max-w-[200px] font-medium" title={audioFile?.name}>
                       🎵 {audioFile?.name}
                     </p>
                     {duration > 0 && (
-                      <p className="text-[9px] text-on-surface-variant mt-0.5">
+                      <p className="text-[9px] text-on-surface-variant mt-0.5 font-bold font-mono">
                         {t('track_duration_label')} {Math.floor(duration / 60)}m {duration % 60}s
                       </p>
                     )}
@@ -333,7 +333,7 @@ export default function UploadManage() {
                   />
                   <label 
                     htmlFor="audio-upload-input"
-                    className="px-3 py-1.5 bg-white/5 hover:bg-white/10 transition border border-white/5 rounded-lg text-[9px] font-bold text-white cursor-pointer select-none"
+                    className="px-4 py-2 bg-white/5 hover:bg-white/10 transition border border-white/10 rounded-full text-[9px] font-bold text-white cursor-pointer select-none"
                   >
                     {t('change_file_btn')}
                   </label>
@@ -341,17 +341,17 @@ export default function UploadManage() {
               )}
 
               {audioStatus === 'error' && (
-                <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-4 text-center items-center justify-center min-h-[220px]">
-                  <span className="material-symbols-outlined text-4xl text-status-error">cancel</span>
+                <div className="bg-[#121212]/40 border border-white/5 p-6 rounded-3xl flex flex-col gap-4 text-center items-center justify-center min-h-[220px]">
+                  <span className="material-symbols-outlined text-4xl text-error">cancel</span>
                   <div>
-                    <p className="text-xs font-bold text-status-error">{t('failed_to_upload')}</p>
-                    <p className="text-[10px] text-on-surface-variant mt-1">{t('please_retry_file')} {audioFile?.name}</p>
+                    <p className="text-xs font-bold text-error">{t('failed_to_upload')}</p>
+                    <p className="text-[10px] text-on-surface-variant mt-1 font-medium">{t('please_retry_file')} {audioFile?.name}</p>
                   </div>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => simulateAudioUpload(audioFile, true)}
-                      className="px-3 py-1.5 bg-secondary-container hover:bg-secondary-container/80 transition rounded-lg text-[10px] font-bold text-black cursor-pointer"
+                      className="px-4 py-2 bg-primary text-black transition rounded-full text-[10px] font-bold cursor-pointer"
                     >
                       {t('retry_upload_btn')}
                     </button>
@@ -364,7 +364,7 @@ export default function UploadManage() {
                     />
                     <label 
                       htmlFor="audio-upload-input"
-                      className="px-3 py-1.5 bg-white/5 hover:bg-white/10 transition border border-white/5 rounded-lg text-[10px] font-bold text-white cursor-pointer select-none"
+                      className="px-4 py-2 bg-white/5 hover:bg-white/10 transition border border-white/10 rounded-full text-[10px] font-bold text-white cursor-pointer select-none"
                     >
                       {t('choose_other_file_btn')}
                     </label>
@@ -374,11 +374,11 @@ export default function UploadManage() {
 
               {/* Cover Image Drag Area */}
               {imageStatus === 'idle' && (
-                <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-4 text-center items-center justify-center min-h-[220px]">
-                  <span className="material-symbols-outlined text-4xl text-secondary-container">image</span>
+                <div className="bg-white/[0.01] border border-dashed border-white/10 hover:border-white/20 p-6 rounded-3xl flex flex-col gap-4 text-center items-center justify-center min-h-[220px] transition duration-200">
+                  <span className="material-symbols-outlined text-4xl text-primary">image</span>
                   <div>
                     <p className="text-xs font-bold text-white">{t('cover_image_label')}</p>
-                    <p className="text-[10px] text-on-surface-variant mt-1">{t('max_image_size')}</p>
+                    <p className="text-[10px] text-on-surface-variant mt-1 font-medium">{t('max_image_size')}</p>
                   </div>
                   <input 
                     type="file"
@@ -389,7 +389,7 @@ export default function UploadManage() {
                   />
                   <label 
                     htmlFor="image-upload-input"
-                    className="px-4 py-2 bg-white/5 hover:bg-white/10 transition border border-white/5 rounded-xl text-[10px] font-bold text-white cursor-pointer select-none"
+                    className="px-5 py-2.5 bg-white/5 hover:bg-white/10 transition border border-white/10 rounded-full text-[10px] font-bold text-white cursor-pointer select-none"
                   >
                     {t('choose_file_btn')}
                   </label>
@@ -397,29 +397,29 @@ export default function UploadManage() {
               )}
 
               {imageStatus === 'uploading' && (
-                <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-4 text-center items-center justify-center min-h-[220px]">
-                  <span className="material-symbols-outlined text-4xl text-secondary-container animate-spin">sync</span>
+                <div className="bg-[#121212]/40 border border-white/5 p-6 rounded-3xl flex flex-col gap-4 text-center items-center justify-center min-h-[220px]">
+                  <span className="material-symbols-outlined text-4xl text-primary animate-spin">sync</span>
                   <div className="w-full px-4">
                     <p className="text-xs font-bold text-white mb-2">{t('uploading_cover')}</p>
                     <div className="w-full bg-white/5 border border-white/5 rounded-full h-2 overflow-hidden">
                       <div 
-                        className="h-full bg-gradient-to-r from-secondary-container to-primary-container transition-all duration-300"
+                        className="h-full bg-primary transition-all duration-300"
                         style={{ width: `${imageProgress}%` }}
                       />
                     </div>
-                    <p className="text-[10px] text-on-surface-variant mt-1">{imageProgress}%</p>
+                    <p className="text-[10px] text-on-surface-variant mt-1 font-mono">{imageProgress}%</p>
                   </div>
                 </div>
               )}
 
               {imageStatus === 'success' && (
-                <div className="glass-panel rounded-3xl border border-white/5 min-h-[220px] relative overflow-hidden group flex items-center justify-center">
+                <div className="rounded-3xl border border-white/5 min-h-[220px] relative overflow-hidden group flex items-center justify-center bg-zinc-900 shadow-md">
                   <img 
                     src={imagePreviewUrl} 
                     alt="Cover Preview" 
                     className="absolute inset-0 w-full h-full object-cover transition duration-300 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition duration-300 flex flex-col items-center justify-center gap-2">
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition duration-300 flex flex-col items-center justify-center gap-2.5 backdrop-blur-xs">
                     <p className="text-xs font-bold text-white">{t('selected_cover')}</p>
                     <input 
                       type="file"
@@ -430,7 +430,7 @@ export default function UploadManage() {
                     />
                     <label 
                       htmlFor="image-upload-input"
-                      className="px-3 py-1.5 bg-secondary-container hover:bg-secondary-container/80 transition rounded-lg text-[10px] font-bold text-black cursor-pointer select-none"
+                      className="px-4 py-2 bg-primary text-black transition rounded-full text-[10px] font-extrabold cursor-pointer select-none"
                     >
                       {t('change_cover_btn')}
                     </label>
@@ -439,17 +439,17 @@ export default function UploadManage() {
               )}
 
               {imageStatus === 'error' && (
-                <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-4 text-center items-center justify-center min-h-[220px]">
-                  <span className="material-symbols-outlined text-4xl text-status-error">cancel</span>
+                <div className="bg-[#121212]/40 border border-white/5 p-6 rounded-3xl flex flex-col gap-4 text-center items-center justify-center min-h-[220px]">
+                  <span className="material-symbols-outlined text-4xl text-error">cancel</span>
                   <div>
-                    <p className="text-xs font-bold text-status-error">{t('failed_to_upload')}</p>
-                    <p className="text-[10px] text-on-surface-variant mt-1">{t('please_retry_file')} {imageFile?.name}</p>
+                    <p className="text-xs font-bold text-error">{t('failed_to_upload')}</p>
+                    <p className="text-[10px] text-on-surface-variant mt-1 font-medium">{t('please_retry_file')} {imageFile?.name}</p>
                   </div>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => simulateImageUpload(imageFile, true)}
-                      className="px-3 py-1.5 bg-secondary-container hover:bg-secondary-container/80 transition rounded-lg text-[10px] font-bold text-black cursor-pointer"
+                      className="px-4 py-2 bg-primary text-black transition rounded-full text-[10px] font-bold cursor-pointer"
                     >
                       {t('retry_upload_btn')}
                     </button>
@@ -462,7 +462,7 @@ export default function UploadManage() {
                     />
                     <label 
                       htmlFor="image-upload-input"
-                      className="px-3 py-1.5 bg-white/5 hover:bg-white/10 transition border border-white/5 rounded-lg text-[10px] font-bold text-white cursor-pointer select-none"
+                      className="px-4 py-2 bg-white/5 hover:bg-white/10 transition border border-white/10 rounded-full text-[10px] font-bold text-white cursor-pointer select-none"
                     >
                       {t('choose_other_file_btn')}
                     </label>
@@ -474,16 +474,16 @@ export default function UploadManage() {
               <button 
                 type="submit"
                 disabled={loading || audioStatus !== 'success' || (imageFile && imageStatus !== 'success')}
-                className="w-full h-12 rounded-2xl electric-btn text-white font-bold text-sm hover:scale-102 transition cursor-pointer flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="w-full h-12 rounded-full bg-primary text-black font-extrabold text-sm hover:scale-105 active:scale-95 transition cursor-pointer flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {loading ? t('publishing_loader') : t('publish_release_btn')}
               </button>
 
               {/* Progress bar */}
               {loading && (
-                <div className="w-full bg-white/5 border border-white/5 rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-[#121212] border border-white/5 rounded-full h-2 overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-secondary-container to-primary-container transition-all duration-300"
+                    className="h-full bg-primary transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   />
                 </div>

@@ -60,25 +60,25 @@ export default function ArtistDashboard() {
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
             <div>
               <h1 className="font-display-lg text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                <span className="material-symbols-outlined text-secondary-container">mic</span>
+                <span className="material-symbols-outlined text-primary">mic</span>
                 {t('artist_dashboard_title')}
               </h1>
-              <p className="text-xs text-on-surface-variant mt-1.5">
+              <p className="text-xs text-on-surface-variant mt-1.5 font-medium">
                 {t('artist_dashboard_subtitle')}
               </p>
             </div>
             
             <button 
               onClick={() => navigate('/upload-manage')}
-              className="electric-btn text-white text-xs font-bold px-5 py-3 rounded-xl hover:scale-102 transition cursor-pointer flex items-center gap-2 shadow-lg"
+              className="bg-white hover:bg-zinc-200 text-black text-xs font-bold px-5 py-2.5 rounded-full hover:scale-105 transition cursor-pointer flex items-center gap-2 shadow-lg"
             >
-              <span className="material-symbols-outlined text-base">publish</span>
+              <span className="material-symbols-outlined text-base font-bold">publish</span>
               {t('upload_new_song_btn')}
             </button>
           </div>
 
           {loading ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-secondary-container gap-3 min-h-[40vh]">
+            <div className="flex-1 flex flex-col items-center justify-center text-primary gap-3 min-h-[40vh]">
               <span className="material-symbols-outlined text-4xl animate-spin">sync</span>
               <p className="text-sm font-semibold">{t('loading_analytics')}</p>
             </div>
@@ -87,8 +87,8 @@ export default function ArtistDashboard() {
               {/* Analytics Metric Cards Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 
-                <div className="glass-panel p-6 rounded-2xl border border-white/5 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-secondary-container/10 flex items-center justify-center text-secondary-container">
+                <div className="bg-[#121212]/40 border border-white/5 p-6 rounded-2xl flex items-center gap-4 shadow-md">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                     <span className="material-symbols-outlined text-2xl">play_circle</span>
                   </div>
                   <div>
@@ -97,8 +97,8 @@ export default function ArtistDashboard() {
                   </div>
                 </div>
 
-                <div className="glass-panel p-6 rounded-2xl border border-white/5 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-tertiary-container/10 flex items-center justify-center text-tertiary">
+                <div className="bg-[#121212]/40 border border-white/5 p-6 rounded-2xl flex items-center gap-4 shadow-md">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                     <span className="material-symbols-outlined text-2xl">favorite</span>
                   </div>
                   <div>
@@ -107,8 +107,8 @@ export default function ArtistDashboard() {
                   </div>
                 </div>
 
-                <div className="glass-panel p-6 rounded-2xl border border-white/5 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary-container/10 flex items-center justify-center text-primary-fixed-dim">
+                <div className="bg-[#121212]/40 border border-white/5 p-6 rounded-2xl flex items-center gap-4 shadow-md">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                     <span className="material-symbols-outlined text-2xl">group</span>
                   </div>
                   <div>
@@ -120,10 +120,10 @@ export default function ArtistDashboard() {
               </div>
 
               {/* simulated analytics chart layout */}
-              <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-6">
+              <div className="bg-[#121212]/40 border border-white/5 p-6 rounded-3xl flex flex-col gap-6 shadow-md">
                 <div>
                   <h3 className="text-sm font-bold text-white">{t('weekly_trends')}</h3>
-                  <p className="text-[10px] text-on-surface-variant mt-0.5">{t('weekly_trends_desc')}</p>
+                  <p className="text-[10px] text-on-surface-variant mt-0.5 font-medium">{t('weekly_trends_desc')}</p>
                 </div>
                 
                 {/* Visual Chart Bars */}
@@ -132,7 +132,7 @@ export default function ArtistDashboard() {
                     return (
                       <div key={idx} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer">
                         <div 
-                          className="w-full rounded-t bg-gradient-to-t from-secondary-container to-primary-container group-hover:brightness-110 transition-all duration-500"
+                          className="w-full rounded-t bg-gradient-to-t from-primary/20 to-primary group-hover:brightness-110 transition-all duration-500"
                           style={{ height: `${val}px` }}
                         />
                         <span className="text-[9px] font-semibold text-on-surface-variant group-hover:text-white transition">{t(daysKeys[idx])}</span>
@@ -144,13 +144,13 @@ export default function ArtistDashboard() {
 
               {/* Uploaded Track Catalog List */}
               <div className="flex flex-col gap-4">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <span className="material-symbols-outlined text-secondary-container">list</span>
+                <h3 className="font-display-lg text-lg font-bold text-white flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary">list</span>
                   {t('your_releases')} ({artistSongs.length})
                 </h3>
 
                 {artistSongs.length > 0 ? (
-                  <div className="glass-panel rounded-2xl overflow-hidden border border-white/5">
+                  <div className="bg-[#121212]/40 border border-white/5 rounded-2xl overflow-hidden shadow-md">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
                         <tr className="bg-white/5 border-b border-white/5 text-on-surface-variant font-bold">
@@ -163,7 +163,7 @@ export default function ArtistDashboard() {
                       </thead>
                       <tbody className="divide-y divide-white/5">
                         {artistSongs.map(song => (
-                          <tr key={song._id} className="hover:bg-white/[0.02] transition">
+                          <tr key={song._id} className="hover:bg-white/[0.04] transition duration-150">
                             <td className="p-4 flex items-center gap-3">
                               <img 
                                 src={song.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=80'} 
@@ -172,19 +172,19 @@ export default function ArtistDashboard() {
                               />
                               <div>
                                 <p className="font-bold text-white">{song.title}</p>
-                                <p className="text-[10px] text-on-surface-variant mt-0.5">{Math.floor(song.duration / 60)}m {song.duration % 60}s</p>
+                                <p className="text-[10px] text-on-surface-variant mt-0.5 font-medium">{Math.floor(song.duration / 60)}m {song.duration % 60}s</p>
                               </div>
                             </td>
-                            <td className="p-4 text-on-surface-variant font-medium">{song.genre}</td>
+                            <td className="p-4 text-on-surface-variant font-semibold">{song.genre}</td>
                             <td className="p-4 text-center font-mono text-white">{(song.stream_count || song.views || 0).toLocaleString()}</td>
                             <td className="p-4 text-center font-mono text-white">{(song.likes || 0).toLocaleString()}</td>
                             <td className="p-4 text-center">
-                              <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${
+                              <span className={`text-[10px] px-2.5 py-0.5 rounded font-extrabold uppercase tracking-wider ${
                                 song.status === 'approved' 
-                                  ? 'bg-status-success/10 text-status-success' 
+                                  ? 'bg-primary/10 text-primary' 
                                   : song.status === 'pending'
-                                  ? 'bg-status-warning/10 text-status-warning'
-                                  : 'bg-status-error/10 text-status-error'
+                                  ? 'bg-amber-500/10 text-amber-500'
+                                  : 'bg-red-500/10 text-red-500'
                               }`}>
                                 {song.status}
                               </span>
@@ -195,8 +195,8 @@ export default function ArtistDashboard() {
                     </table>
                   </div>
                 ) : (
-                  <div className="glass-panel p-8 text-center rounded-2xl border border-white/5">
-                    <p className="text-xs text-on-surface-variant">{t('no_songs_uploaded')}</p>
+                  <div className="bg-[#121212]/40 p-8 text-center rounded-2xl border border-white/5">
+                    <p className="text-xs text-on-surface-variant font-medium">{t('no_songs_uploaded')}</p>
                   </div>
                 )}
               </div>

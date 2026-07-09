@@ -148,33 +148,33 @@ export default function PaymentCC() {
   const cardBrand = getCardBrand();
 
   return (
-    <div className="min-h-screen bg-[#141313] text-[#e5e2e1] flex">
+    <div className="min-h-screen bg-background text-[#e5e2e1] flex">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <Header />
         
         <main className="md:ml-sidebar-width flex-1 p-8 overflow-y-auto flex items-center justify-center relative">
           {/* Background Ambient Glow */}
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-secondary-container/5 blur-[120px] rounded-full -z-10 translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full -z-10 translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
 
           {!successData ? (
             /* PAYMENT FORM SCREEN */
-            <div className="w-full max-w-lg glass-panel p-8 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-6">
+            <div className="w-full max-w-lg bg-[#121212]/40 border border-white/5 p-8 rounded-3xl shadow-2xl flex flex-col gap-6">
               
               <div className="text-center flex flex-col gap-2">
                 <h1 className="font-display-lg text-2xl font-bold text-white tracking-tight">Melodies</h1>
-                <p className="text-xs text-on-surface-variant">{t('payment_secure_desc')}</p>
+                <p className="text-xs text-on-surface-variant font-medium">{t('payment_secure_desc')}</p>
               </div>
 
               {errorMessage && (
-                <div className="bg-status-error/15 border border-status-error/30 text-status-error px-4 py-2.5 rounded-xl text-xs flex items-center gap-2">
+                <div className="bg-red-500/10 border border-red-500/25 text-red-500 px-4 py-2.5 rounded-xl text-xs flex items-center gap-2">
                   <span className="material-symbols-outlined text-sm">error</span>
                   <span>{errorMessage}</span>
                 </div>
               )}
 
               {/* LIVE CARD PREVIEW GRAPHIC */}
-              <div className="w-full aspect-[1.586/1] bg-gradient-to-br from-[#2E5BFF] to-[#8A3FFC] rounded-2xl p-6 flex flex-col justify-between shadow-2xl relative overflow-hidden border border-white/10 select-none">
+              <div className="w-full aspect-[1.586/1] bg-gradient-to-br from-indigo-600 to-purple-800 rounded-2xl p-6 flex flex-col justify-between shadow-2xl relative overflow-hidden border border-white/10 select-none">
                 <div className="absolute -top-12 -right-12 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
                 <div className="absolute -bottom-16 -left-16 w-40 h-40 bg-black/20 rounded-full blur-2xl"></div>
                 
@@ -194,8 +194,8 @@ export default function PaymentCC() {
                     )}
                     {cardBrand === 'mastercard' && (
                       <span className="text-white font-extrabold italic text-xl tracking-wider flex items-center gap-1">
-                        <span className="w-4 h-4 rounded-full bg-error/90 inline-block"></span>
-                        <span className="w-4 h-4 rounded-full bg-warning/90 -ml-2 inline-block"></span>
+                        <span className="w-4 h-4 rounded-full bg-red-500/90 inline-block"></span>
+                        <span className="w-4 h-4 rounded-full bg-amber-500/90 -ml-2 inline-block"></span>
                       </span>
                     )}
                     {cardBrand === 'unknown' && (
@@ -236,7 +236,7 @@ export default function PaymentCC() {
                       placeholder="NGUYEN VAN A"
                       value={cardName}
                       onChange={e => setCardName(e.target.value)}
-                      className="w-full h-11 pl-4 pr-10 bg-white/5 border border-white/5 rounded-xl text-sm text-white placeholder-on-surface-variant focus:border-white/15 focus:bg-white/10 transition uppercase"
+                      className="w-full h-11 pl-4 pr-10 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200 uppercase"
                     />
                     <span className="material-symbols-outlined text-sm text-on-surface-variant absolute right-3.5 top-1/2 -translate-y-1/2">person</span>
                   </div>
@@ -251,7 +251,7 @@ export default function PaymentCC() {
                       placeholder="0000 0000 0000 0000"
                       value={cardNumber}
                       onChange={handleCardNumberChange}
-                      className="w-full h-11 pl-4 pr-10 bg-white/5 border border-white/5 rounded-xl text-sm text-white placeholder-on-surface-variant focus:border-white/15 focus:bg-white/10 transition font-mono"
+                      className="w-full h-11 pl-4 pr-10 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200 font-mono"
                     />
                     <span className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center">
                       {cardBrand === 'visa' && <span className="text-white font-extrabold italic text-[10px] tracking-wider">VISA</span>}
@@ -270,7 +270,7 @@ export default function PaymentCC() {
                       placeholder="MM/YY"
                       value={cardExpiry}
                       onChange={handleExpiryChange}
-                      className="w-full h-11 px-4 bg-white/5 border border-white/5 rounded-xl text-sm text-white placeholder-on-surface-variant focus:border-white/15 focus:bg-white/10 transition font-mono"
+                      className="w-full h-11 px-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200 font-mono"
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
@@ -282,7 +282,7 @@ export default function PaymentCC() {
                         placeholder="***"
                         value={cardCvv}
                         onChange={handleCvvChange}
-                        className="w-full h-11 pl-4 pr-10 bg-white/5 border border-white/5 rounded-xl text-sm text-white placeholder-on-surface-variant focus:border-white/15 focus:bg-white/10 transition font-mono"
+                        className="w-full h-11 pl-4 pr-10 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200 font-mono"
                       />
                       <span className="material-symbols-outlined text-sm text-on-surface-variant absolute right-3.5 top-1/2 -translate-y-1/2">lock</span>
                     </div>
@@ -292,7 +292,7 @@ export default function PaymentCC() {
                 <button 
                   type="submit" 
                   disabled={loading || loadingConfig}
-                  className="w-full h-11 rounded-xl bg-electric-gradient text-white font-bold text-xs hover:scale-102 transition cursor-pointer flex items-center justify-center gap-2 mt-2 shadow-lg shadow-primary/20"
+                  className="w-full h-11 rounded-full bg-primary text-black font-extrabold text-xs hover:scale-105 active:scale-95 transition cursor-pointer flex items-center justify-center gap-2 mt-2 shadow-lg disabled:opacity-50"
                 >
                   {loading ? (
                     <>
@@ -302,12 +302,12 @@ export default function PaymentCC() {
                   ) : (
                     <>
                       <span>{t('pay_now_btn')}</span>
-                      <span className="material-symbols-outlined text-sm select-none">arrow_forward</span>
+                      <span className="material-symbols-outlined text-sm select-none font-bold">arrow_forward</span>
                     </>
                   )}
                 </button>
 
-                <p className="text-[9px] text-center text-status-success font-semibold flex items-center justify-center gap-1 mt-1">
+                <p className="text-[9px] text-center text-primary font-bold flex items-center justify-center gap-1 mt-1">
                   <span className="material-symbols-outlined text-xs select-none">verified_user</span>
                   {t('ssl_security_notice')}
                 </p>
@@ -315,24 +315,24 @@ export default function PaymentCC() {
             </div>
           ) : (
             /* SUCCESS CONFIRM SCREEN */
-            <div className="w-full max-w-md glass-panel p-8 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-6 text-center animate-fadeIn">
+            <div className="w-full max-w-md bg-[#121212]/40 border border-white/5 p-8 rounded-3xl shadow-2xl flex flex-col gap-6 text-center animate-fadeIn">
               
               {/* Success Check Badge */}
               <div className="flex justify-center">
-                <div className="w-16 h-16 rounded-full bg-status-success/15 text-status-success flex items-center justify-center shadow-lg shadow-status-success/10 border border-status-success/20">
+                <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center shadow-lg border border-primary/20">
                   <span className="material-symbols-outlined text-4xl select-none font-bold">check</span>
                 </div>
               </div>
 
               <div>
                 <h1 className="font-display-lg text-2xl font-bold text-white tracking-tight">{t('payment_success_title')}</h1>
-                <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
+                <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed font-medium">
                   {t('payment_success_desc')}
                 </p>
               </div>
 
               {/* Bill invoice details box */}
-              <div className="bg-white/5 p-4.5 rounded-2xl border border-white/5 text-left text-xs flex flex-col gap-3.5 font-inter">
+              <div className="bg-[#121212]/30 p-4.5 rounded-2xl border border-white/5 text-left text-xs flex flex-col gap-3.5 font-medium">
                 <div className="flex justify-between items-center">
                   <span className="text-on-surface-variant">{t('invoice_service')}</span>
                   <span className="font-bold text-white">VibeStream Premium</span>
@@ -348,8 +348,8 @@ export default function PaymentCC() {
                   </span>
                 </div>
                 <div className="flex justify-between items-center pt-2.5 border-t border-white/5">
-                  <span className="text-on-surface-variant font-medium">{t('invoice_total')}</span>
-                  <span className="font-bold text-status-success text-sm">
+                  <span className="text-on-surface-variant font-semibold">{t('invoice_total')}</span>
+                  <span className="font-bold text-primary text-sm font-mono">
                     {(successData.amount).toLocaleString('vi-VN')} {t('billing_and_plans').includes('Billing') ? 'VND/month' : 'đ/tháng'}
                   </span>
                 </div>
@@ -359,14 +359,14 @@ export default function PaymentCC() {
               <div className="flex flex-col gap-3 mt-1.5">
                 <button 
                   onClick={() => navigate('/home')}
-                  className="w-full h-11 rounded-xl bg-electric-gradient text-white font-bold text-xs hover:scale-102 transition cursor-pointer shadow-lg shadow-primary/20"
+                  className="w-full h-11 rounded-full bg-primary text-black font-extrabold text-xs hover:scale-105 active:scale-95 transition cursor-pointer shadow-lg"
                 >
                   {t('back_to_home')}
                 </button>
                 <button 
                   type="button"
                   onClick={() => navigate('/settings')}
-                  className="text-[11px] text-on-surface-variant hover:text-white font-semibold transition"
+                  className="text-[11px] text-on-surface-variant hover:text-white font-bold transition cursor-pointer"
                 >
                   {t('view_invoice_details')}
                 </button>

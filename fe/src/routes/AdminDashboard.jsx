@@ -332,16 +332,16 @@ export default function AdminDashboard() {
         <main className="md:ml-sidebar-width flex-1 p-8 overflow-y-auto flex flex-col gap-6">
           <div>
             <h1 className="font-display-lg text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-              <span className="material-symbols-outlined text-secondary-container">admin_panel_settings</span>
+              <span className="material-symbols-outlined text-primary">admin_panel_settings</span>
               {t('admin_dashboard_title')}
             </h1>
-            <p className="text-xs text-on-surface-variant mt-1.5">
+            <p className="text-xs text-on-surface-variant mt-1.5 font-medium">
               {t('admin_dashboard_subtitle')}
             </p>
           </div>
 
           {/* Navigation Tabbed items */}
-          <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 overflow-x-auto gap-1">
+          <div className="flex bg-[#121212]/60 p-1 rounded-xl border border-white/5 overflow-x-auto gap-1 max-w-max select-none">
             {[
               { id: 'overview', key: 'tab_overview', icon: 'monitoring' },
               { id: 'songs', key: 'tab_songs', icon: 'rate_review' },
@@ -364,7 +364,7 @@ export default function AdminDashboard() {
 
           {/* Loading segment */}
           {loading ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-secondary-container gap-3 min-h-[30vh]">
+            <div className="flex-1 flex flex-col items-center justify-center text-primary gap-3 min-h-[30vh]">
               <span className="material-symbols-outlined text-4xl animate-spin">sync</span>
               <p className="text-sm font-semibold">{t('loading_dashboard_modules')}</p>
             </div>
@@ -376,35 +376,35 @@ export default function AdminDashboard() {
                 <div className="flex flex-col gap-8">
                   {/* Stats card */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="glass-panel p-5 rounded-2xl border border-white/5">
+                    <div className="bg-[#121212]/40 border border-white/5 p-5 rounded-2xl shadow-md">
                       <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">{t('stats_users')}</p>
                       <p className="text-2xl font-extrabold text-white mt-1.5">{stats.metrics?.totalUsers.toLocaleString()}</p>
                     </div>
-                    <div className="glass-panel p-5 rounded-2xl border border-white/5">
+                    <div className="bg-[#121212]/40 border border-white/5 p-5 rounded-2xl shadow-md">
                       <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">{t('stats_premium')}</p>
-                      <p className="text-2xl font-extrabold text-tertiary mt-1.5">{stats.metrics?.premiumUsers.toLocaleString()}</p>
+                      <p className="text-2xl font-extrabold text-primary mt-1.5">{stats.metrics?.premiumUsers.toLocaleString()}</p>
                     </div>
-                    <div className="glass-panel p-5 rounded-2xl border border-white/5">
+                    <div className="bg-[#121212]/40 border border-white/5 p-5 rounded-2xl shadow-md">
                       <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">{t('stats_streams')}</p>
                       <p className="text-2xl font-extrabold text-white mt-1.5">{stats.metrics?.totalStreams.toLocaleString()}</p>
                     </div>
-                    <div className="glass-panel p-5 rounded-2xl border border-white/5">
+                    <div className="bg-[#121212]/40 border border-white/5 p-5 rounded-2xl shadow-md">
                       <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">{t('stats_revenue')}</p>
                       <p className="text-2xl font-extrabold text-white mt-1.5">{stats.metrics?.monthlyRevenue.toLocaleString()} VND</p>
                     </div>
                   </div>
 
                   {/* Chart representation */}
-                  <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-6">
+                  <div className="bg-[#121212]/40 border border-white/5 p-6 rounded-3xl flex flex-col gap-6 shadow-md">
                     <div>
                       <h3 className="text-xs font-bold text-white uppercase tracking-wider">{t('chart_title')}</h3>
-                      <p className="text-[10px] text-on-surface-variant mt-0.5">{t('chart_subtitle')}</p>
+                      <p className="text-[10px] text-on-surface-variant mt-0.5 font-medium">{t('chart_subtitle')}</p>
                     </div>
                     <div className="h-44 flex items-end justify-between gap-4 pt-4 border-b border-white/5">
                       {stats.chartData?.map((item, idx) => (
                         <div key={idx} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer">
                           <div 
-                            className="w-full rounded-t bg-secondary-container/50 group-hover:bg-secondary-container transition-all"
+                            className="w-full rounded-t bg-primary/20 group-hover:bg-primary transition-all duration-300"
                             style={{ height: `${item.streams / 3}px` }}
                           />
                           <span className="text-[9px] font-bold text-on-surface-variant">{item.date}</span>
@@ -418,30 +418,30 @@ export default function AdminDashboard() {
               {/* TAB 2: Song Moderation Queue */}
               {activeTab === 'songs' && (
                 <div className="flex flex-col gap-4">
-                  <h3 className="text-sm font-bold text-white">{t('song_requests_title')} ({pendingSongs.length})</h3>
+                  <h3 className="font-display-lg text-lg font-bold text-white">{t('song_requests_title')} ({pendingSongs.length})</h3>
                   {pendingSongs.length > 0 ? (
                     <div className="grid grid-cols-1 gap-4">
                       {pendingSongs.map(song => (
-                        <div key={song._id} className="glass-panel p-5 rounded-2xl border border-white/5 flex flex-col md:flex-row justify-between md:items-center gap-4">
+                        <div key={song._id} className="bg-[#121212]/40 border border-white/5 p-5 rounded-2xl flex flex-col md:flex-row justify-between md:items-center gap-4 shadow-md">
                           <div className="flex items-center gap-4">
-                            <img src={song.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=80'} className="w-12 h-12 rounded-xl object-cover" alt="" />
+                            <img src={song.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=80'} className="w-12 h-12 rounded-xl object-cover border border-white/5" alt="" />
                             <div>
                               <p className="text-sm font-bold text-white">{song.title}</p>
-                              <p className="text-xs text-on-surface-variant mt-0.5">{t('song_artist_prefix')} {song.artist} ({song.artistId?.email})</p>
-                              <p className="text-[10px] uppercase tracking-wider font-semibold text-white/55 mt-1 bg-white/5 px-2 py-0.5 rounded w-max">{song.genre}</p>
+                              <p className="text-xs text-on-surface-variant mt-0.5 font-medium">{t('song_artist_prefix')} {song.artist} ({song.artistId?.email})</p>
+                              <p className="text-[10px] uppercase tracking-wider font-semibold text-white/70 mt-1 bg-white/5 px-2 py-0.5 rounded w-max">{song.genre}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
                             <AdminAudioPlayer src={song.audioUrl} />
                             <button 
                               onClick={() => handleApproveSong(song._id)}
-                              className="px-4 py-2 bg-status-success/15 hover:bg-status-success/25 transition text-status-success font-bold text-xs rounded-xl cursor-pointer"
+                              className="px-4 py-2 bg-primary/10 hover:bg-primary/25 transition text-primary font-extrabold text-xs rounded-full cursor-pointer"
                             >
                               {t('approve_btn')}
                             </button>
                             <button 
                               onClick={() => handleBanSong(song._id)}
-                              className="px-4 py-2 bg-status-error/15 hover:bg-status-error/25 transition text-status-error font-bold text-xs rounded-xl cursor-pointer"
+                              className="px-4 py-2 bg-red-500/10 hover:bg-red-500/25 transition text-red-500 font-extrabold text-xs rounded-full cursor-pointer"
                             >
                               {t('reject_btn')}
                             </button>
@@ -450,8 +450,8 @@ export default function AdminDashboard() {
                       ))}
                     </div>
                   ) : (
-                    <div className="glass-panel p-8 text-center rounded-2xl border border-white/5">
-                      <p className="text-xs text-on-surface-variant">{t('no_songs_in_queue')}</p>
+                    <div className="bg-[#121212]/40 p-8 text-center rounded-2xl border border-white/5">
+                      <p className="text-xs text-on-surface-variant font-medium">{t('no_songs_in_queue')}</p>
                     </div>
                   )}
                 </div>
@@ -460,9 +460,9 @@ export default function AdminDashboard() {
               {/* TAB 3: Comments Hidden Queue */}
               {activeTab === 'comments' && (
                 <div className="flex flex-col gap-4">
-                  <h3 className="text-sm font-bold text-white">{t('hidden_comments_title')} ({hiddenComments.length})</h3>
+                  <h3 className="font-display-lg text-lg font-bold text-white">{t('hidden_comments_title')} ({hiddenComments.length})</h3>
                   {hiddenComments.length > 0 ? (
-                    <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+                    <div className="bg-[#121212]/40 border border-white/5 rounded-2xl overflow-hidden shadow-md">
                       <table className="w-full text-left border-collapse text-xs">
                         <thead>
                           <tr className="bg-white/5 border-b border-white/5 text-on-surface-variant font-bold">
@@ -474,23 +474,25 @@ export default function AdminDashboard() {
                         </thead>
                         <tbody className="divide-y divide-white/5">
                           {hiddenComments.map(comment => (
-                            <tr key={comment._id} className="hover:bg-white/[0.01]">
+                            <tr key={comment._id} className="hover:bg-white/[0.04] transition duration-150">
                               <td className="p-4 font-bold text-white">{comment.userId?.name}</td>
-                              <td className="p-4 text-on-surface-variant">{comment.songId?.title}</td>
-                              <td className="p-4 text-status-error italic font-medium">"{comment.content}"</td>
-                              <td className="p-4 text-center flex items-center justify-center gap-2">
-                                <button 
-                                  onClick={() => handleApproveComment(comment._id)}
-                                  className="px-3 py-1.5 bg-status-success/15 hover:bg-status-success/25 transition text-status-success rounded-lg font-bold"
-                                >
-                                  {t('show_comment_btn')}
-                                </button>
-                                <button 
-                                  onClick={() => handleRejectComment(comment._id)}
-                                  className="px-3 py-1.5 bg-status-error/15 hover:bg-status-error/25 transition text-status-error rounded-lg font-bold"
-                                >
-                                  {t('delete_comment_btn')}
-                                </button>
+                              <td className="p-4 text-on-surface-variant font-semibold">{comment.songId?.title}</td>
+                              <td className="p-4 text-red-400 italic font-medium">"{comment.content}"</td>
+                              <td className="p-4 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button 
+                                    onClick={() => handleApproveComment(comment._id)}
+                                    className="px-3 py-1.5 bg-primary/10 hover:bg-primary/25 transition text-primary rounded-full font-bold"
+                                  >
+                                    {t('show_comment_btn')}
+                                  </button>
+                                  <button 
+                                    onClick={() => handleRejectComment(comment._id)}
+                                    className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/25 transition text-red-500 rounded-full font-bold"
+                                  >
+                                    {t('delete_comment_btn')}
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -498,8 +500,8 @@ export default function AdminDashboard() {
                       </table>
                     </div>
                   ) : (
-                    <div className="glass-panel p-8 text-center rounded-2xl border border-white/5">
-                      <p className="text-xs text-on-surface-variant">{t('no_flagged_comments')}</p>
+                    <div className="bg-[#121212]/40 p-8 text-center rounded-2xl border border-white/5">
+                      <p className="text-xs text-on-surface-variant font-medium">{t('no_flagged_comments')}</p>
                     </div>
                   )}
                 </div>
@@ -509,17 +511,17 @@ export default function AdminDashboard() {
               {activeTab === 'ads' && (
                 <div className="flex flex-col gap-4">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-sm font-bold text-white">{t('ads_campaigns_title')}</h3>
+                    <h3 className="font-display-lg text-lg font-bold text-white">{t('ads_campaigns_title')}</h3>
                     <button 
                       onClick={() => setShowAdModal(true)}
-                      className="electric-btn text-white text-xs font-bold px-4 py-2 rounded-xl hover:scale-102 transition cursor-pointer shadow-lg"
+                      className="bg-white hover:bg-zinc-200 text-black text-xs font-bold px-5 py-2.5 rounded-full hover:scale-105 transition cursor-pointer shadow-lg"
                     >
                       {t('create_new_ad_btn')}
                     </button>
                   </div>
 
                   {ads.length > 0 ? (
-                    <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+                    <div className="bg-[#121212]/40 border border-white/5 rounded-2xl overflow-hidden shadow-md">
                       <table className="w-full text-left border-collapse text-xs">
                         <thead>
                           <tr className="bg-white/5 border-b border-white/5 text-on-surface-variant font-bold">
@@ -535,35 +537,37 @@ export default function AdminDashboard() {
                         </thead>
                         <tbody className="divide-y divide-white/5">
                           {ads.map(ad => (
-                            <tr key={ad._id} className="hover:bg-white/[0.01]">
+                            <tr key={ad._id} className="hover:bg-white/[0.04] transition duration-150">
                               <td className="p-4 font-bold text-white">{ad.title}</td>
-                              <td className="p-4 text-on-surface-variant capitalize">{ad.type}</td>
-                              <td className="p-4 text-on-surface-variant">{ad.clientName}</td>
-                              <td className="p-4 text-center font-mono">{ad.impressions || 0}</td>
-                              <td className="p-4 text-center font-mono">{ad.clicks || 0}</td>
-                              <td className="p-4 text-center font-mono text-tertiary">
+                              <td className="p-4 text-on-surface-variant capitalize font-semibold">{ad.type}</td>
+                              <td className="p-4 text-on-surface-variant font-semibold">{ad.clientName}</td>
+                              <td className="p-4 text-center font-mono text-white">{ad.impressions || 0}</td>
+                              <td className="p-4 text-center font-mono text-white">{ad.clicks || 0}</td>
+                              <td className="p-4 text-center font-mono text-primary font-bold">
                                 {ad.budgetSpent?.toLocaleString()} / {ad.budgetLimit?.toLocaleString()} USD
                               </td>
                               <td className="p-4 text-center">
-                                <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${
-                                  ad.status === 'active' ? 'bg-status-success/15 text-status-success' : 'bg-white/10 text-on-surface-variant'
+                                <span className={`text-[10px] px-2.5 py-0.5 rounded font-extrabold uppercase tracking-wider ${
+                                  ad.status === 'active' ? 'bg-primary/10 text-primary' : 'bg-white/10 text-on-surface-variant'
                                 }`}>
                                   {ad.status}
                                 </span>
                               </td>
-                              <td className="p-4 text-center flex items-center justify-center gap-2">
-                                <button 
-                                  onClick={() => handleToggleAdStatus(ad)}
-                                  className="text-[10px] font-bold px-2 py-1 bg-white/5 hover:bg-white/10 rounded border border-white/5 transition"
-                                >
-                                  {ad.status === 'active' ? t('action_stop') : t('action_start')}
-                                </button>
-                                <button 
-                                  onClick={() => handleDeleteAd(ad._id)}
-                                  className="text-[10px] font-bold px-2 py-1 bg-status-error/15 hover:bg-status-error/25 text-status-error rounded transition"
-                                >
-                                  {t('delete_comment_btn')}
-                                </button>
+                              <td className="p-4 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button 
+                                    onClick={() => handleToggleAdStatus(ad)}
+                                    className="text-[10px] font-bold px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 transition"
+                                  >
+                                    {ad.status === 'active' ? t('action_stop') : t('action_start')}
+                                  </button>
+                                  <button 
+                                    onClick={() => handleDeleteAd(ad._id)}
+                                    className="text-[10px] font-bold px-3 py-1.5 bg-red-500/10 hover:bg-red-500/25 text-red-500 rounded-full transition"
+                                  >
+                                    {t('delete_comment_btn')}
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -571,61 +575,61 @@ export default function AdminDashboard() {
                       </table>
                     </div>
                   ) : (
-                    <div className="glass-panel p-8 text-center rounded-2xl border border-white/5">
-                      <p className="text-xs text-on-surface-variant">{t('no_ads_setup')}</p>
+                    <div className="bg-[#121212]/40 p-8 text-center rounded-2xl border border-white/5">
+                      <p className="text-xs text-on-surface-variant font-medium">{t('no_ads_setup')}</p>
                     </div>
                   )}
 
                   {/* Create Ad modal dialog overlay */}
                   {showAdModal && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-                      <form onSubmit={handleCreateAd} className="glass-panel w-full max-w-md p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4">
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-6 z-50">
+                      <form onSubmit={handleCreateAd} className="bg-[#121212]/90 w-full max-w-md p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4">
                         <h2 className="text-base font-bold text-white">{t('create_ad_modal_title')}</h2>
                         
                         <div className="flex flex-col gap-1">
                            <label className="text-[10px] uppercase font-bold text-on-surface-variant">{t('label_ad_title')}</label>
-                           <input type="text" required placeholder="Campaign Name" value={adTitle} onChange={e => setAdTitle(e.target.value)} className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" />
+                           <input type="text" required placeholder="Campaign Name" value={adTitle} onChange={e => setAdTitle(e.target.value)} className="w-full h-10 px-3 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200" />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="flex flex-col gap-1">
                             <label className="text-[10px] uppercase font-bold text-on-surface-variant">{t('label_ad_type')}</label>
-                            <select value={adType} onChange={e => setAdType(e.target.value)} className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white [&>option]:bg-surface">
+                            <select value={adType} onChange={e => setAdType(e.target.value)} className="w-full h-10 px-3 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white [&>option]:bg-surface transition duration-200 cursor-pointer">
                               <option value="audio">{t('option_ad_audio')}</option>
                               <option value="banner">{t('option_ad_banner')}</option>
                             </select>
                           </div>
                           <div className="flex flex-col gap-1">
                             <label className="text-[10px] uppercase font-bold text-on-surface-variant">{t('label_ad_budget')}</label>
-                            <input type="number" min="1" value={adBudget} onChange={e => setAdBudget(e.target.value)} className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" />
+                            <input type="number" min="1" value={adBudget} onChange={e => setAdBudget(e.target.value)} className="w-full h-10 px-3 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200" />
                           </div>
                         </div>
 
                         <div className="flex flex-col gap-1">
                           <label className="text-[10px] uppercase font-bold text-on-surface-variant">{t('label_ad_client')}</label>
-                          <input type="text" required placeholder="Client name" value={adClient} onChange={e => setAdClient(e.target.value)} className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" />
+                          <input type="text" required placeholder="Client name" value={adClient} onChange={e => setAdClient(e.target.value)} className="w-full h-10 px-3 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200" />
                         </div>
 
                         {adType === 'audio' ? (
                           <div className="flex flex-col gap-1">
                             <label className="text-[10px] uppercase font-bold text-on-surface-variant">{t('label_ad_audio_url')}</label>
-                            <input type="text" placeholder="https://example.com/ad.mp3" value={adAudioUrl} onChange={e => setAdAudioUrl(e.target.value)} className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" />
+                            <input type="text" placeholder="https://example.com/ad.mp3" value={adAudioUrl} onChange={e => setAdAudioUrl(e.target.value)} className="w-full h-10 px-3 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200" />
                           </div>
                         ) : (
                           <div className="flex flex-col gap-1">
                             <label className="text-[10px] uppercase font-bold text-on-surface-variant">{t('label_ad_image_url')}</label>
-                            <input type="text" placeholder="https://example.com/ad.png" value={adImageUrl} onChange={e => setAdImageUrl(e.target.value)} className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" />
+                            <input type="text" placeholder="https://example.com/ad.png" value={adImageUrl} onChange={e => setAdImageUrl(e.target.value)} className="w-full h-10 px-3 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200" />
                           </div>
                         )}
 
                         <div className="flex flex-col gap-1">
                           <label className="text-[10px] uppercase font-bold text-on-surface-variant">{t('label_ad_target_url')}</label>
-                          <input type="text" placeholder="https://target-business.com" value={adTargetUrl} onChange={e => setAdTargetUrl(e.target.value)} className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" />
+                          <input type="text" placeholder="https://target-business.com" value={adTargetUrl} onChange={e => setAdTargetUrl(e.target.value)} className="w-full h-10 px-3 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200" />
                         </div>
 
                         <div className="flex gap-3 justify-end mt-2">
-                          <button type="button" onClick={() => setShowAdModal(false)} className="px-4 py-2 rounded-xl text-xs bg-white/5 hover:bg-white/10 transition text-white">{t('btn_cancel')}</button>
-                          <button type="submit" className="px-4 py-2 rounded-xl text-xs electric-btn text-white font-bold">{t('btn_activate')}</button>
+                          <button type="button" onClick={() => setShowAdModal(false)} className="px-4 py-2 rounded-full text-xs bg-white/5 hover:bg-white/10 transition text-white font-bold">{t('btn_cancel')}</button>
+                          <button type="submit" className="px-5 py-2 rounded-full text-xs bg-primary text-black font-extrabold hover:scale-105 active:scale-95 transition">{t('btn_activate')}</button>
                         </div>
                       </form>
                     </div>
@@ -639,16 +643,16 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                   
                   {/* Pricing Plans Config */}
-                  <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-4">
+                  <div className="bg-[#121212]/40 border border-white/5 p-6 rounded-3xl flex flex-col gap-4 shadow-md">
                     <h3 className="text-sm font-bold text-white">{t('plan_config_title')}</h3>
-                    <p className="text-[10px] text-on-surface-variant">{t('plan_config_subtitle')}</p>
+                    <p className="text-[10px] text-on-surface-variant font-medium">{t('plan_config_subtitle')}</p>
                     
                     <div className="flex flex-col gap-4 mt-2">
                       {plans.map(plan => (
-                        <div key={plan._id} className="flex items-center justify-between p-3.5 bg-white/5 border border-white/5 rounded-2xl">
+                        <div key={plan._id} className="flex items-center justify-between p-3.5 bg-[#121212]/30 border border-white/5 rounded-2xl">
                           <div>
                             <p className="text-xs font-bold text-white capitalize">{plan.name} Plan</p>
-                            <p className="text-[9px] text-on-surface-variant mt-0.5">{plan.planId}</p>
+                            <p className="text-[9px] text-on-surface-variant mt-0.5 font-bold font-mono">{plan.planId}</p>
                           </div>
                           
                           <div className="flex items-center gap-3">
@@ -656,9 +660,9 @@ export default function AdminDashboard() {
                               type="number" 
                               value={planPrices[plan.planId] !== undefined ? planPrices[plan.planId] : plan.price}
                               onChange={(e) => setPlanPrices(prev => ({ ...prev, [plan.planId]: parseInt(e.target.value) || 0 }))}
-                              className="w-24 h-9 px-2 text-right bg-background border border-white/5 rounded-lg text-xs font-mono font-bold"
+                              className="w-28 h-9 px-2 text-right bg-[#121212] border border-white/5 rounded-lg text-xs font-mono font-bold text-white focus:border-primary transition"
                             />
-                            <span className="text-[10px] text-on-surface-variant">VND</span>
+                            <span className="text-[10px] text-on-surface-variant font-bold font-mono">VND</span>
                           </div>
                         </div>
                       ))}
@@ -666,21 +670,21 @@ export default function AdminDashboard() {
                     <button 
                       type="button" 
                       onClick={handleSavePrices}
-                      className="text-[10px] font-bold px-4 py-2 bg-secondary-container text-black rounded-xl hover:bg-secondary-container/90 transition cursor-pointer self-end mt-2"
+                      className="text-[10px] font-bold px-5 py-2.5 bg-primary text-black rounded-full hover:scale-105 active:scale-95 transition cursor-pointer self-end mt-2"
                     >
                       Lưu biểu phí gói
                     </button>
                   </div>
 
                   {/* Payment Sandbox API configurations */}
-                  <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-6">
+                  <div className="bg-[#121212]/40 border border-white/5 p-6 rounded-3xl flex flex-col gap-6 shadow-md">
                     <div>
                       <h3 className="text-sm font-bold text-white">{t('sandbox_payment_title')}</h3>
-                      <p className="text-[10px] text-on-surface-variant">{t('sandbox_payment_subtitle')}</p>
+                      <p className="text-[10px] text-on-surface-variant font-medium">{t('sandbox_payment_subtitle')}</p>
                     </div>
 
                     {/* Momo config */}
-                    <div className="flex flex-col gap-3 p-4 bg-white/5 border border-white/5 rounded-2xl">
+                    <div className="flex flex-col gap-3 p-4 bg-[#121212]/20 border border-white/5 rounded-2xl">
                       <h4 className="text-xs font-bold text-[#A50064] flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-sm">qr_code_scanner</span>
                         Momo Merchant Credentials
@@ -688,11 +692,11 @@ export default function AdminDashboard() {
                       <div className="grid grid-cols-2 gap-3 mt-1">
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] font-bold text-on-surface-variant">Merchant ID</label>
-                          <input type="text" value={momoMerchant} onChange={e => setMomoMerchant(e.target.value)} className="h-9 px-3 bg-background border border-white/5 rounded-lg text-[10px] text-white" />
+                          <input type="text" value={momoMerchant} onChange={e => setMomoMerchant(e.target.value)} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition" />
                         </div>
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] font-bold text-on-surface-variant">Secret Key</label>
-                          <input type="password" value={momoSecret} onChange={e => setMomoSecret(e.target.value)} className="h-9 px-3 bg-background border border-white/5 rounded-lg text-[10px] text-white" />
+                          <input type="password" value={momoSecret} onChange={e => setMomoSecret(e.target.value)} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition" />
                         </div>
                       </div>
                       <button 
@@ -705,7 +709,7 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* VNPay config */}
-                    <div className="flex flex-col gap-3 p-4 bg-white/5 border border-white/5 rounded-2xl">
+                    <div className="flex flex-col gap-3 p-4 bg-[#121212]/20 border border-white/5 rounded-2xl">
                       <h4 className="text-xs font-bold text-[#005BAA] flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-sm">account_balance_wallet</span>
                         VNPay Merchant Credentials
@@ -713,11 +717,11 @@ export default function AdminDashboard() {
                       <div className="grid grid-cols-2 gap-3 mt-1">
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] font-bold text-on-surface-variant">Merchant ID</label>
-                          <input type="text" value={vnpayMerchant} onChange={e => setVnpayMerchant(e.target.value)} className="h-9 px-3 bg-background border border-white/5 rounded-lg text-[10px] text-white" />
+                          <input type="text" value={vnpayMerchant} onChange={e => setVnpayMerchant(e.target.value)} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition" />
                         </div>
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] font-bold text-on-surface-variant">Secret Key</label>
-                          <input type="password" value={vnpaySecret} onChange={e => setVnpaySecret(e.target.value)} className="h-9 px-3 bg-background border border-white/5 rounded-lg text-[10px] text-white" />
+                          <input type="password" value={vnpaySecret} onChange={e => setVnpaySecret(e.target.value)} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition" />
                         </div>
                       </div>
                       <button 
@@ -730,7 +734,7 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Stripe config */}
-                    <div className="flex flex-col gap-3 p-4 bg-white/5 border border-white/5 rounded-2xl">
+                    <div className="flex flex-col gap-3 p-4 bg-[#121212]/20 border border-white/5 rounded-2xl">
                       <h4 className="text-xs font-bold text-primary flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-sm">credit_card</span>
                         Stripe Credit Card Credentials
@@ -738,11 +742,11 @@ export default function AdminDashboard() {
                       <div className="grid grid-cols-2 gap-3 mt-1">
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] font-bold text-on-surface-variant">Publishable Key</label>
-                          <input type="text" value={stripePublishable} onChange={e => setStripePublishable(e.target.value)} className="h-9 px-3 bg-background border border-white/5 rounded-lg text-[10px] text-white" />
+                          <input type="text" value={stripePublishable} onChange={e => setStripePublishable(e.target.value)} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition" />
                         </div>
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] font-bold text-on-surface-variant">Secret Key</label>
-                          <input type="password" value={stripeSecret} onChange={e => setStripeSecret(e.target.value)} className="h-9 px-3 bg-background border border-white/5 rounded-lg text-[10px] text-white" />
+                          <input type="password" value={stripeSecret} onChange={e => setStripeSecret(e.target.value)} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition" />
                         </div>
                       </div>
                       <button 

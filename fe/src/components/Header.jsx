@@ -129,11 +129,11 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 h-20 bg-background/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between pl-8 md:pl-[312px] pr-8 z-20">
+    <header className="sticky top-0 h-20 bg-[#070707]/75 backdrop-blur-md border-b border-white/5 flex items-center justify-between pl-8 md:pl-[312px] pr-8 z-20">
       {/* Search Input */}
-      <form ref={searchContainerRef} onSubmit={handleSearchSubmit} className="relative w-[380px]">
+      <form ref={searchContainerRef} onSubmit={handleSearchSubmit} className="relative w-[380px] group">
         <div className="relative">
-          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-hover:text-white transition duration-200">search</span>
           <input
             type="text"
             placeholder={t('search_placeholder')}
@@ -148,36 +148,36 @@ export default function Header() {
                 fetchProfile();
               }
             }}
-            className="w-full h-11 pl-12 pr-4 bg-white/5 border border-white/5 rounded-full text-sm text-white placeholder-on-surface-variant focus:border-white/10 focus:bg-white/10 transition"
+            className="w-full h-11 pl-12 pr-4 bg-[#121212] border border-white/5 rounded-full text-sm text-white placeholder-on-surface-variant focus:border-primary focus:bg-[#181818] focus:ring-1 focus:ring-primary transition duration-200"
           />
         </div>
 
         {/* Instant Search Dropdown */}
         {showSearchDropdown && searchQuery.trim() && (
-          <div className="absolute top-13 left-0 w-full glass-panel rounded-2xl p-2 shadow-2xl z-50">
+          <div className="absolute top-13 left-0 w-full glass-panel rounded-2xl p-2 shadow-2xl z-50 border border-white/10 mt-1">
             {instantResults.length > 0 ? (
-              <div className="flex flex-col">
+              <div className="flex flex-col gap-0.5">
                 {instantResults.map(song => (
                   <div
                     key={song._id}
                     onClick={() => handleInstantClick(song)}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition"
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition duration-150"
                   >
                     <img
                       src={song.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=80'}
                       alt={song.title}
-                      className="w-10 h-10 rounded-lg object-cover"
+                      className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white truncate">{song.title}</p>
+                      <p className="text-sm font-bold text-white truncate">{song.title}</p>
                       <p className="text-xs text-on-surface-variant truncate">{song.artist}</p>
                     </div>
-                    <span className="material-symbols-outlined text-on-surface-variant hover:text-white transition">play_circle</span>
+                    <span className="material-symbols-outlined text-primary hover:scale-105 transition">play_circle</span>
                   </div>
                 ))}
                 <button
                   type="submit"
-                  className="text-xs text-center py-2 text-secondary-container hover:underline cursor-pointer border-t border-white/5 mt-1 pt-2 font-medium"
+                  className="text-xs text-center py-2.5 text-primary hover:underline cursor-pointer border-t border-white/5 mt-1.5 pt-2 font-bold transition duration-150"
                 >
                   Xem tất cả kết quả cho "{searchQuery}"
                 </button>
@@ -190,7 +190,7 @@ export default function Header() {
 
         {/* Recent Search Dropdown */}
         {showSearchDropdown && !searchQuery.trim() && user && user.searchHistory && user.searchHistory.length > 0 && (
-          <div className="absolute top-13 left-0 w-full glass-panel rounded-2xl p-2 shadow-2xl z-50">
+          <div className="absolute top-13 left-0 w-full glass-panel rounded-2xl p-2 shadow-2xl z-50 border border-white/10 mt-1">
             <div className="px-3 py-2 border-b border-white/5 flex items-center justify-between">
               <span className="text-xs font-bold text-white">Tìm kiếm gần đây</span>
               <button
@@ -204,12 +204,12 @@ export default function Header() {
                     console.log('Failed to clear search history:', err.message);
                   }
                 }}
-                className="text-[10px] text-on-surface-variant hover:text-white cursor-pointer hover:underline"
+                className="text-[10px] text-primary hover:text-white cursor-pointer hover:underline font-semibold"
               >
                 Xóa tất cả
               </button>
             </div>
-            <div className="flex flex-col gap-1 mt-1">
+            <div className="flex flex-col gap-0.5 mt-1.5">
               {user.searchHistory.map((queryText, idx) => (
                 <div
                   key={idx}
@@ -218,7 +218,7 @@ export default function Header() {
                     setShowSearchDropdown(false);
                     navigate(`/search-results?q=${encodeURIComponent(queryText)}`);
                   }}
-                  className="flex items-center justify-between py-1.5 px-3 rounded-xl hover:bg-white/5 cursor-pointer transition group"
+                  className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-white/5 cursor-pointer transition duration-150 group"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="material-symbols-outlined text-on-surface-variant text-sm flex-shrink-0">history</span>
@@ -253,16 +253,16 @@ export default function Header() {
         {user?.premium_status === 'FREE' ? (
           <button
             onClick={() => navigate('/subscription-plans')}
-            className="electric-btn text-white text-xs font-bold px-5 py-2.5 rounded-full hover:scale-105 transition duration-200 cursor-pointer shadow-lg shadow-primary-container/20"
+            className="bg-white hover:bg-zinc-200 text-black text-xs font-bold px-6 py-2.5 rounded-full hover:scale-105 transition duration-200 cursor-pointer shadow-lg"
           >
             {t('btn_upgrade_premium')}
           </button>
         ) : (
           <div
             onClick={() => navigate('/settings')}
-            className="bg-electric-gradient text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-lg shadow-primary-container/20 flex items-center gap-1.5 cursor-pointer hover:scale-105 transition duration-200"
+            className="border border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 text-white text-xs font-bold px-5 py-2.5 rounded-full flex items-center gap-1.5 cursor-pointer transition duration-200"
           >
-            <span className="material-symbols-outlined text-sm">stars</span>
+            <span className="material-symbols-outlined text-sm text-primary filled">stars</span>
             Premium
           </div>
         )}
@@ -274,24 +274,24 @@ export default function Header() {
               setShowNotificationDropdown(!showNotificationDropdown);
               loadNotifications();
             }}
-            className="w-10 h-10 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-on-surface-variant hover:text-white transition hover:bg-white/10 cursor-pointer relative"
+            className="w-10 h-10 rounded-full bg-[#121212] border border-white/5 flex items-center justify-center text-on-surface-variant hover:text-white transition hover:bg-white/10 hover:border-white/10 cursor-pointer relative"
           >
             <span className="material-symbols-outlined text-xl">notifications</span>
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-error text-white font-bold text-[10px] rounded-full flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-black font-extrabold text-[10px] rounded-full flex items-center justify-center animate-pulse">
                 {unreadCount}
               </span>
             )}
           </button>
 
           {showNotificationDropdown && (
-            <div className="absolute right-0 top-12 w-80 glass-panel rounded-2xl p-2 shadow-2xl z-50">
+            <div className="absolute right-0 top-12 w-80 glass-panel rounded-2xl p-2 shadow-2xl z-50 border border-white/10 mt-1">
               <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
                 <span className="text-xs font-bold text-white">Thông báo</span>
                 {unreadCount > 0 && (
                   <button
                     onClick={handleMarkAllRead}
-                    className="text-[10px] text-secondary-container hover:underline cursor-pointer"
+                    className="text-[10px] text-primary hover:underline cursor-pointer font-bold"
                   >
                     Đọc tất cả
                   </button>
@@ -305,12 +305,12 @@ export default function Header() {
                       onClick={() => handleNotifClick(notif)}
                       className={`p-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition flex items-start gap-2.5 ${!notif.isRead ? 'bg-white/[0.02]' : ''}`}
                     >
-                      <span className={`material-symbols-outlined text-lg mt-0.5 ${notif.type === 'new_track' ? 'text-tertiary' : notif.type === 'admin' ? 'text-error' : 'text-secondary-container'
+                      <span className={`material-symbols-outlined text-lg mt-0.5 ${notif.type === 'new_track' ? 'text-primary' : notif.type === 'admin' ? 'text-error' : 'text-primary'
                         }`}>
                         {notif.type === 'new_track' ? 'library_music' : notif.type === 'admin' ? 'warning' : 'info'}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-xs font-semibold text-white ${!notif.isRead ? 'font-bold' : ''}`}>{notif.title}</p>
+                        <p className={`text-xs font-bold text-white ${!notif.isRead ? 'text-primary' : ''}`}>{notif.title}</p>
                         <p className="text-[10px] text-on-surface-variant mt-0.5 line-clamp-2">{notif.message}</p>
                       </div>
                     </div>
@@ -327,31 +327,31 @@ export default function Header() {
         <div ref={userMenuRef} className="relative">
           <div
             onClick={() => setShowUserDropdown(!showUserDropdown)}
-            className="flex items-center gap-3 cursor-pointer p-1.5 rounded-full hover:bg-white/5 transition"
+            className="flex items-center gap-3 cursor-pointer p-1.5 rounded-full hover:bg-white/5 border border-transparent hover:border-white/5 transition duration-150"
           >
-            <div className="w-9 h-9 rounded-full bg-secondary-container flex items-center justify-center font-bold text-white overflow-hidden">
+            <div className="w-9 h-9 rounded-full bg-electric-gradient flex items-center justify-center font-bold text-white overflow-hidden flex-shrink-0">
               {user?.avatarUrl ? (
                 <img src={user.avatarUrl} alt={user?.name} className="w-full h-full object-cover" />
               ) : (
                 user?.name.charAt(0).toUpperCase()
               )}
             </div>
-            <span className="text-xs font-semibold text-white max-w-[120px] truncate hidden sm:inline-block">
+            <span className="text-xs font-bold text-white max-w-[120px] truncate hidden sm:inline-block">
               {user?.name}
             </span>
           </div>
 
           {showUserDropdown && (
-            <div className="absolute right-0 top-12 w-48 glass-panel rounded-2xl p-1.5 shadow-2xl z-50 flex flex-col gap-1 border border-white/5">
+            <div className="absolute right-0 top-12 w-48 glass-panel rounded-2xl p-1.5 shadow-2xl z-50 flex flex-col gap-0.5 border border-white/10 mt-1">
               <button
                 type="button"
                 onClick={() => {
                   setShowUserDropdown(false);
                   navigate('/settings');
                 }}
-                className="w-full text-left px-3 py-2 rounded-xl text-xs text-white hover:bg-white/5 transition flex items-center gap-2.5 font-semibold cursor-pointer"
+                className="w-full text-left px-3 py-2 rounded-xl text-xs text-white hover:bg-white/5 transition flex items-center gap-2.5 font-bold cursor-pointer"
               >
-                <span className="material-symbols-outlined text-lg text-secondary-container">settings</span>
+                <span className="material-symbols-outlined text-lg text-primary">settings</span>
                 {t('settings')}
               </button>
               <button
@@ -361,7 +361,7 @@ export default function Header() {
                   logout();
                   navigate('/auth');
                 }}
-                className="w-full text-left px-3 py-2 rounded-xl text-xs text-error hover:bg-error/10 transition flex items-center gap-2.5 font-semibold cursor-pointer"
+                className="w-full text-left px-3 py-2 rounded-xl text-xs text-error hover:bg-error/10 transition flex items-center gap-2.5 font-bold cursor-pointer border-t border-white/5 mt-1 pt-1.5"
               >
                 <span className="material-symbols-outlined text-lg text-error">logout</span>
                 {t('logout')}

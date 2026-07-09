@@ -262,39 +262,39 @@ export default function PlaylistDetail() {
         
         <main className="md:ml-sidebar-width flex-1 p-8 overflow-y-auto flex flex-col gap-8">
           
-          {/* Playlist Header Section from Stitch */}
+          {/* Playlist Header Section */}
           <div className="flex flex-col md:flex-row gap-8 items-end mb-4 relative z-10">
-            <div className="w-40 h-40 md:w-52 md:h-52 rounded-xl overflow-hidden shadow-2xl flex-shrink-0 border border-white/10 relative group">
+            <div className="w-40 h-40 md:w-52 md:h-52 rounded-2xl overflow-hidden shadow-2xl flex-shrink-0 border border-white/5 relative group bg-zinc-900">
               <img 
                 src={playlist.thumbnailUrl || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400'} 
                 alt="" 
-                className="w-full h-full object-cover" 
+                className="w-full h-full object-cover transition duration-300 group-hover:scale-105" 
               />
             </div>
             
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               <span className="text-[10px] uppercase font-bold tracking-widest text-primary">
                 {playlist.isLikedSpecial ? t('playlist') : t(playlist.visibility) || 'PLAYLIST'}
               </span>
               
-              <div className="flex items-center gap-3 mt-1 flex-wrap">
-                <h1 className="font-display-lg text-3xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="font-display-lg text-3xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tighter leading-none">
                   {playlist.title}
                 </h1>
               </div>
               
-              <p className="text-xs text-on-surface-variant mt-1.5 max-w-xl leading-relaxed">
+              <p className="text-xs text-on-surface-variant mt-2 max-w-xl leading-relaxed font-medium">
                 {playlist.description}
               </p>
               
-              <div className="flex items-center gap-2 mt-2 text-xs text-on-surface-variant font-medium">
-                <span className="font-bold text-white">{playlist.userId?.name || playlist.owner || 'Melodies User'}</span>
+              <div className="flex items-center gap-2 mt-3 text-xs text-on-surface-variant font-semibold">
+                <span className="text-white font-bold">{playlist.userId?.name || playlist.owner || 'Melodies User'}</span>
                 <span className="w-1 h-1 rounded-full bg-on-surface-variant"></span>
-                <span>{songs.length} bài hát</span>
+                <span className="text-white">{songs.length} bài hát</span>
                 {songs.length > 0 && (
                   <>
                     <span className="w-1 h-1 rounded-full bg-on-surface-variant"></span>
-                    <span>Khoảng {formatTotalDuration(totalDuration)}</span>
+                    <span>{formatTotalDuration(totalDuration)}</span>
                   </>
                 )}
               </div>
@@ -306,27 +306,27 @@ export default function PlaylistDetail() {
             <button 
               onClick={handlePlayAll}
               disabled={songs.length === 0}
-              className="h-11 px-6 rounded-full bg-status-success hover:bg-status-success/90 text-black font-bold flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-status-success/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs md:text-sm"
+              className="h-12 px-8 rounded-full bg-primary text-black font-extrabold flex items-center gap-2 hover:scale-105 active:scale-95 transition shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs"
             >
-              <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+              <span className="material-symbols-outlined text-xl filled">play_arrow</span>
               <span>PHÁT TẤT CẢ</span>
             </button>
             
             <button 
               onClick={handleShufflePlay}
               disabled={songs.length === 0}
-              className="h-11 px-6 rounded-full border border-white/20 font-bold flex items-center gap-2 hover:bg-white/5 active:scale-95 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs md:text-sm"
+              className="h-12 px-6 rounded-full border border-white/20 font-bold flex items-center gap-2 hover:bg-white/5 active:scale-95 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs text-white"
             >
-              <span className="material-symbols-outlined text-base">shuffle</span>
+              <span className="material-symbols-outlined text-lg">shuffle</span>
               <span>XÁO TRỘN</span>
             </button>
 
             {isOwner && !playlist.isLikedSpecial && (
               <button 
                 onClick={() => setShowAddSongsModal(true)}
-                className="h-11 px-6 rounded-full border border-white/20 font-bold flex items-center gap-2 hover:bg-white/5 active:scale-95 transition-all cursor-pointer text-xs md:text-sm text-white"
+                className="h-12 px-6 rounded-full border border-white/20 font-bold flex items-center gap-2 hover:bg-white/5 active:scale-95 transition cursor-pointer text-xs text-white"
               >
-                <span className="material-symbols-outlined text-base">add</span>
+                <span className="material-symbols-outlined text-lg">add</span>
                 <span>THÊM BÀI HÁT</span>
               </button>
             )}
@@ -335,13 +335,13 @@ export default function PlaylistDetail() {
               <div className="relative" ref={actionMenuRef}>
                 <button 
                   onClick={() => setShowActionMenu(!showActionMenu)}
-                  className="w-11 h-11 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/5 active:scale-95 transition-all cursor-pointer text-white"
+                  className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/5 hover:border-white/40 transition cursor-pointer text-white"
                 >
-                  <span className="material-symbols-outlined text-base">more_horiz</span>
+                  <span className="material-symbols-outlined text-lg">more_horiz</span>
                 </button>
 
                 {showActionMenu && (
-                  <div className="absolute left-0 top-13 w-48 glass-panel rounded-2xl p-2 shadow-2xl z-50 border border-white/10 flex flex-col gap-1">
+                  <div className="absolute left-0 top-13 w-48 glass-panel rounded-2xl p-1.5 shadow-2xl z-50 border border-white/10 flex flex-col gap-0.5 mt-1">
                     <button 
                       onClick={() => {
                         setEditTitle(playlist.title);
@@ -351,7 +351,7 @@ export default function PlaylistDetail() {
                         setShowEditModal(true);
                         setShowActionMenu(false);
                       }}
-                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 cursor-pointer text-xs font-semibold text-white transition text-left"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/5 cursor-pointer text-xs font-bold text-white transition text-left"
                     >
                       <span className="material-symbols-outlined text-base">edit</span>
                       <span>Chỉnh sửa thông tin</span>
@@ -361,7 +361,7 @@ export default function PlaylistDetail() {
                         setShowDeleteConfirmModal(true);
                         setShowActionMenu(false);
                       }}
-                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 cursor-pointer text-xs font-semibold text-error transition text-left"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/5 cursor-pointer text-xs font-bold text-error transition text-left border-t border-white/5 mt-1 pt-1.5"
                     >
                       <span className="material-symbols-outlined text-base">delete</span>
                       <span>Xóa danh sách phát</span>
@@ -372,7 +372,7 @@ export default function PlaylistDetail() {
             )}
           </div>
 
-          {/* Track List Table from Stitch */}
+          {/* Track List Table */}
           <div className="w-full overflow-x-auto">
             {songs.length > 0 ? (
               <table className="w-full text-left border-collapse min-w-[600px]">
@@ -391,23 +391,23 @@ export default function PlaylistDetail() {
                   {songs.map((song, idx) => (
                     <tr 
                       key={song._id}
-                      className="track-row group hover:bg-white/5 transition-colors cursor-pointer"
+                      className="track-row group hover:bg-white/[0.04] transition duration-150 cursor-pointer"
                     >
                       {/* Index / Hover Play */}
                       <td className="py-4 pl-4 text-on-surface-variant font-mono text-xs w-12">
                         <span className="group-hover:hidden block">{idx + 1}</span>
                         <button 
                           onClick={() => playSong(song, songs, idx)}
-                          className="group-hover:flex hidden items-center justify-center text-primary hover:text-white cursor-pointer"
+                          className="group-hover:flex hidden items-center justify-center text-primary hover:scale-105 transition cursor-pointer"
                         >
-                          <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+                          <span className="material-symbols-outlined text-lg filled">play_arrow</span>
                         </button>
                       </td>
 
                       {/* Title, Artist and Cover Thumbnail */}
                       <td className="py-4">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-md overflow-hidden bg-surface-container shrink-0 border border-white/5">
+                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 shrink-0 border border-white/5">
                             <img 
                               src={song.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=80'} 
                               className="w-full h-full object-cover" 
@@ -417,7 +417,7 @@ export default function PlaylistDetail() {
                           <div>
                             <p 
                               onClick={() => playSong(song, songs, idx)}
-                              className="text-xs font-bold text-white group-hover:text-primary transition-colors cursor-pointer"
+                              className="text-xs font-bold text-white group-hover:text-primary transition cursor-pointer"
                             >
                               {song.title}
                             </p>
@@ -426,13 +426,13 @@ export default function PlaylistDetail() {
                         </div>
                       </td>
 
-                      {/* Album (Default to Single if not found) */}
-                      <td className="py-4 hidden lg:table-cell text-xs text-on-surface-variant">
+                      {/* Album */}
+                      <td className="py-4 hidden lg:table-cell text-xs text-on-surface-variant font-medium">
                         {song.album || 'Single'}
                       </td>
 
                       {/* Added Date */}
-                      <td className="py-4 hidden md:table-cell text-xs text-on-surface-variant">
+                      <td className="py-4 hidden md:table-cell text-xs text-on-surface-variant font-medium">
                         {song.createdAt ? new Date(song.createdAt).toLocaleDateString('vi-VN') : 'Mới đây'}
                       </td>
 
@@ -448,7 +448,7 @@ export default function PlaylistDetail() {
                               e.stopPropagation();
                               handleRemoveTrack(song._id);
                             }}
-                            className="opacity-0 group-hover:opacity-100 text-on-surface-variant hover:text-error transition p-1 hover:bg-white/5 rounded-lg cursor-pointer"
+                            className="opacity-0 group-hover:opacity-100 text-on-surface-variant hover:text-error transition p-1 hover:bg-white/10 rounded-full cursor-pointer flex items-center justify-center"
                             title={t('remove_track')}
                           >
                             <span className="material-symbols-outlined text-base">delete</span>
@@ -460,8 +460,8 @@ export default function PlaylistDetail() {
                 </tbody>
               </table>
             ) : (
-              <div className="glass-panel p-8 text-center rounded-2xl border border-white/5">
-                <p className="text-xs text-on-surface-variant">{t('no_songs_in_playlist')}</p>
+              <div className="bg-[#121212]/40 p-8 text-center rounded-2xl border border-white/5">
+                <p className="text-xs text-on-surface-variant font-medium">{t('no_songs_in_playlist')}</p>
               </div>
             )}
           </div>
@@ -473,47 +473,47 @@ export default function PlaylistDetail() {
 
       {/* Edit Playlist Modal Overlay */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-6 z-[100] animate-fade-in">
-          <form onSubmit={handleUpdatePlaylist} className="glass-panel w-full max-w-sm p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4">
-            <div className="flex justify-between items-center border-b border-white/5 pb-2">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 z-[100]">
+          <form onSubmit={handleUpdatePlaylist} className="glass-panel w-full max-w-md p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-white/5 pb-3">
               <h3 className="text-sm font-bold text-white">Chỉnh sửa Playlist</h3>
               <button 
                 type="button" 
                 onClick={() => setShowEditModal(false)}
-                className="text-on-surface-variant hover:text-white cursor-pointer"
+                className="text-on-surface-variant hover:text-white cursor-pointer transition duration-150"
               >
                 <span className="material-symbols-outlined text-lg">close</span>
               </button>
             </div>
             
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold text-on-surface-variant">Tên danh sách phát</label>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[9px] uppercase font-bold text-on-surface-variant ml-1">Tên danh sách phát</label>
               <input 
                 type="text" 
                 required 
                 placeholder="Tên playlist" 
                 value={editTitle} 
                 onChange={e => setEditTitle(e.target.value)} 
-                className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" 
+                className="w-full h-11 px-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200" 
               />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold text-on-surface-variant">Mô tả ngắn</label>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[9px] uppercase font-bold text-on-surface-variant ml-1">Mô tả ngắn</label>
               <input 
                 type="text" 
                 placeholder="Mô tả danh sách phát..." 
                 value={editDescription} 
                 onChange={e => setEditDescription(e.target.value)} 
-                className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white" 
+                className="w-full h-11 px-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200" 
               />
             </div>
 
             {/* Cover Image Upload (Image instead of URL) */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-[9px] uppercase font-bold text-on-surface-variant">Ảnh đại diện Playlist</label>
-              <div className="flex flex-col gap-3 p-4 bg-white/5 border border-white/5 rounded-2xl">
-                <label className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold cursor-pointer transition select-none self-start">
+              <label className="text-[9px] uppercase font-bold text-on-surface-variant ml-1">Ảnh đại diện Playlist</label>
+              <div className="flex flex-col gap-3 p-4 bg-[#121212] border border-white/5 rounded-2xl">
+                <label className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold cursor-pointer transition duration-200 select-none self-start">
                   <span className="material-symbols-outlined text-base">upload_file</span>
                   <span>Chọn ảnh</span>
                   <input 
@@ -533,7 +533,7 @@ export default function PlaylistDetail() {
                     </div>
                     <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-electric-gradient transition-all duration-100" 
+                        className="h-full bg-primary transition-all duration-100" 
                         style={{ width: `${uploadProgress}%` }}
                       />
                     </div>
@@ -550,7 +550,7 @@ export default function PlaylistDetail() {
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] font-bold text-white truncate">{fileName || 'playlist-cover.jpg'}</p>
-                      <p className="text-[9px] text-status-success font-bold uppercase tracking-wider mt-0.5">Upload complete</p>
+                      <p className="text-[9px] text-primary font-extrabold uppercase tracking-wider mt-0.5">Upload complete</p>
                     </div>
                     <button 
                       type="button"
@@ -567,26 +567,26 @@ export default function PlaylistDetail() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold text-on-surface-variant">Quyền riêng tư</label>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[9px] uppercase font-bold text-on-surface-variant ml-1">Quyền riêng tư</label>
               <select 
                 value={editVisibility} 
                 onChange={e => setEditVisibility(e.target.value)} 
-                className="w-full h-10 px-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white [&>option]:bg-surface"
+                className="w-full h-11 px-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white [&>option]:bg-surface cursor-pointer transition duration-200"
               >
                 <option value="public">Công khai / Public</option>
                 <option value="private">Riêng tư / Private</option>
               </select>
             </div>
 
-            <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5 gap-3">
+            <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/5 gap-3">
               <button 
                 type="button" 
                 onClick={() => {
                   setShowEditModal(false);
                   setShowDeleteConfirmModal(true);
                 }}
-                className="px-4 py-2 rounded-xl text-xs bg-error/10 hover:bg-error/20 text-error font-bold cursor-pointer"
+                className="px-5 py-2.5 rounded-full text-xs bg-error/10 hover:bg-error/20 text-error font-bold cursor-pointer transition duration-150"
               >
                 Xóa Playlist
               </button>
@@ -595,14 +595,14 @@ export default function PlaylistDetail() {
                 <button 
                   type="button" 
                   onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs bg-white/5 hover:bg-white/10 text-white cursor-pointer"
+                  className="px-5 py-2.5 rounded-full text-xs bg-white/5 hover:bg-white/10 text-white cursor-pointer font-bold transition duration-150"
                 >
                   Hủy
                 </button>
                 <button 
                   type="submit" 
                   disabled={loadingEdit}
-                  className="px-4 py-2 rounded-xl text-xs electric-btn text-white font-bold cursor-pointer"
+                  className="px-6 py-2.5 rounded-full text-xs bg-primary text-black font-bold cursor-pointer hover:scale-105 active:scale-95 transition duration-150 disabled:opacity-50"
                 >
                   {loadingEdit ? 'Đang lưu...' : 'Lưu'}
                 </button>
@@ -614,16 +614,16 @@ export default function PlaylistDetail() {
 
       {/* Add Songs Modal Overlay */}
       {showAddSongsModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-6 z-[100] animate-fade-in">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 z-[100]">
           <div className="glass-panel w-full max-w-md p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4 max-h-[80vh]">
-            <div className="flex justify-between items-center border-b border-white/5 pb-2">
+            <div className="flex justify-between items-center border-b border-white/5 pb-3">
               <h3 className="text-sm font-bold text-white">Thêm bài hát vào playlist</h3>
               <button 
                 onClick={() => {
                   setShowAddSongsModal(false);
                   setSongSearchQuery('');
                 }}
-                className="text-on-surface-variant hover:text-white cursor-pointer flex items-center justify-center"
+                className="text-on-surface-variant hover:text-white cursor-pointer transition duration-150"
               >
                 <span className="material-symbols-outlined text-lg">close</span>
               </button>
@@ -631,13 +631,13 @@ export default function PlaylistDetail() {
             
             {/* Search Input */}
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-base">search</span>
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-base">search</span>
               <input 
                 type="text" 
                 placeholder="Tìm bài hát theo tên hoặc nghệ sĩ..." 
                 value={songSearchQuery} 
                 onChange={e => setSongSearchQuery(e.target.value)} 
-                className="w-full h-10 pl-9 pr-4 bg-white/5 border border-white/5 rounded-xl text-xs text-white placeholder-on-surface-variant focus:border-white/10 focus:bg-white/10 transition" 
+                className="w-full h-11 pl-11 pr-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200" 
               />
             </div>
 
@@ -647,7 +647,7 @@ export default function PlaylistDetail() {
                 filteredSongs.map(song => {
                   const isAdded = songs.some(s => s._id === song._id);
                   return (
-                    <div key={song._id} className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/5 transition">
+                    <div key={song._id} className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.01] border border-white/5 hover:bg-white/[0.04] transition duration-150">
                       <div className="flex items-center gap-3 min-w-0">
                         <img 
                           src={song.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=80'} 
@@ -662,10 +662,10 @@ export default function PlaylistDetail() {
                       <button 
                         disabled={isAdded}
                         onClick={() => handleAddSong(song)}
-                        className={`h-8 px-3 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition ${
+                        className={`h-8 px-4 rounded-full text-[10px] font-bold flex items-center gap-1 cursor-pointer transition ${
                           isAdded 
-                            ? 'bg-white/5 text-on-surface-variant border border-white/5 cursor-not-allowed' 
-                            : 'bg-primary hover:bg-primary/90 text-white'
+                            ? 'bg-white/5 text-on-surface-variant border border-white/10 cursor-not-allowed' 
+                            : 'bg-primary hover:bg-primary/95 text-black hover:scale-105 active:scale-95'
                         }`}
                       >
                         <span className="material-symbols-outlined text-xs">{isAdded ? 'check' : 'add'}</span>
@@ -677,18 +677,18 @@ export default function PlaylistDetail() {
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
                   <span className="material-symbols-outlined text-3xl text-on-surface-variant mb-2">music_note</span>
-                  <p className="text-xs text-on-surface-variant">Không tìm thấy bài hát nào phù hợp</p>
+                  <p className="text-xs text-on-surface-variant font-medium">Không tìm thấy bài hát nào phù hợp</p>
                 </div>
               )}
             </div>
             
-            <div className="flex justify-end pt-2 border-t border-white/5">
+            <div className="flex justify-end pt-3 border-t border-white/5">
               <button 
                 onClick={() => {
                   setShowAddSongsModal(false);
                   setSongSearchQuery('');
                 }}
-                className="px-5 py-2.5 rounded-xl text-xs bg-white/5 hover:bg-white/10 text-white font-bold cursor-pointer transition"
+                className="px-6 py-2.5 rounded-full text-xs bg-white/5 hover:bg-white/10 text-white font-bold cursor-pointer transition duration-150"
               >
                 Xong
               </button>
@@ -699,19 +699,19 @@ export default function PlaylistDetail() {
 
       {/* Delete Confirmation Modal Overlay */}
       {showDeleteConfirmModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-6 z-[100] animate-fade-in">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 z-[100]">
           <div className="glass-panel w-full max-w-sm p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4">
-            <div className="flex items-center gap-3 text-status-error">
+            <div className="flex items-center gap-3 text-error">
               <span className="material-symbols-outlined text-3xl">warning</span>
               <h3 className="text-sm font-bold text-white">Xóa danh sách phát?</h3>
             </div>
-            <p className="text-xs text-on-surface-variant leading-relaxed">
+            <p className="text-xs text-on-surface-variant leading-relaxed font-medium">
               Bạn có chắc chắn muốn xóa danh sách phát <strong>{playlist?.title}</strong>? Hành động này không thể hoàn tác và tất cả thông tin của danh sách phát sẽ bị gỡ bỏ.
             </p>
             <div className="flex justify-end gap-2 mt-2">
               <button 
                 onClick={() => setShowDeleteConfirmModal(false)}
-                className="px-4 py-2 rounded-xl text-xs bg-white/5 hover:bg-white/10 text-white cursor-pointer font-bold transition"
+                className="px-5 py-2.5 rounded-full text-xs bg-white/5 hover:bg-white/10 text-white cursor-pointer font-bold transition duration-150"
               >
                 Hủy
               </button>
@@ -725,7 +725,7 @@ export default function PlaylistDetail() {
                     alert('Xóa thất bại: ' + err.message);
                   }
                 }}
-                className="px-4 py-2 rounded-xl text-xs bg-status-error hover:bg-status-error/80 text-white font-bold cursor-pointer transition"
+                className="px-5 py-2.5 rounded-full text-xs bg-error hover:bg-error/90 text-white font-bold cursor-pointer transition duration-150"
               >
                 Xóa
               </button>
