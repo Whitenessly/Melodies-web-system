@@ -44,11 +44,34 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
+const GuestRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-primary gap-4">
+        <span className="material-symbols-outlined text-5xl animate-spin">sync</span>
+        <span className="font-headline-md text-headline-md font-bold">Melodies Loading...</span>
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to="/home" replace />;
+  }
+
+  return children;
+};
+
 function AppRoutes() {
   return (
     <Routes>
       <Route path="" element={<Navigate to="/home" />} />
-      <Route path="/auth" element={<Auth />} />
+      <Route path="/auth" element={
+        <GuestRoute>
+          <Auth />
+        </GuestRoute>
+      } />
 
       {/* Protected Routes */}
       <Route path="/home" element={
