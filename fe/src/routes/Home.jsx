@@ -94,7 +94,7 @@ export default function Home() {
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                   {categories.map((cat, idx) => (
-                    <div 
+                    <div
                       key={cat._id}
                       onClick={() => navigate(`/search-results?genre=${encodeURIComponent(cat.name)}`)}
                       className={`h-28 rounded-2xl bg-gradient-to-br ${bentoGradients[idx % bentoGradients.length]} p-5 flex flex-col justify-between cursor-pointer hover:scale-103 transition-transform duration-300 relative overflow-hidden group shadow-lg`}
@@ -112,7 +112,7 @@ export default function Home() {
 
               {/* Grid split for Recommended Songs & Featured Artists */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
+
                 {/* Recommended Songs (Left 2 cols) */}
                 <div className="lg:col-span-2 flex flex-col gap-4">
                   <h2 className="font-headline-md text-xl font-bold tracking-tight text-white flex items-center gap-2">
@@ -121,24 +121,24 @@ export default function Home() {
                   </h2>
                   <div className="glass-panel p-4 rounded-2xl flex flex-col divide-y divide-white/5">
                     {songs.slice(0, 6).map((song, idx) => (
-                      <div 
+                      <div
                         key={song._id}
                         onClick={() => playSong(song, songs, idx)}
                         className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition cursor-pointer group"
                       >
                         <div className="flex items-center gap-4 min-w-0">
                           <span className="text-sm font-semibold text-on-surface-variant min-w-[20px]">{idx + 1}</span>
-                          <img 
-                            src={song.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100'} 
-                            alt={song.title} 
-                            className="w-12 h-12 rounded-lg object-cover" 
+                          <img
+                            src={song.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100'}
+                            alt={song.title}
+                            className="w-12 h-12 rounded-lg object-cover"
                           />
                           <div className="min-w-0">
                             <p className="text-sm font-bold text-white group-hover:text-secondary-container transition truncate">{song.title}</p>
                             <p className="text-xs text-on-surface-variant truncate mt-0.5">{song.artist}</p>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-4">
                           <span className="text-xs text-on-surface-variant font-mono">{Math.floor(song.duration / 60)}:{(song.duration % 60) < 10 ? '0' : ''}{song.duration % 60}</span>
                           <button className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-white/5 rounded-lg transition text-white">
@@ -161,7 +161,7 @@ export default function Home() {
                       const isFollowing = user.following?.includes(art._id);
                       return (
                         <div key={art._id} className="flex items-center justify-between p-2 rounded-xl hover:bg-white/[0.02] transition">
-                          <div 
+                          <div
                             onClick={() => navigate(`/artist-detail?id=${art._id}`)}
                             className="flex items-center gap-3 cursor-pointer group min-w-0"
                           >
@@ -178,13 +178,12 @@ export default function Home() {
                             </div>
                           </div>
 
-                          <button 
+                          <button
                             onClick={() => handleFollowToggle(art)}
-                            className={`text-[10px] font-bold px-3 py-1.5 rounded-full transition cursor-pointer flex-shrink-0 ${
-                              isFollowing 
-                                ? 'bg-white/10 text-white hover:bg-white/15' 
+                            className={`text-[10px] font-bold px-3 py-1.5 rounded-full transition cursor-pointer flex-shrink-0 ${isFollowing
+                                ? 'bg-white/10 text-white hover:bg-white/15'
                                 : 'electric-btn text-white hover:scale-102'
-                            }`}
+                              }`}
                           >
                             {isFollowing ? 'Following' : 'Follow'}
                           </button>

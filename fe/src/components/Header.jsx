@@ -15,7 +15,7 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [instantResults, setInstantResults] = useState([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
-  
+
   // Notification states
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -134,7 +134,7 @@ export default function Header() {
       <form ref={searchContainerRef} onSubmit={handleSearchSubmit} className="relative w-[380px]">
         <div className="relative">
           <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-          <input 
+          <input
             type="text"
             placeholder={t('search_placeholder')}
             value={searchQuery}
@@ -158,15 +158,15 @@ export default function Header() {
             {instantResults.length > 0 ? (
               <div className="flex flex-col">
                 {instantResults.map(song => (
-                  <div 
-                    key={song._id} 
+                  <div
+                    key={song._id}
                     onClick={() => handleInstantClick(song)}
                     className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition"
                   >
-                    <img 
-                      src={song.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=80'} 
-                      alt={song.title} 
-                      className="w-10 h-10 rounded-lg object-cover" 
+                    <img
+                      src={song.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=80'}
+                      alt={song.title}
+                      className="w-10 h-10 rounded-lg object-cover"
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-white truncate">{song.title}</p>
@@ -175,7 +175,7 @@ export default function Header() {
                     <span className="material-symbols-outlined text-on-surface-variant hover:text-white transition">play_circle</span>
                   </div>
                 ))}
-                <button 
+                <button
                   type="submit"
                   className="text-xs text-center py-2 text-secondary-container hover:underline cursor-pointer border-t border-white/5 mt-1 pt-2 font-medium"
                 >
@@ -193,7 +193,7 @@ export default function Header() {
           <div className="absolute top-13 left-0 w-full glass-panel rounded-2xl p-2 shadow-2xl z-50">
             <div className="px-3 py-2 border-b border-white/5 flex items-center justify-between">
               <span className="text-xs font-bold text-white">Tìm kiếm gần đây</span>
-              <button 
+              <button
                 type="button"
                 onClick={async (e) => {
                   e.stopPropagation();
@@ -251,14 +251,14 @@ export default function Header() {
       <div className="flex items-center gap-6">
         {/* Upgrade Premium CTA for Free account, or Premium Badge for Premium account */}
         {user?.premium_status === 'FREE' ? (
-          <button 
+          <button
             onClick={() => navigate('/subscription-plans')}
             className="electric-btn text-white text-xs font-bold px-5 py-2.5 rounded-full hover:scale-105 transition duration-200 cursor-pointer shadow-lg shadow-primary-container/20"
           >
             {t('btn_upgrade_premium')}
           </button>
         ) : (
-          <div 
+          <div
             onClick={() => navigate('/settings')}
             className="bg-electric-gradient text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-lg shadow-primary-container/20 flex items-center gap-1.5 cursor-pointer hover:scale-105 transition duration-200"
           >
@@ -269,7 +269,7 @@ export default function Header() {
 
         {/* Notifications Dropdown Container */}
         <div ref={notifContainerRef} className="relative">
-          <button 
+          <button
             onClick={() => {
               setShowNotificationDropdown(!showNotificationDropdown);
               loadNotifications();
@@ -289,8 +289,8 @@ export default function Header() {
               <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
                 <span className="text-xs font-bold text-white">Thông báo</span>
                 {unreadCount > 0 && (
-                  <button 
-                    onClick={handleMarkAllRead} 
+                  <button
+                    onClick={handleMarkAllRead}
                     className="text-[10px] text-secondary-container hover:underline cursor-pointer"
                   >
                     Đọc tất cả
@@ -300,14 +300,13 @@ export default function Header() {
               <div className="max-h-64 overflow-y-auto custom-scrollbar flex flex-col gap-1 mt-2">
                 {notifications.length > 0 ? (
                   notifications.map(notif => (
-                    <div 
+                    <div
                       key={notif._id}
                       onClick={() => handleNotifClick(notif)}
                       className={`p-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition flex items-start gap-2.5 ${!notif.isRead ? 'bg-white/[0.02]' : ''}`}
                     >
-                      <span className={`material-symbols-outlined text-lg mt-0.5 ${
-                        notif.type === 'new_track' ? 'text-tertiary' : notif.type === 'admin' ? 'text-error' : 'text-secondary-container'
-                      }`}>
+                      <span className={`material-symbols-outlined text-lg mt-0.5 ${notif.type === 'new_track' ? 'text-tertiary' : notif.type === 'admin' ? 'text-error' : 'text-secondary-container'
+                        }`}>
                         {notif.type === 'new_track' ? 'library_music' : notif.type === 'admin' ? 'warning' : 'info'}
                       </span>
                       <div className="flex-1 min-w-0">
@@ -326,7 +325,7 @@ export default function Header() {
 
         {/* User Badge Info with Dropdown */}
         <div ref={userMenuRef} className="relative">
-          <div 
+          <div
             onClick={() => setShowUserDropdown(!showUserDropdown)}
             className="flex items-center gap-3 cursor-pointer p-1.5 rounded-full hover:bg-white/5 transition"
           >

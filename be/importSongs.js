@@ -8,6 +8,7 @@ import User from './models/User.js';
 import Song from './models/Song.js';
 import Category from './models/Category.js';
 import { hashPassword } from './utils/token.js';
+import { transcodeTo128kbps } from './utils/audioTranscoder.js';
 
 dotenv.config();
 
@@ -284,17 +285,42 @@ async function importSong(file) {
 
   // 5. Copy file and create safe URL
   const urlSafeArtistPart = artistNames.map(a => a.toLowerCase().replace(/[^a-z0-9]+/g, '-')).join('-');
-  const urlSafeName = songInfo.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + urlSafeArtistPart + '.mp3';
-  const destPath = path.join(UPLOADS_FOLDER, urlSafeName);
+  const baseName = songInfo.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + urlSafeArtistPart;
+  
+  // 320kbps and 128kbps output paths
+  const destPath320 = path.join(UPLOADS_FOLDER, `${baseName}-320.mp3`);
+  const destPath128 = path.join(UPLOADS_FOLDER, `${baseName}-128.mp3`);
   
   try {
-    fs.copyFileSync(filePath, destPath);
+    fs.copyFileSync(filePath, destPath320);
   } catch (err) {
-    console.error(`   Failed to copy file: ${err.message}`);
+    console.error(`   Failed to copy 320kbps file: ${err.message}`);
     return;
   }
 
-  const audioUrl = `http://localhost:8080/uploads/songs/${urlSafeName}`;
+  try {
+    await transcodeTo128kbps(filePath, destPath128);
+  } catch (err) {
+    console.warn(`   Transcoding failed for "${file}", falling back to copy original: ${err.message}`);
+    try {
+      fs.copyFileSync(filePath, destPath128);
+    } catch (copyErr) {
+      console.error(`   Failed to copy 128kbps fallback: ${copyErr.message}`);
+      return;
+    }
+  }
+
+  const stream_320kbps_url = `http://localhost:8080/uploads/songs/${baseName}-320.mp3`;
+  const stream_128kbps_url = `http://localhost:8080/uploads/songs/${baseName}-128.mp3`;
+  const original_file_url = stream_320kbps_url;
+  
+  const audioUrl = stream_128kbps_url; // Default fallback is 128kbps
+  
+  const audio_source = {
+    original_file_url,
+    stream_128kbps_url,
+    stream_320kbps_url
+  };
 
   // 6. Generate waveform representation (100 values between 0.1 and 0.9)
   const waveform_data = Array.from({ length: 100 }, () => Math.round((Math.random() * 0.8 + 0.1) * 100) / 100);
@@ -325,6 +351,7 @@ async function importSong(file) {
     songDoc.lyrics = lyrics || songDoc.lyrics;
     songDoc.genre = songInfo.genre;
     songDoc.audioUrl = audioUrl;
+    songDoc.audio_source = audio_source;
     songDoc.thumbnailUrl = songInfo.thumbnailUrl;
     songDoc.cover_image_url = songInfo.thumbnailUrl;
     songDoc.waveform_data = waveform_data;
@@ -341,6 +368,7 @@ async function importSong(file) {
       lyrics: lyrics,
       genre: songInfo.genre,
       audioUrl: audioUrl,
+      audio_source: audio_source,
       thumbnailUrl: songInfo.thumbnailUrl,
       cover_image_url: songInfo.thumbnailUrl,
       waveform_data: waveform_data,
@@ -382,12 +410,13 @@ async function run() {
     }
 
     const files = fs.readdirSync(MUSIC_FOLDER).filter(f => f.toLowerCase().endsWith('.mp3'));
-    console.log(`Found ${files.length} mp3 files.`);
+    console.log(`Found ${files.length} mp3 files. Limiting to first 10 for performance...`);
 
     // For safety and fast verification, let's limit or print a prompt.
     // We will process all of them, but with a sleep between each to respect API rate limits.
-    for (let i = 0; i < files.length; i++) {
-      console.log(`\n--- Progress: ${i + 1}/${files.length} ---`);
+    const limit = Math.min(files.length, 10);
+    for (let i = 0; i < limit; i++) {
+      console.log(`\n--- Progress: ${i + 1}/${limit} ---`);
       try {
         await importSong(files[i]);
       } catch (err) {

@@ -14,7 +14,7 @@ const router = express.Router();
 
 // Public routes
 router.get('/', optionalAuthenticate, getAllSongs);
-router.get('/:id', getSongById);
+router.get('/:id', optionalAuthenticate, getSongById);
 
 // Authenticated routes
 router.post('/', authenticate, createSong);

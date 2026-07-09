@@ -4,6 +4,34 @@ import { saveBase64File } from '../utils/file.js';
 import crypto from 'crypto';
 import { updateLikedGenres, updateArtistGenres } from '../utils/genreHelpers.js';
 import { findClosestCorrection } from '../utils/stringSimilarity.js';
+import fs from 'fs';
+import path from 'path';
+import { transcodeTo128kbps } from '../utils/audioTranscoder.js';
+
+function filterSongForUser(song, user) {
+  if (!song) return song;
+  const songObj = typeof song.toObject === 'function' ? song.toObject() : song;
+  const isPremium = user && user.premium_status === 'PREMIUM';
+  if (!isPremium) {
+    if (songObj.audio_source) {
+      delete songObj.audio_source.original_file_url;
+      delete songObj.audio_source.stream_320kbps_url;
+    }
+    if (song.audio_source && song.audio_source.stream_128kbps_url) {
+      songObj.audioUrl = song.audio_source.stream_128kbps_url;
+    }
+  }
+  return songObj;
+}
+
+function filterSongsForUser(songsOrSong, user) {
+  if (!songsOrSong) return songsOrSong;
+  if (Array.isArray(songsOrSong)) {
+    return songsOrSong.map(song => filterSongForUser(song, user));
+  }
+  return filterSongForUser(songsOrSong, user);
+}
+
 
 // Helper to remove Vietnamese tones for fuzzy search
 function removeVietnameseTones(str) {
@@ -28,13 +56,14 @@ function removeVietnameseTones(str) {
 }
 
 function paginateAndSend(songsList, req, res) {
+  const filteredList = filterSongsForUser(songsList, req.user);
   if (req.query.page) {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
     const skip = (page - 1) * limit;
-    const total = songsList.length;
+    const total = filteredList.length;
     const pages = Math.ceil(total / limit);
-    const paginated = songsList.slice(skip, skip + limit);
+    const paginated = filteredList.slice(skip, skip + limit);
     return res.json({
       songs: paginated,
       pagination: {
@@ -45,7 +74,7 @@ function paginateAndSend(songsList, req, res) {
       }
     });
   }
-  return res.json(songsList);
+  return res.json(filteredList);
 }
 
 export async function getAllSongs(req, res) {
@@ -131,7 +160,7 @@ export async function getAllSongs(req, res) {
               const pages = Math.ceil(total / limit);
               const paginated = correctedSongs.slice(skip, skip + limit);
               return res.json({
-                songs: paginated,
+                songs: filterSongsForUser(paginated, req.user),
                 artists: correctedArtists,
                 suggestedQuery: closestMatch,
                 pagination: {
@@ -143,7 +172,7 @@ export async function getAllSongs(req, res) {
               });
             }
             return res.json({
-              songs: correctedSongs,
+              songs: filterSongsForUser(correctedSongs, req.user),
               artists: correctedArtists,
               suggestedQuery: closestMatch
             });
@@ -152,7 +181,7 @@ export async function getAllSongs(req, res) {
           const recommendations = await Song.find({ status: 'approved', deleted_at: null })
             .limit(5)
             .populate('artistId', 'name avatarUrl');
-          return res.json({ songs: [], recommendations, wasFuzzy: true });
+          return res.json({ songs: [], recommendations: filterSongsForUser(recommendations, req.user), wasFuzzy: true });
         }
 
         // Return paginated songs + matching artists
@@ -164,7 +193,7 @@ export async function getAllSongs(req, res) {
           const pages = Math.ceil(total / limit);
           const paginated = songs.slice(skip, skip + limit);
           return res.json({
-            songs: paginated,
+            songs: filterSongsForUser(paginated, req.user),
             artists: matchingArtists,
             pagination: {
               total,
@@ -175,7 +204,7 @@ export async function getAllSongs(req, res) {
           });
         }
         return res.json({
-          songs,
+          songs: filterSongsForUser(songs, req.user),
           artists: matchingArtists
         });
       }
@@ -276,7 +305,7 @@ export async function getSongById(req, res) {
     if (!song) {
       return res.status(404).json({ message: 'Song not found' });
     }
-    return res.json(song);
+    return res.json(filterSongsForUser(song, req.user));
   } catch (err) {
     return res.status(500).json({ message: 'Error retrieving song', error: err.message });
   }
@@ -296,6 +325,25 @@ export async function createSong(req, res) {
       return res.status(500).json({ message: 'Failed to process audio upload' });
     }
 
+    // Generate transcoded 128kbps version
+    let audio128Url = audioUrl;
+    try {
+      const audioFilename = audioUrl.split('/').pop();
+      const originalLocalPath = path.join(process.cwd(), 'public', 'uploads', 'audio', audioFilename);
+      
+      const ext = path.extname(audioFilename);
+      const baseName = path.basename(audioFilename, ext);
+      const audio128Filename = `${baseName}-128${ext}`;
+      const local128Path = path.join(process.cwd(), 'public', 'uploads', 'audio', audio128Filename);
+      
+      await transcodeTo128kbps(originalLocalPath, local128Path);
+      
+      const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+      audio128Url = `${backendUrl}/uploads/audio/${audio128Filename}`;
+    } catch (transcodeErr) {
+      console.error('Transcoding failed on upload, using original file as fallback:', transcodeErr.message);
+    }
+
     // Save cover image
     let thumbnailUrl = 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500';
     if (imageData) {
@@ -309,10 +357,10 @@ export async function createSong(req, res) {
       waveform_data.push(parseFloat((Math.random() * 0.8 + 0.2).toFixed(2)));
     }
 
-    // Simulate Transcoding Pipeline urls
+    // Transcoding Pipeline urls
     const audio_source = {
       original_file_url: audioUrl,
-      stream_128kbps_url: audioUrl, // In mock, both point to same or can append quality suffixes
+      stream_128kbps_url: audio128Url,
       stream_320kbps_url: audioUrl
     };
 
@@ -327,7 +375,7 @@ export async function createSong(req, res) {
       duration: duration || 180,
       lyrics: lyrics || '',
       genre,
-      audioUrl,
+      audioUrl: audio128Url, // Use 128kbps as primary audioUrl fallback
       audio_source,
       thumbnailUrl,
       cover_image_url: thumbnailUrl,
