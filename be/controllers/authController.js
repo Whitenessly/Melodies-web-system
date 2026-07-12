@@ -52,12 +52,12 @@ export async function login(req, res) {
 
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Account does not exist or incorrect email' });
     }
 
     const isMatch = verifyPassword(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Incorrect password' });
     }
 
     const token = generateToken({ id: user._id, role: user.role });
