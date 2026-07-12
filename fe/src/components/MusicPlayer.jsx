@@ -276,7 +276,7 @@ export default function MusicPlayer() {
             <span className="text-[10px] text-on-surface-variant font-mono min-w-[30px] text-right">{formatTime(currentTime)}</span>
             
             {/* Waveform scroll container */}
-            <div className={`flex-1 h-8 flex items-center justify-between gap-[2px] select-none relative ${isAdPlaying ? 'pointer-events-none opacity-40' : ''}`}>
+            <div className={`flex-1 h-8 flex items-center justify-between gap-[2px] select-none relative waveform-container ${isAdPlaying ? 'pointer-events-none opacity-40' : ''}`}>
               {/* Invisible range input for perfect slider behavior */}
               <input 
                 type="range"

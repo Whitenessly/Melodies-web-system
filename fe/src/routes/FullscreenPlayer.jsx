@@ -364,17 +364,20 @@ export default function FullscreenPlayer() {
             className="w-full h-12 flex items-center justify-between gap-[2.5px] cursor-pointer relative select-none"
           >
             {/* Waveform bars */}
-            {(currentSong.waveform_data || Array.from({ length: 85 }, () => 0.5)).map((val, idx) => {
-              const barPercent = (idx / 85) * 100;
-              const isPlayed = barPercent <= progressPercent;
-              return (
-                <div 
-                  key={idx}
-                  className={`flex-1 rounded-full transition-all duration-200 ${isPlayed ? 'bg-primary shadow-sm shadow-primary/30 h-[90%]' : 'bg-white/10 h-[50%]'}`}
-                  style={{ height: `${val * 100}%` }}
-                />
-              );
-            })}
+            {(() => {
+              const waveformData = currentSong.waveform_data || Array.from({ length: 85 }, () => 0.5);
+              return waveformData.map((val, idx) => {
+                const barPercent = (idx / waveformData.length) * 100;
+                const isPlayed = barPercent <= progressPercent;
+                return (
+                  <div 
+                    key={idx}
+                    className={`flex-1 rounded-full transition-all duration-200 ${isPlayed ? 'bg-primary shadow-sm shadow-primary/30 h-[90%]' : 'bg-white/10 h-[50%]'}`}
+                    style={{ height: `${val * 100}%` }}
+                  />
+                );
+              });
+            })()}
 
             {/* Render comments avatars at their timestamps */}
             {comments.map(c => {

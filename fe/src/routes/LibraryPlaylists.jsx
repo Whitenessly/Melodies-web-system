@@ -125,7 +125,7 @@ export default function LibraryPlaylists() {
               <span className="material-symbols-outlined text-4xl animate-spin">sync</span>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-6">
               {/* Liked Songs Special Bento card */}
               <div 
                 onClick={() => navigate('/playlist-detail?id=liked')}
