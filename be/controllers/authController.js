@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 import { hashPassword, verifyPassword, generateToken } from '../utils/token.js';
 
 export async function register(req, res) {
@@ -90,8 +91,28 @@ export async function getMe(req, res) {
       user.premium_status = 'FREE';
       user.premium_expired_at = null;
       user.premium_auto_renew = true; // reset
+      user.premium_warning_sent = false; // reset
       await user.save();
       console.log(`📉 User ${user.email} subscription expired. Downgraded to FREE.`);
+    }
+
+    // Send 1-day warning notification if card is removed
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    if (user.premium_status === 'PREMIUM' && user.premium_expired_at) {
+      const timeLeft = user.premium_expired_at.getTime() - Date.now();
+      if (timeLeft > 0 && timeLeft <= oneDayMs && user.paymentMethods.length === 0 && !user.premium_warning_sent) {
+        const notification = new Notification({
+          userId: user._id,
+          title: 'Gói Premium sắp hết hạn',
+          message: 'Gói cước Premium của bạn sẽ hết hạn trong vòng 24 giờ tới và bạn chưa liên kết thẻ thanh toán. Vui lòng thêm lại thẻ để duy trì dịch vụ.',
+          type: 'system'
+        });
+        await notification.save();
+        
+        user.premium_warning_sent = true;
+        await user.save();
+        console.log(`✉️ Sent 1-day warning notification to ${user.email}`);
+      }
     }
 
     return res.json(user);
@@ -370,6 +391,10 @@ export async function reactivateSubscription(req, res) {
   try {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (user.paymentMethods.length === 0) {
+      return res.status(400).json({ message: 'Vui lòng liên kết thẻ thanh toán trước khi bật lại gia hạn tự động.' });
+    }
 
     user.premium_auto_renew = true;
     await user.save();

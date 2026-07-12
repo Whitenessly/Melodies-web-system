@@ -258,6 +258,7 @@ export async function chargeCard(req, res) {
           isDefault: true
         });
 
+        user.premium_warning_sent = false;
         await user.save();
       }
 
@@ -279,9 +280,10 @@ export async function chargeCard(req, res) {
   } catch (err) {
     console.error('Stripe charge error:', err.message);
 
-    // Fallback: If it's a test mode key, simulate success so the payment flow works
-    if (stripeConfig?.secretKey?.startsWith('sk_test_')) {
-      console.log('⚠️ Stripe key is test mode, simulating success fallback...');
+    // Fallback: If it's the default dummy key (sk_test_12345), simulate success so the payment flow works without Stripe config.
+    // If it's a real test key, we do NOT simulate success, allowing real test declines/failures to go through.
+    if (stripeConfig?.secretKey === 'sk_test_12345') {
+      console.log('⚠️ Stripe key is dummy test mode, simulating success fallback...');
       const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
       
       // Save Transaction
@@ -320,6 +322,7 @@ export async function chargeCard(req, res) {
           isDefault: true
         });
 
+        user.premium_warning_sent = false;
         await user.save();
       }
 
@@ -349,6 +352,96 @@ export async function getMyTransactions(req, res) {
   } catch (err) {
     console.error('Error fetching transactions:', err.message);
     return res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
+
+export async function removeCard(req, res) {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.paymentMethods = [];
+    user.premium_auto_renew = false;
+    user.premium_warning_sent = false;
+    await user.save();
+
+    console.log(`📉 User ${user.email} removed payment card. Auto-renew disabled.`);
+    return res.json(user);
+  } catch (err) {
+    console.error('Error removing card:', err.message);
+    return res.status(500).json({ message: 'Failed to remove card details', error: err.message });
+  }
+}
+
+export async function updateCard(req, res) {
+  try {
+    const { tokenId, cardName, cardNumber, cardExpiry } = req.body;
+    if (!tokenId) {
+      return res.status(400).json({ message: 'Token ID is required' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Load Stripe config
+    const stripeConfig = await PaymentConfig.findOne({ gateway: 'stripe' });
+    if (!stripeConfig || !stripeConfig.secretKey) {
+      return res.status(400).json({ message: 'Stripe gateway is not configured.' });
+    }
+
+    let cardDetails = {
+      brand: 'visa',
+      last4: '4242',
+      expiry: cardExpiry || '12/29'
+    };
+
+    // If using real Stripe key, validate token with Stripe API
+    if (stripeConfig.secretKey !== 'sk_test_12345') {
+      const stripeObj = new Stripe(stripeConfig.secretKey);
+      try {
+        const token = await stripeObj.tokens.retrieve(tokenId);
+        if (token && token.card) {
+          cardDetails.brand = token.card.brand || 'visa';
+          cardDetails.last4 = token.card.last4 || '4242';
+          cardDetails.expiry = `${token.card.exp_month}/${token.card.exp_year.toString().slice(-2)}`;
+        }
+      } catch (stripeErr) {
+        console.error('Stripe token validation failed:', stripeErr.message);
+        return res.status(400).json({ message: 'Thẻ không hợp lệ: ' + stripeErr.message });
+      }
+    } else {
+      // Simulate validation for dummy key
+      if (cardNumber && cardNumber.replace(/\s+/g, '').endsWith('2')) {
+        // Mock decline scenario
+        return res.status(400).json({ message: 'Thẻ của bạn đã bị từ chối (Card declined).' });
+      }
+      if (cardNumber) {
+        cardDetails.last4 = cardNumber.replace(/\s+/g, '').slice(-4);
+      }
+    }
+
+    // Update payment method
+    user.paymentMethods = [{
+      brand: cardDetails.brand,
+      cardholderName: (cardName || 'NGUYEN VAN A').trim().toUpperCase(),
+      last4: cardDetails.last4,
+      expiry: cardDetails.expiry,
+      isDefault: true
+    }];
+
+    user.premium_auto_renew = true;
+    user.premium_warning_sent = false;
+    await user.save();
+
+    console.log(`🚀 User ${user.email} updated payment card. Auto-renew enabled.`);
+    return res.json(user);
+  } catch (err) {
+    console.error('Error updating card:', err.message);
+    return res.status(500).json({ message: 'Failed to update card details', error: err.message });
   }
 }
 

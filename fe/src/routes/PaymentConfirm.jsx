@@ -10,8 +10,19 @@ import { api } from '../utils/api.js';
 export default function PaymentConfirm() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { fetchProfile } = useAuth();
+  const { user, loading: authLoading, fetchProfile } = useAuth();
   const { t } = useLanguage();
+
+  // Redirect if already Premium (unless currently verifying a successful transaction redirect)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const order_id = params.get('orderId');
+    const pay_status = params.get('status');
+    
+    if (!authLoading && user?.premium_status === 'PREMIUM' && (!order_id || pay_status !== 'SUCCESS')) {
+      navigate('/home', { replace: true });
+    }
+  }, [user, authLoading, location.search, navigate]);
 
   const [orderId, setOrderId] = useState('');
   const [gateway, setGateway] = useState('');

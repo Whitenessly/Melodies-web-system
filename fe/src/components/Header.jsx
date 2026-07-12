@@ -259,7 +259,7 @@ export default function Header() {
           </button>
         ) : (
           <div
-            onClick={() => navigate('/settings')}
+            onClick={() => navigate('/settings?tab=subscription')}
             className="border border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 text-white text-xs font-bold px-5 py-2.5 rounded-full flex items-center gap-1.5 cursor-pointer transition duration-200"
           >
             <span className="material-symbols-outlined text-sm text-primary filled">stars</span>

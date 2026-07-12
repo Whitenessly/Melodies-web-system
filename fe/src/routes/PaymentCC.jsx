@@ -11,7 +11,7 @@ export default function PaymentCC() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const planId = searchParams.get('planId') || 'premium';
-  const { fetchProfile } = useAuth();
+  const { user, loading: authLoading, fetchProfile } = useAuth();
   const { t } = useLanguage();
 
   // Stripe configurations loaded from server
@@ -28,6 +28,13 @@ export default function PaymentCC() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successData, setSuccessData] = useState(null); // stores transaction details on success
+
+  // Redirect if already Premium (and not just finished transaction)
+  useEffect(() => {
+    if (!authLoading && user?.premium_status === 'PREMIUM' && !successData) {
+      navigate('/home', { replace: true });
+    }
+  }, [user, authLoading, successData, navigate]);
 
   // Fetch publishable key on mount
   useEffect(() => {
@@ -159,159 +166,166 @@ export default function PaymentCC() {
 
           {!successData ? (
             /* PAYMENT FORM SCREEN */
-            <div className="w-full max-w-lg bg-[#121212]/40 border border-white/5 p-8 rounded-3xl shadow-2xl flex flex-col gap-6">
+            /* PAYMENT FORM SCREEN */
+            <div className="w-full max-w-5xl bg-neutral-900/60 backdrop-blur-xl border border-white/10 p-10 md:p-12 rounded-[32px] shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_24px_50px_-12px_rgba(0,0,0,0.5)] flex flex-col md:flex-row gap-12 md:gap-16 items-center animate-fadeIn">
               
-              <div className="text-center flex flex-col gap-2">
-                <h1 className="font-display-lg text-2xl font-bold text-white tracking-tight">Melodies</h1>
-                <p className="text-xs text-on-surface-variant font-medium">{t('payment_secure_desc')}</p>
-              </div>
+              {/* LEFT COLUMN: Purple Card Graphic */}
+              <div className="w-full md:w-[380px] flex-shrink-0 flex flex-col gap-4">
+                {/* LIVE CARD PREVIEW GRAPHIC */}
+                <div className="w-full aspect-[1.586/1] bg-gradient-to-br from-indigo-600 to-purple-800 rounded-2xl p-6 flex flex-col justify-between shadow-2xl relative overflow-hidden border border-white/10 select-none">
+                  <div className="absolute -top-12 -right-12 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+                  <div className="absolute -bottom-16 -left-16 w-40 h-40 bg-black/20 rounded-full blur-2xl"></div>
+                  
+                  {/* Gold chip and Brand Logo */}
+                  <div className="flex justify-between items-center relative z-10">
+                    {/* Gold Chip CSS representation */}
+                    <div className="w-11 h-9 rounded-md bg-gradient-to-br from-[#e5c158] to-[#c5a038] p-1 flex flex-col justify-between border border-[#b2902f] shadow-inner relative">
+                      <div className="w-full h-[1px] bg-black/10 absolute top-1/2 left-0 -translate-y-1/2"></div>
+                      <div className="w-[1px] h-full bg-black/10 absolute left-1/3 top-0"></div>
+                      <div className="w-[1px] h-full bg-black/10 absolute left-2/3 top-0"></div>
+                    </div>
 
-              {errorMessage && (
-                <div className="bg-red-500/10 border border-red-500/25 text-red-500 px-4 py-2.5 rounded-xl text-xs flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm">error</span>
-                  <span>{errorMessage}</span>
-                </div>
-              )}
-
-              {/* LIVE CARD PREVIEW GRAPHIC */}
-              <div className="w-full aspect-[1.586/1] bg-gradient-to-br from-indigo-600 to-purple-800 rounded-2xl p-6 flex flex-col justify-between shadow-2xl relative overflow-hidden border border-white/10 select-none">
-                <div className="absolute -top-12 -right-12 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
-                <div className="absolute -bottom-16 -left-16 w-40 h-40 bg-black/20 rounded-full blur-2xl"></div>
-                
-                {/* Gold chip and Brand Logo */}
-                <div className="flex justify-between items-center relative z-10">
-                  {/* Gold Chip CSS representation */}
-                  <div className="w-11 h-9 rounded-md bg-gradient-to-br from-[#e5c158] to-[#c5a038] p-1 flex flex-col justify-between border border-[#b2902f] shadow-inner relative">
-                    <div className="w-full h-[1px] bg-black/10 absolute top-1/2 left-0 -translate-y-1/2"></div>
-                    <div className="w-[1px] h-full bg-black/10 absolute left-1/3 top-0"></div>
-                    <div className="w-[1px] h-full bg-black/10 absolute left-2/3 top-0"></div>
+                    {/* Brand badge */}
+                    <div>
+                      {cardBrand === 'visa' && (
+                        <span className="text-white font-extrabold italic text-xl tracking-wider">VISA</span>
+                      )}
+                      {cardBrand === 'mastercard' && (
+                        <span className="text-white font-extrabold italic text-xl tracking-wider flex items-center gap-1">
+                          <span className="w-4 h-4 rounded-full bg-red-500/90 inline-block"></span>
+                          <span className="w-4 h-4 rounded-full bg-amber-500/90 -ml-2 inline-block"></span>
+                        </span>
+                      )}
+                      {cardBrand === 'unknown' && (
+                        <span className="material-symbols-outlined text-white/50 text-2xl">credit_card</span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Brand badge */}
-                  <div>
-                    {cardBrand === 'visa' && (
-                      <span className="text-white font-extrabold italic text-xl tracking-wider">VISA</span>
-                    )}
-                    {cardBrand === 'mastercard' && (
-                      <span className="text-white font-extrabold italic text-xl tracking-wider flex items-center gap-1">
-                        <span className="w-4 h-4 rounded-full bg-red-500/90 inline-block"></span>
-                        <span className="w-4 h-4 rounded-full bg-amber-500/90 -ml-2 inline-block"></span>
+                  {/* Card Number */}
+                  <div className="text-white font-mono text-lg md:text-xl tracking-[0.18em] my-4 text-center drop-shadow-md relative z-10">
+                    {cardNumber || '•••• •••• •••• ••••'}
+                  </div>
+
+                  {/* Cardholder name and Expiry */}
+                  <div className="flex justify-between items-end relative z-10 text-white drop-shadow-md">
+                    <div>
+                      <span className="text-[8px] uppercase tracking-wider text-white/60 block">{t('cardholder_name_preview')}</span>
+                      <span className="text-xs font-mono font-bold tracking-wider truncate max-w-[200px] inline-block uppercase">
+                        {cardName || 'NAME ON CARD'}
                       </span>
-                    )}
-                    {cardBrand === 'unknown' && (
-                      <span className="material-symbols-outlined text-white/50 text-2xl">credit_card</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Card Number */}
-                <div className="text-white font-mono text-lg md:text-xl tracking-[0.18em] my-4 text-center drop-shadow-md relative z-10">
-                  {cardNumber || '•••• •••• •••• ••••'}
-                </div>
-
-                {/* Cardholder name and Expiry */}
-                <div className="flex justify-between items-end relative z-10 text-white drop-shadow-md">
-                  <div>
-                    <span className="text-[8px] uppercase tracking-wider text-white/60 block">{t('cardholder_name_preview')}</span>
-                    <span className="text-xs font-mono font-bold tracking-wider truncate max-w-[200px] inline-block uppercase">
-                      {cardName || 'NAME ON CARD'}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[8px] uppercase tracking-wider text-white/60 block">{t('card_expiry_preview')}</span>
-                    <span className="text-xs font-mono font-bold tracking-wider">
-                      {cardExpiry || 'MM/YY'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <form onSubmit={handlePaymentSubmit} className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] uppercase font-bold text-on-surface-variant ml-1">{t('cardholder_name_label')}</label>
-                  <div className="relative">
-                    <input 
-                      type="text" 
-                      required 
-                      placeholder="NGUYEN VAN A"
-                      value={cardName}
-                      onChange={e => setCardName(e.target.value)}
-                      className="w-full h-11 pl-4 pr-10 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200 uppercase"
-                    />
-                    <span className="material-symbols-outlined text-sm text-on-surface-variant absolute right-3.5 top-1/2 -translate-y-1/2">person</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] uppercase font-bold text-on-surface-variant ml-1">{t('card_number_label')}</label>
-                  <div className="relative">
-                    <input 
-                      type="text" 
-                      required 
-                      placeholder="0000 0000 0000 0000"
-                      value={cardNumber}
-                      onChange={handleCardNumberChange}
-                      className="w-full h-11 pl-4 pr-10 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200 font-mono"
-                    />
-                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center">
-                      {cardBrand === 'visa' && <span className="text-white font-extrabold italic text-[10px] tracking-wider">VISA</span>}
-                      {cardBrand === 'mastercard' && <span className="text-white font-extrabold italic text-[10px] tracking-wider">MC</span>}
-                      {cardBrand === 'unknown' && <span className="material-symbols-outlined text-sm text-on-surface-variant">credit_card</span>}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] uppercase font-bold text-on-surface-variant ml-1">{t('expiry_date_label')}</label>
-                    <input 
-                      type="text" 
-                      required 
-                      placeholder="MM/YY"
-                      value={cardExpiry}
-                      onChange={handleExpiryChange}
-                      className="w-full h-11 px-4 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200 font-mono"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] uppercase font-bold text-on-surface-variant ml-1">{t('cvv_code_label')}</label>
-                    <div className="relative">
-                      <input 
-                        type="password" 
-                        required 
-                        placeholder="***"
-                        value={cardCvv}
-                        onChange={handleCvvChange}
-                        className="w-full h-11 pl-4 pr-10 bg-[#121212] border border-white/5 focus:border-primary rounded-xl text-xs text-white placeholder-on-surface-variant transition duration-200 font-mono"
-                      />
-                      <span className="material-symbols-outlined text-sm text-on-surface-variant absolute right-3.5 top-1/2 -translate-y-1/2">lock</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[8px] uppercase tracking-wider text-white/60 block">{t('card_expiry_preview')}</span>
+                      <span className="text-xs font-mono font-bold tracking-wider">
+                        {cardExpiry || 'MM/YY'}
+                      </span>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <button 
-                  type="submit" 
-                  disabled={loading || loadingConfig}
-                  className="w-full h-11 rounded-full bg-primary text-black font-extrabold text-xs hover:scale-105 active:scale-95 transition cursor-pointer flex items-center justify-center gap-2 mt-2 shadow-lg disabled:opacity-50"
-                >
-                  {loading ? (
-                    <>
-                      <span className="material-symbols-outlined text-sm animate-spin">sync</span>
-                      <span>{t('processing_transaction')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>{t('pay_now_btn')}</span>
-                      <span className="material-symbols-outlined text-sm select-none font-bold">arrow_forward</span>
-                    </>
-                  )}
-                </button>
+              {/* RIGHT COLUMN: Header, Alert and Form */}
+              <div className="flex-1 w-full flex flex-col gap-6">
+                <div className="text-center md:text-left flex flex-col gap-2">
+                  <h1 className="font-display-lg text-2xl font-bold text-white tracking-tight">Melodies - Premium</h1>
+                  <p className="text-xs text-on-surface-variant font-medium">{t('payment_secure_desc')}</p>
+                </div>
 
-                <p className="text-[9px] text-center text-primary font-bold flex items-center justify-center gap-1 mt-1">
-                  <span className="material-symbols-outlined text-xs select-none">verified_user</span>
-                  {t('ssl_security_notice')}
-                </p>
-              </form>
+                {errorMessage && (
+                  <div className="bg-red-500/10 border border-red-500/25 text-red-500 px-4 py-2.5 rounded-xl text-xs flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm">error</span>
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handlePaymentSubmit} className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase font-bold text-white/50 tracking-wider ml-1">{t('cardholder_name_label')}</label>
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        required 
+                        placeholder="NGUYEN VAN A"
+                        value={cardName}
+                        onChange={e => setCardName(e.target.value)}
+                        className="w-full h-12 pl-4 pr-10 bg-white/[0.03] border border-white/10 hover:border-white/20 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none rounded-2xl text-xs text-white placeholder-on-surface-variant/40 transition-all duration-300 uppercase tracking-wide"
+                      />
+                      <span className="material-symbols-outlined text-sm text-on-surface-variant absolute right-3.5 top-1/2 -translate-y-1/2">person</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase font-bold text-white/50 tracking-wider ml-1">{t('card_number_label')}</label>
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        required 
+                        placeholder="0000 0000 0000 0000"
+                        value={cardNumber}
+                        onChange={handleCardNumberChange}
+                        className="w-full h-12 pl-4 pr-10 bg-white/[0.03] border border-white/10 hover:border-white/20 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none rounded-2xl text-xs text-white placeholder-on-surface-variant/40 transition-all duration-300 font-mono tracking-widest"
+                      />
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center">
+                        {cardBrand === 'visa' && <span className="text-white font-extrabold italic text-[10px] tracking-wider">VISA</span>}
+                        {cardBrand === 'mastercard' && <span className="text-white font-extrabold italic text-[10px] tracking-wider">MC</span>}
+                        {cardBrand === 'unknown' && <span className="material-symbols-outlined text-sm text-on-surface-variant">credit_card</span>}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] uppercase font-bold text-white/50 tracking-wider ml-1">{t('expiry_date_label')}</label>
+                      <input 
+                        type="text" 
+                        required 
+                        placeholder="MM/YY"
+                        value={cardExpiry}
+                        onChange={handleExpiryChange}
+                        className="w-full h-12 px-4 bg-white/[0.03] border border-white/10 hover:border-white/20 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none rounded-2xl text-xs text-white placeholder-on-surface-variant/40 transition-all duration-300 font-mono tracking-widest"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] uppercase font-bold text-white/50 tracking-wider ml-1">{t('cvv_code_label')}</label>
+                      <div className="relative">
+                        <input 
+                          type="password" 
+                          required 
+                          placeholder="***"
+                          value={cardCvv}
+                          onChange={handleCvvChange}
+                          className="w-full h-12 pl-4 pr-10 bg-white/[0.03] border border-white/10 hover:border-white/20 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none rounded-2xl text-xs text-white placeholder-on-surface-variant/40 transition-all duration-300 font-mono tracking-widest"
+                        />
+                        <span className="material-symbols-outlined text-sm text-on-surface-variant absolute right-3.5 top-1/2 -translate-y-1/2">lock</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    disabled={loading || loadingConfig}
+                    className="w-full h-12 rounded-full bg-primary text-black font-extrabold text-xs hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/20 active:scale-[0.98] transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+                  >
+                    {loading ? (
+                      <>
+                        <span className="material-symbols-outlined text-sm animate-spin">sync</span>
+                        <span>{t('processing_transaction')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{t('pay_now_btn')}</span>
+                        <span className="material-symbols-outlined text-sm select-none font-bold">arrow_forward</span>
+                      </>
+                    )}
+                  </button>
+
+                  <p className="text-[9px] text-center text-primary font-bold flex items-center justify-center gap-1 mt-1">
+                    <span className="material-symbols-outlined text-xs select-none">verified_user</span>
+                    {t('ssl_security_notice')}
+                  </p>
+                </form>
+              </div>
             </div>
           ) : (
             /* SUCCESS CONFIRM SCREEN */
@@ -365,7 +379,7 @@ export default function PaymentCC() {
                 </button>
                 <button 
                   type="button"
-                  onClick={() => navigate('/settings')}
+                  onClick={() => navigate('/settings?tab=subscription')}
                   className="text-[11px] text-on-surface-variant hover:text-white font-bold transition cursor-pointer"
                 >
                   {t('view_invoice_details')}
