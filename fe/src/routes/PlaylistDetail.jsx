@@ -33,6 +33,7 @@ export default function PlaylistDetail() {
   const [showAddSongsModal, setShowAddSongsModal] = useState(false);
   const [allSongs, setAllSongs] = useState([]);
   const [songSearchQuery, setSongSearchQuery] = useState('');
+  const [loadingSongs, setLoadingSongs] = useState(false);
   const actionMenuRef = useRef(null);
 
   // Close action menu on click outside
@@ -46,21 +47,50 @@ export default function PlaylistDetail() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Load all approved songs for the Add Songs modal
+  // Load approved songs for the Add Songs modal with debounce and limit
   useEffect(() => {
-    const fetchAllSongs = async () => {
+    if (!showAddSongsModal) return;
+
+    let isMounted = true;
+    let timerId = null;
+
+    const fetchSongs = async (query) => {
+      setLoadingSongs(true);
       try {
-        const data = await api.get('/songs?isApproved=true');
-        const songsList = Array.isArray(data) ? data : (data.songs || []);
-        setAllSongs(songsList);
+        let url = '/songs?isApproved=true';
+        if (query.trim()) {
+          url += `&q=${encodeURIComponent(query.trim())}`;
+        } else {
+          // If query is empty, only show 10 recently uploaded songs
+          url += '&page=1&limit=10';
+        }
+        const data = await api.get(url);
+        if (isMounted) {
+          const songsList = Array.isArray(data) ? data : (data.songs || []);
+          setAllSongs(songsList);
+        }
       } catch (err) {
         console.error(err);
+      } finally {
+        if (isMounted) setLoadingSongs(false);
       }
     };
-    if (showAddSongsModal) {
-      fetchAllSongs();
+
+    if (songSearchQuery.trim() === '') {
+      // Fetch immediately if query is empty
+      fetchSongs('');
+    } else {
+      // Debounce for 1.5 seconds (1-2 seconds as requested)
+      timerId = setTimeout(() => {
+        fetchSongs(songSearchQuery);
+      }, 1500);
     }
-  }, [showAddSongsModal]);
+
+    return () => {
+      isMounted = false;
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [songSearchQuery, showAddSongsModal]);
 
   const handleAddSong = async (song) => {
     try {
@@ -71,10 +101,8 @@ export default function PlaylistDetail() {
     }
   };
 
-  const filteredSongs = allSongs.filter(s => 
-    s.title.toLowerCase().includes(songSearchQuery.toLowerCase()) ||
-    s.artist.toLowerCase().includes(songSearchQuery.toLowerCase())
-  );
+  // We no longer need client-side filtering as the backend filters based on query q
+  const filteredSongs = allSongs;
 
 
   // File upload states for editing
@@ -643,7 +671,12 @@ export default function PlaylistDetail() {
 
             {/* Songs List */}
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-2 min-h-[250px] max-h-[350px]">
-              {filteredSongs.length > 0 ? (
+              {loadingSongs ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-primary gap-3 py-10">
+                  <span className="material-symbols-outlined text-3xl animate-spin">sync</span>
+                  <p className="text-[10px] text-on-surface-variant font-medium">Đang tìm kiếm bài hát...</p>
+                </div>
+              ) : filteredSongs.length > 0 ? (
                 filteredSongs.map(song => {
                   const isAdded = songs.some(s => s._id === song._id);
                   return (
