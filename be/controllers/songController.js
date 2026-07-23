@@ -1,5 +1,6 @@
 import Song from '../models/Song.js';
 import User from '../models/User.js';
+import Playlist from '../models/Playlist.js';
 import { saveBase64File } from '../utils/file.js';
 import crypto from 'crypto';
 import { updateLikedGenres, updateArtistGenres } from '../utils/genreHelpers.js';
@@ -125,13 +126,46 @@ export async function getAllSongs(req, res) {
           return cleanName.includes(cleanSearch);
         });
 
-        if (songs.length === 0 && matchingArtists.length === 0) {
+        // Find matching public playlists
+        const allPlaylists = await Playlist.find({ visibility: 'public', deleted_at: null }).populate('userId', 'name avatarUrl');
+        const matchingPlaylists = allPlaylists.filter(playlist => {
+          const cleanTitle = removeVietnameseTones(playlist.title).toLowerCase();
+          return cleanTitle.includes(cleanSearch);
+        });
+
+        // Pagination helper for sub-resources (artists, playlists)
+        const formatPaginatedObj = (items, pageQuery, limitQuery, defaultLimit = 5) => {
+          const page = parseInt(pageQuery, 10) || 1;
+          const limit = parseInt(limitQuery, 10) || defaultLimit;
+          const total = items.length;
+          const pages = Math.ceil(total / limit) || 1;
+          const skip = (page - 1) * limit;
+          const data = items.slice(skip, skip + limit);
+          return {
+            data,
+            pagination: {
+              total,
+              page,
+              pages,
+              limit
+            }
+          };
+        };
+
+        const artistPageQuery = req.query.artistPage || req.query.page;
+        const artistLimitQuery = req.query.artistLimit || 8;
+        const playlistPageQuery = req.query.playlistPage || req.query.page;
+        const playlistLimitQuery = req.query.playlistLimit || 5;
+
+        if (songs.length === 0 && matchingArtists.length === 0 && matchingPlaylists.length === 0) {
           // Get all candidates
           const candidateArtists = await User.find({ role: 'artist' }).select('name');
           const candidateSongs = await Song.find({ status: 'approved', deleted_at: null }).select('title');
+          const candidatePlaylists = await Playlist.find({ visibility: 'public', deleted_at: null }).select('title');
           const candidates = [
             ...candidateArtists.map(a => a.name),
-            ...candidateSongs.map(s => s.title)
+            ...candidateSongs.map(s => s.title),
+            ...candidatePlaylists.map(p => p.title)
           ];
 
           const closestMatch = findClosestCorrection(q, candidates);
@@ -151,17 +185,27 @@ export async function getAllSongs(req, res) {
               return cleanName.includes(cleanMatched);
             });
 
+            // Find matching playlists for closestMatch
+            const correctedPlaylists = allPlaylists.filter(playlist => {
+              const cleanTitle = removeVietnameseTones(playlist.title).toLowerCase();
+              return cleanTitle.includes(cleanMatched);
+            });
+
+            const artistsObj = formatPaginatedObj(correctedArtists, artistPageQuery, artistLimitQuery, 8);
+            const playlistsObj = formatPaginatedObj(correctedPlaylists, playlistPageQuery, playlistLimitQuery, 5);
+
             // Return results with suggestedQuery field
             if (req.query.page) {
               const page = parseInt(req.query.page, 10) || 1;
               const limit = parseInt(req.query.limit, 10) || 10;
               const skip = (page - 1) * limit;
               const total = correctedSongs.length;
-              const pages = Math.ceil(total / limit);
+              const pages = Math.ceil(total / limit) || 1;
               const paginated = correctedSongs.slice(skip, skip + limit);
               return res.json({
                 songs: filterSongsForUser(paginated, req.user),
-                artists: correctedArtists,
+                artists: artistsObj,
+                playlists: playlistsObj,
                 suggestedQuery: closestMatch,
                 pagination: {
                   total,
@@ -173,7 +217,8 @@ export async function getAllSongs(req, res) {
             }
             return res.json({
               songs: filterSongsForUser(correctedSongs, req.user),
-              artists: correctedArtists,
+              artists: artistsObj,
+              playlists: playlistsObj,
               suggestedQuery: closestMatch
             });
           }
@@ -184,17 +229,21 @@ export async function getAllSongs(req, res) {
           return res.json({ songs: [], recommendations: filterSongsForUser(recommendations, req.user), wasFuzzy: true });
         }
 
-        // Return paginated songs + matching artists
+        const artistsObj = formatPaginatedObj(matchingArtists, artistPageQuery, artistLimitQuery, 8);
+        const playlistsObj = formatPaginatedObj(matchingPlaylists, playlistPageQuery, playlistLimitQuery, 5);
+
+        // Return paginated songs + matching artists + matching playlists
         if (req.query.page) {
           const page = parseInt(req.query.page, 10) || 1;
           const limit = parseInt(req.query.limit, 10) || 10;
           const skip = (page - 1) * limit;
           const total = songs.length;
-          const pages = Math.ceil(total / limit);
+          const pages = Math.ceil(total / limit) || 1;
           const paginated = songs.slice(skip, skip + limit);
           return res.json({
             songs: filterSongsForUser(paginated, req.user),
-            artists: matchingArtists,
+            artists: artistsObj,
+            playlists: playlistsObj,
             pagination: {
               total,
               page,
@@ -205,7 +254,8 @@ export async function getAllSongs(req, res) {
         }
         return res.json({
           songs: filterSongsForUser(songs, req.user),
-          artists: matchingArtists
+          artists: artistsObj,
+          playlists: playlistsObj
         });
       }
       
