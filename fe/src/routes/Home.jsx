@@ -87,18 +87,17 @@ export default function Home() {
           ) : (
             <>
               {/* Category Bento Grid */}
-              {/* Category Bento Grid */}
               <section className="flex flex-col gap-5">
                 <h2 className="font-display-lg text-2xl font-bold tracking-tight text-white flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary">grid_view</span>
                   {t('explore_categories')}
                 </h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="flex overflow-x-auto gap-4 pb-2 no-scrollbar snap-x snap-mandatory md:grid md:grid-cols-3 lg:grid-cols-5 md:overflow-x-visible md:pb-0">
                   {categories.map((cat, idx) => (
                     <div
                       key={cat._id}
                       onClick={() => navigate(`/search-results?genre=${encodeURIComponent(cat.name)}`)}
-                      className={`h-28 rounded-2xl bg-gradient-to-br ${bentoGradients[idx % bentoGradients.length]} p-5 flex flex-col justify-between cursor-pointer hover:scale-105 transition-all duration-300 relative overflow-hidden group shadow-lg`}
+                      className={`w-[160px] sm:w-[180px] flex-shrink-0 snap-start md:w-auto md:flex-shrink h-28 rounded-2xl bg-gradient-to-br ${bentoGradients[idx % bentoGradients.length]} p-5 flex flex-col justify-between cursor-pointer hover:scale-105 transition-all duration-300 relative overflow-hidden group shadow-lg`}
                     >
                       {/* Ambient background symbol */}
                       <span className="material-symbols-outlined absolute -bottom-4 -right-4 text-7xl opacity-15 rotate-12 group-hover:scale-110 transition duration-300">

@@ -42,6 +42,7 @@ export default function FullscreenPlayer() {
   const [commentRating, setCommentRating] = useState(5);
   const [activePopupComment, setActivePopupComment] = useState(null);
   const [lyricsLines, setLyricsLines] = useState([]);
+  const [isLyricsOpen, setIsLyricsOpen] = useState(false);
   const [artistInfo, setArtistInfo] = useState(null);
 
   const [isLiked, setIsLiked] = useState(false);
@@ -306,50 +307,60 @@ export default function FullscreenPlayer() {
         </div>
 
         {/* Right Side: Scrollable Lyrics & Live Comments */}
-        <div className="flex flex-col gap-5 h-[380px] md:h-[450px]">
+        <div className={`flex flex-col gap-4 ${isLyricsOpen ? 'h-[380px]' : 'h-auto'} md:h-[450px] transition-all duration-300`}>
           
-          {/* Tab Menu */}
+          {/* Tab Menu / Mobile Toggle */}
           <div className="flex bg-[#121212]/60 p-1 rounded-xl border border-white/5">
-            <button className="flex-1 py-2.5 rounded-lg text-xs font-bold bg-white/5 text-white">
-              {t('lyrics')}
-            </button>
-          </div>
-
-          {/* Lyrics container */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#121212]/30 border border-white/5 p-6 rounded-2xl flex flex-col gap-4 text-center justify-center">
-            {lyricsLines.map((line, idx) => (
-              <p 
-                key={idx} 
-                className={`text-sm md:text-base font-bold transition duration-300 ${
-                  idx % 3 === Math.floor(currentTime / 10) % 3 
-                    ? 'text-white scale-105 font-extrabold' 
-                    : 'text-on-surface-variant/30 font-medium'
-                }`}
-              >
-                {line}
-              </p>
-            ))}
-          </div>
-
-          {/* Timeline comment posting form */}
-          <form onSubmit={handlePostComment} className="flex gap-2 bg-[#121212]/50 p-2 rounded-2xl border border-white/5 items-center">
-            <span className="text-[10px] font-bold font-mono text-primary px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl flex-shrink-0">
-              {formatTime(currentTime)}
-            </span>
-            <input 
-              type="text"
-              placeholder={t('comment_placeholder')}
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              className="flex-1 h-10 bg-transparent text-sm text-white placeholder-on-surface-variant outline-none px-2 font-medium"
-            />
             <button 
-              type="submit"
-              className="bg-primary text-black text-xs font-extrabold px-5 py-2.5 rounded-xl hover:scale-105 active:scale-95 transition cursor-pointer flex-shrink-0"
+              onClick={() => setIsLyricsOpen(!isLyricsOpen)}
+              className="flex-1 py-2.5 rounded-lg text-xs font-bold bg-white/5 text-white flex items-center justify-center gap-2 cursor-pointer"
             >
-              {t('send_comment')}
+              <span className="material-symbols-outlined text-base">lyrics</span>
+              <span>{t('lyrics')}</span>
+              <span className="material-symbols-outlined text-sm md:hidden">
+                {isLyricsOpen ? 'expand_less' : 'expand_more'}
+              </span>
             </button>
-          </form>
+          </div>
+
+          {/* Lyrics & Comment Form Container (Collapsible on mobile) */}
+          <div className={`${isLyricsOpen ? 'flex' : 'hidden md:flex'} flex-col gap-5 flex-1 min-h-0`}>
+            {/* Lyrics container */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#121212]/30 border border-white/5 p-6 rounded-2xl flex flex-col gap-4 text-center justify-center">
+              {lyricsLines.map((line, idx) => (
+                <p 
+                  key={idx} 
+                  className={`text-sm md:text-base font-bold transition duration-300 ${
+                    idx % 3 === Math.floor(currentTime / 10) % 3 
+                      ? 'text-white scale-105 font-extrabold' 
+                      : 'text-on-surface-variant/30 font-medium'
+                  }`}
+                >
+                  {line}
+                </p>
+              ))}
+            </div>
+
+            {/* Timeline comment posting form */}
+            <form onSubmit={handlePostComment} className="flex gap-2 bg-[#121212]/50 p-2 rounded-2xl border border-white/5 items-center">
+              <span className="text-[10px] font-bold font-mono text-primary px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl flex-shrink-0">
+                {formatTime(currentTime)}
+              </span>
+              <input 
+                type="text"
+                placeholder={t('comment_placeholder')}
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                className="flex-1 h-10 bg-transparent text-sm text-white placeholder-on-surface-variant outline-none px-2 font-medium"
+              />
+              <button 
+                type="submit"
+                className="bg-primary text-black text-xs font-extrabold px-5 py-2.5 rounded-xl hover:scale-105 active:scale-95 transition cursor-pointer flex-shrink-0"
+              >
+                {t('send_comment')}
+              </button>
+            </form>
+          </div>
         </div>
 
       </div>
@@ -409,10 +420,10 @@ export default function FullscreenPlayer() {
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center justify-between gap-1 md:gap-6 pb-4">
+        <div className="flex items-center justify-between gap-1 md:gap-6 pb-2 md:pb-4">
           
-          {/* Left Column: Like & Add Playlist buttons */}
-          <div className="flex items-center gap-1 md:gap-1.5 shrink-0">
+          {/* Left Column: Like & Add Playlist buttons (Desktop only) */}
+          <div className="hidden md:flex items-center gap-1 md:gap-1.5 shrink-0">
             {!isAdPlaying && (
               <>
                 <button 
@@ -434,11 +445,11 @@ export default function FullscreenPlayer() {
           </div>
 
           {/* Center Column: Playback controls */}
-          <div className="flex-1 flex items-center justify-center gap-3">
+          <div className="flex-1 flex items-center justify-center gap-2 md:gap-3">
             <button 
               disabled={isAdPlaying}
               onClick={() => setIsShuffle(!isShuffle)}
-              className={`p-2.5 rounded-full hover:bg-white/5 transition cursor-pointer ${isShuffle ? 'text-primary' : 'text-on-surface-variant hover:text-white'} ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+              className={`hidden md:inline-flex p-2.5 rounded-full hover:bg-white/5 transition cursor-pointer ${isShuffle ? 'text-primary' : 'text-on-surface-variant hover:text-white'} ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
               title="Shuffle"
             >
               <span className="material-symbols-outlined text-xl flex items-center justify-center">shuffle</span>
@@ -447,7 +458,7 @@ export default function FullscreenPlayer() {
             <button 
               disabled={isAdPlaying}
               onClick={playPrev}
-              className={`p-2.5 rounded-full hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+              className={`p-2 rounded-md md:p-2.5 md:rounded-full hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
               title="Previous"
             >
               <span className="material-symbols-outlined text-2xl flex items-center justify-center">skip_previous</span>
@@ -457,7 +468,7 @@ export default function FullscreenPlayer() {
             <button 
               disabled={isAdPlaying}
               onClick={() => seek(Math.max(0, currentTime - 10))}
-              className={`p-2.5 rounded-full hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+              className={`p-2 rounded-md md:p-2.5 md:rounded-full hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
               title="Backward 10s"
             >
               <span className="material-symbols-outlined text-2xl flex items-center justify-center">replay_10</span>
@@ -465,7 +476,7 @@ export default function FullscreenPlayer() {
 
             <button 
               onClick={togglePlay}
-              className="w-14 h-14 rounded-full bg-white text-black hover:bg-zinc-200 flex items-center justify-center hover:scale-105 transition cursor-pointer shadow-xl shrink-0"
+              className="w-13 h-13 md:w-14 md:h-14 rounded-full bg-white text-black hover:bg-zinc-200 flex items-center justify-center hover:scale-105 transition cursor-pointer shadow-xl shrink-0"
               title={isPlaying ? "Pause" : "Play"}
             >
               <span className="material-symbols-outlined text-3xl filled flex items-center justify-center">
@@ -477,7 +488,7 @@ export default function FullscreenPlayer() {
             <button 
               disabled={isAdPlaying}
               onClick={() => seek(Math.min(duration, currentTime + 10))}
-              className={`p-2.5 rounded-full hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+              className={`p-2 rounded-md md:p-2.5 md:rounded-full hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
               title="Forward 10s"
             >
               <span className="material-symbols-outlined text-2xl flex items-center justify-center">forward_10</span>
@@ -486,7 +497,7 @@ export default function FullscreenPlayer() {
             <button 
               disabled={isAdPlaying}
               onClick={playNext}
-              className={`p-2.5 rounded-full hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+              className={`p-2 rounded-md md:p-2.5 md:rounded-full hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
               title="Next"
             >
               <span className="material-symbols-outlined text-2xl flex items-center justify-center">skip_next</span>
@@ -495,7 +506,7 @@ export default function FullscreenPlayer() {
             <button 
               disabled={isAdPlaying}
               onClick={handleLoopToggle}
-              className={`p-2.5 rounded-full hover:bg-white/5 transition cursor-pointer relative ${loopMode !== 'none' ? 'text-primary' : 'text-on-surface-variant hover:text-white'} ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+              className={`hidden md:inline-flex p-2.5 rounded-full hover:bg-white/5 transition cursor-pointer relative ${loopMode !== 'none' ? 'text-primary' : 'text-on-surface-variant hover:text-white'} ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
               title="Loop"
             >
               <span className="material-symbols-outlined text-xl flex items-center justify-center">
@@ -504,8 +515,8 @@ export default function FullscreenPlayer() {
             </button>
           </div>
 
-          {/* Right Column: Volume Control */}
-          <div className="flex items-center gap-2.5 w-[24%] justify-end">
+          {/* Right Column: Volume Control (Desktop only) */}
+          <div className="hidden md:flex items-center gap-2.5 w-[24%] justify-end">
             <button 
               onClick={() => setIsMuted(!isMuted)}
               className="p-2 rounded-full hover:bg-white/5 text-on-surface-variant hover:text-white transition cursor-pointer"
@@ -529,6 +540,80 @@ export default function FullscreenPlayer() {
             />
           </div>
 
+        </div>
+
+        {/* Mobile Secondary Controls Row: Like & Playlist on Left | Shuffle, Loop & Volume on Right */}
+        <div className="flex md:hidden items-center justify-between pt-2 px-1 border-t border-white/5">
+          {/* Left Side: Like & Add to Playlist */}
+          <div className="flex items-center gap-1">
+            {!isAdPlaying && (
+              <>
+                <button 
+                  onClick={handleLikeToggle}
+                  className={`p-2.5 rounded-full hover:bg-white/5 transition cursor-pointer ${isLiked ? 'text-heart-active' : 'text-on-surface-variant'}`}
+                  title="Thích"
+                >
+                  <span className={`material-symbols-outlined text-2xl flex items-center justify-center ${isLiked ? 'filled' : ''}`}>favorite</span>
+                </button>
+
+                <button 
+                  onClick={() => setShowAddPlaylistModal(true)}
+                  className="p-2.5 rounded-full hover:bg-white/5 transition cursor-pointer text-on-surface-variant"
+                  title="Thêm vào danh sách phát"
+                >
+                  <span className="material-symbols-outlined text-2xl flex items-center justify-center">playlist_add</span>
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Right Side: Shuffle, Loop & Volume Control */}
+          <div className="flex items-center gap-1">
+            <button 
+              disabled={isAdPlaying}
+              onClick={() => setIsShuffle(!isShuffle)}
+              className={`p-2.5 rounded-full hover:bg-white/5 transition cursor-pointer ${isShuffle ? 'text-primary' : 'text-on-surface-variant'} ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+              title="Trộn bài"
+            >
+              <span className="material-symbols-outlined text-2xl flex items-center justify-center">shuffle</span>
+            </button>
+
+            <button 
+              disabled={isAdPlaying}
+              onClick={handleLoopToggle}
+              className={`p-2.5 rounded-full hover:bg-white/5 transition cursor-pointer ${loopMode !== 'none' ? 'text-primary' : 'text-on-surface-variant'} ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+              title="Lặp bài"
+            >
+              <span className="material-symbols-outlined text-2xl flex items-center justify-center">
+                {loopMode === 'single' ? 'repeat_one' : 'repeat'}
+              </span>
+            </button>
+
+            {/* Volume Control on Mobile */}
+            <div className="flex items-center gap-1 pl-1">
+              <button 
+                onClick={() => setIsMuted(!isMuted)}
+                className="p-2 rounded-full hover:bg-white/5 text-on-surface-variant hover:text-white transition cursor-pointer"
+                title="Mute/Unmute"
+              >
+                <span className="material-symbols-outlined text-2xl flex items-center justify-center">
+                  {isMuted || volume === 0 ? 'volume_off' : volume < 0.4 ? 'volume_down' : 'volume_up'}
+                </span>
+              </button>
+              <input 
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={isMuted ? 0 : volume}
+                onChange={(e) => {
+                  setVolume(parseFloat(e.target.value));
+                  setIsMuted(false);
+                }}
+                className="w-16 accent-primary"
+              />
+            </div>
+          </div>
         </div>
 
       </div>

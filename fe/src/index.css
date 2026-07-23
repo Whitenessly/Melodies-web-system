@@ -133,6 +133,15 @@
   background: rgba(255, 255, 255, 0.18);
 }
 
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Floating Layout Overrides for standard pages */
 main.md\:ml-sidebar-width {
   margin-top: 24px !important;

@@ -142,6 +142,15 @@ const translations = {
     songs_list: 'Songs List',
     remove_track: 'Remove Track',
     no_songs_in_playlist: 'No songs in this playlist.',
+    play_all: 'PLAY ALL',
+    shuffle: 'SHUFFLE',
+    add_songs: 'ADD SONGS',
+    edit_playlist_info: 'Edit Playlist Details',
+    delete_playlist: 'Delete Playlist',
+    playlist: 'PLAYLIST',
+    songs_count_suffix: 'songs',
+    hours_suffix: 'hours',
+    minutes_suffix: 'mins',
     
     // Artist Detail
     artist_not_found: 'Artist profile not found.',
@@ -598,6 +607,15 @@ const translations = {
     songs_list: 'Danh sách bài hát',
     remove_track: 'Xóa bài',
     no_songs_in_playlist: 'Không có bài hát nào trong playlist này.',
+    play_all: 'PHÁT TẤT CẢ',
+    shuffle: 'XÁO TRỘN',
+    add_songs: 'THÊM BÀI HÁT',
+    edit_playlist_info: 'Chỉnh sửa thông tin',
+    delete_playlist: 'Xóa danh sách phát',
+    playlist: 'DANH SÁCH PHÁT',
+    songs_count_suffix: 'bài hát',
+    hours_suffix: 'giờ',
+    minutes_suffix: 'phút',
     
     // Artist Detail
     artist_not_found: 'Không tìm thấy thông tin Nghệ sĩ.',

@@ -248,9 +248,9 @@ export default function PlaylistDetail() {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     if (h > 0) {
-      return `${h} giờ ${m} phút`;
+      return `${h} ${t('hours_suffix')} ${m} ${t('minutes_suffix')}`;
     }
-    return `${m} phút`;
+    return `${m} ${t('minutes_suffix')}`;
   };
 
   if (loading) {
@@ -291,8 +291,9 @@ export default function PlaylistDetail() {
         <main className="md:ml-sidebar-width flex-1 p-8 overflow-y-auto flex flex-col gap-8">
           
           {/* Playlist Header Section */}
-          <div className="flex flex-col md:flex-row gap-8 items-end mb-4 relative z-10">
-            <div className="w-40 h-40 md:w-52 md:h-52 rounded-2xl overflow-hidden shadow-2xl flex-shrink-0 border border-white/5 relative group bg-zinc-900">
+          <div className="flex flex-row items-center md:items-end gap-4 md:gap-8 mb-4 relative z-10">
+            {/* Album cover image on LEFT */}
+            <div className="w-28 h-28 xs:w-32 xs:h-32 md:w-52 md:h-52 rounded-2xl overflow-hidden shadow-2xl flex-shrink-0 border border-white/5 relative group bg-zinc-900">
               <img 
                 src={playlist.thumbnailUrl || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400'} 
                 alt="" 
@@ -300,25 +301,28 @@ export default function PlaylistDetail() {
               />
             </div>
             
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-primary">
+            {/* Playlist Info on RIGHT */}
+            <div className="flex flex-col gap-1 md:gap-1.5 flex-1 min-w-0">
+              <span className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-primary">
                 {playlist.isLikedSpecial ? t('playlist') : t(playlist.visibility) || 'PLAYLIST'}
               </span>
               
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="font-display-lg text-3xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tighter leading-none">
+              <div className="flex items-center gap-3 flex-wrap min-w-0">
+                <h1 className="font-display-lg text-xl xs:text-2xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tighter leading-tight break-words line-clamp-2 md:line-clamp-none">
                   {playlist.title}
                 </h1>
               </div>
               
-              <p className="text-xs text-on-surface-variant mt-2 max-w-xl leading-relaxed font-medium">
-                {playlist.description}
-              </p>
+              {playlist.description && (
+                <p className="text-[11px] md:text-xs text-on-surface-variant mt-0.5 max-w-xl leading-relaxed font-medium line-clamp-2 md:line-clamp-none">
+                  {playlist.description}
+                </p>
+              )}
               
-              <div className="flex items-center gap-2 mt-3 text-xs text-on-surface-variant font-semibold">
-                <span className="text-white font-bold">{playlist.userId?.name || playlist.owner || 'Melodies User'}</span>
+              <div className="flex items-center gap-1.5 md:gap-2 mt-2 text-[10px] md:text-xs text-on-surface-variant font-semibold flex-wrap">
+                <span className="text-white font-bold truncate max-w-[120px] md:max-w-none">{playlist.userId?.name || playlist.owner || 'Melodies User'}</span>
                 <span className="w-1 h-1 rounded-full bg-on-surface-variant"></span>
-                <span className="text-white">{songs.length} bài hát</span>
+                <span className="text-white">{songs.length} {t('songs_count_suffix')}</span>
                 {songs.length > 0 && (
                   <>
                     <span className="w-1 h-1 rounded-full bg-on-surface-variant"></span>
@@ -330,46 +334,46 @@ export default function PlaylistDetail() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-2 md:gap-4 mb-4 flex-wrap">
             <button 
               onClick={handlePlayAll}
               disabled={songs.length === 0}
-              className="h-12 px-8 rounded-full bg-primary text-black font-extrabold flex items-center gap-2 hover:scale-105 active:scale-95 transition shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+              className="h-10 md:h-12 px-4 md:px-8 rounded-full bg-primary text-black font-extrabold flex items-center gap-1.5 md:gap-2 hover:scale-105 active:scale-95 transition shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-[11px] md:text-xs shrink-0"
             >
-              <span className="material-symbols-outlined text-xl filled">play_arrow</span>
-              <span>PHÁT TẤT CẢ</span>
+              <span className="material-symbols-outlined text-lg md:text-xl filled">play_arrow</span>
+              <span className="whitespace-nowrap">{t('play_all')}</span>
             </button>
             
             <button 
               onClick={handleShufflePlay}
               disabled={songs.length === 0}
-              className="h-12 px-6 rounded-full border border-white/20 font-bold flex items-center gap-2 hover:bg-white/5 active:scale-95 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs text-white"
+              className="h-10 md:h-12 px-3.5 md:px-6 rounded-full border border-white/20 font-bold flex items-center gap-1.5 md:gap-2 hover:bg-white/5 active:scale-95 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-[11px] md:text-xs text-white shrink-0"
             >
-              <span className="material-symbols-outlined text-lg">shuffle</span>
-              <span>XÁO TRỘN</span>
+              <span className="material-symbols-outlined text-base md:text-lg">shuffle</span>
+              <span className="whitespace-nowrap">{t('shuffle')}</span>
             </button>
 
             {isOwner && !playlist.isLikedSpecial && (
               <button 
                 onClick={() => setShowAddSongsModal(true)}
-                className="h-12 px-6 rounded-full border border-white/20 font-bold flex items-center gap-2 hover:bg-white/5 active:scale-95 transition cursor-pointer text-xs text-white"
+                className="h-10 md:h-12 px-3.5 md:px-6 rounded-full border border-white/20 font-bold flex items-center gap-1.5 md:gap-2 hover:bg-white/5 active:scale-95 transition cursor-pointer text-[11px] md:text-xs text-white shrink-0"
               >
-                <span className="material-symbols-outlined text-lg">add</span>
-                <span>THÊM BÀI HÁT</span>
+                <span className="material-symbols-outlined text-base md:text-lg">add</span>
+                <span className="whitespace-nowrap">{t('add_songs')}</span>
               </button>
             )}
 
             {isOwner && !playlist.isLikedSpecial && (
-              <div className="relative" ref={actionMenuRef}>
+              <div className="relative shrink-0" ref={actionMenuRef}>
                 <button 
                   onClick={() => setShowActionMenu(!showActionMenu)}
-                  className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/5 hover:border-white/40 transition cursor-pointer text-white"
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/5 hover:border-white/40 transition cursor-pointer text-white"
                 >
-                  <span className="material-symbols-outlined text-lg">more_horiz</span>
+                  <span className="material-symbols-outlined text-base md:text-lg">more_horiz</span>
                 </button>
 
                 {showActionMenu && (
-                  <div className="absolute left-0 top-13 w-48 glass-panel rounded-2xl p-1.5 shadow-2xl z-50 border border-white/10 flex flex-col gap-0.5 mt-1">
+                  <div className="absolute right-0 top-11 md:top-13 w-48 glass-panel rounded-2xl p-1.5 shadow-2xl z-50 border border-white/10 flex flex-col gap-0.5 mt-1">
                     <button 
                       onClick={() => {
                         setEditTitle(playlist.title);
@@ -382,7 +386,7 @@ export default function PlaylistDetail() {
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/5 cursor-pointer text-xs font-bold text-white transition text-left"
                     >
                       <span className="material-symbols-outlined text-base">edit</span>
-                      <span>Chỉnh sửa thông tin</span>
+                      <span>{t('edit_playlist_info')}</span>
                     </button>
                     <button 
                       onClick={() => {
@@ -392,7 +396,7 @@ export default function PlaylistDetail() {
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/5 cursor-pointer text-xs font-bold text-error transition text-left border-t border-white/5 mt-1 pt-1.5"
                     >
                       <span className="material-symbols-outlined text-base">delete</span>
-                      <span>Xóa danh sách phát</span>
+                      <span>{t('delete_playlist')}</span>
                     </button>
                   </div>
                 )}
@@ -400,93 +404,139 @@ export default function PlaylistDetail() {
             )}
           </div>
 
-          {/* Track List Table */}
-          <div className="w-full overflow-x-auto">
+          {/* Track List Section */}
+          <div className="w-full max-w-full overflow-x-hidden">
             {songs.length > 0 ? (
-              <table className="w-full text-left border-collapse min-w-[600px]">
-                <thead>
-                  <tr className="border-b border-white/5 text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">
-                    <th className="pb-4 pl-4 w-12">#</th>
-                    <th className="pb-4">TIÊU ĐỀ</th>
-                    <th className="pb-4 hidden lg:table-cell">ALBUM</th>
-                    <th className="pb-4 hidden md:table-cell">NGÀY THÊM</th>
-                    <th className="pb-4 text-right pr-4 w-28">
-                      <span className="material-symbols-outlined text-base">schedule</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
+              <>
+                {/* Mobile Track List View */}
+                <div className="flex flex-col gap-1.5 md:hidden">
                   {songs.map((song, idx) => (
-                    <tr 
+                    <div 
                       key={song._id}
-                      className="track-row group hover:bg-white/[0.04] transition duration-150 cursor-pointer"
+                      onClick={() => playSong(song, songs, idx)}
+                      className="flex items-center justify-between p-2.5 rounded-xl hover:bg-white/[0.04] active:bg-white/[0.08] transition cursor-pointer border border-white/5 gap-3 min-w-0"
                     >
-                      {/* Index / Hover Play */}
-                      <td className="py-4 pl-4 text-on-surface-variant font-mono text-xs w-12">
-                        <span className="group-hover:hidden block">{idx + 1}</span>
-                        <button 
-                          onClick={() => playSong(song, songs, idx)}
-                          className="group-hover:flex hidden items-center justify-center text-primary hover:scale-105 transition cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined text-lg filled">play_arrow</span>
-                        </button>
-                      </td>
-
-                      {/* Title, Artist and Cover Thumbnail */}
-                      <td className="py-4">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 shrink-0 border border-white/5">
-                            <img 
-                              src={song.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=80'} 
-                              className="w-full h-full object-cover" 
-                              alt="" 
-                            />
-                          </div>
-                          <div>
-                            <p 
-                              onClick={() => playSong(song, songs, idx)}
-                              className="text-xs font-bold text-white group-hover:text-primary transition cursor-pointer"
-                            >
-                              {song.title}
-                            </p>
-                            <p className="text-[10px] text-on-surface-variant mt-0.5">{song.artist}</p>
-                          </div>
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <span className="text-xs font-semibold text-on-surface-variant w-4 text-center shrink-0">{idx + 1}</span>
+                        <img 
+                          src={song.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=80'} 
+                          className="w-10 h-10 rounded-lg object-cover shrink-0 border border-white/5" 
+                          alt="" 
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-white truncate">{song.title}</p>
+                          <p className="text-[10px] text-on-surface-variant truncate mt-0.5">{song.artist}</p>
                         </div>
-                      </td>
-
-                      {/* Album */}
-                      <td className="py-4 hidden lg:table-cell text-xs text-on-surface-variant font-medium">
-                        {song.album || 'Single'}
-                      </td>
-
-                      {/* Added Date */}
-                      <td className="py-4 hidden md:table-cell text-xs text-on-surface-variant font-medium">
-                        {song.createdAt ? new Date(song.createdAt).toLocaleDateString('vi-VN') : 'Mới đây'}
-                      </td>
-
-                      {/* Duration & Delete Item */}
-                      <td className="py-4 text-right pr-4 text-xs text-on-surface-variant font-mono">
-                        <div className="flex items-center justify-end gap-3">
-                          <span>
-                            {Math.floor(song.duration / 60)}:{(song.duration % 60) < 10 ? '0' : ''}{song.duration % 60}
-                          </span>
-                          
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-[11px] text-on-surface-variant font-mono">
+                          {Math.floor(song.duration / 60)}:{(song.duration % 60) < 10 ? '0' : ''}{song.duration % 60}
+                        </span>
+                        {isOwner && (
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
                               handleRemoveTrack(song._id);
                             }}
-                            className="opacity-0 group-hover:opacity-100 text-on-surface-variant hover:text-error transition p-1 hover:bg-white/10 rounded-full cursor-pointer flex items-center justify-center"
+                            className="text-on-surface-variant hover:text-error transition p-1 rounded-full cursor-pointer flex items-center justify-center"
                             title={t('remove_track')}
                           >
                             <span className="material-symbols-outlined text-base">delete</span>
                           </button>
-                        </div>
-                      </td>
-                    </tr>
+                        )}
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+
+                {/* Desktop Track List Table */}
+                <table className="hidden md:table w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/5 text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">
+                      <th className="pb-4 pl-4 w-12">#</th>
+                      <th className="pb-4">TIÊU ĐỀ</th>
+                      <th className="pb-4 hidden lg:table-cell">ALBUM</th>
+                      <th className="pb-4 hidden md:table-cell">NGÀY THÊM</th>
+                      <th className="pb-4 text-right pr-4 w-28">
+                        <span className="material-symbols-outlined text-base">schedule</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {songs.map((song, idx) => (
+                      <tr 
+                        key={song._id}
+                        className="track-row group hover:bg-white/[0.04] transition duration-150 cursor-pointer"
+                      >
+                        {/* Index / Hover Play */}
+                        <td className="py-4 pl-4 text-on-surface-variant font-mono text-xs w-12">
+                          <span className="group-hover:hidden block">{idx + 1}</span>
+                          <button 
+                            onClick={() => playSong(song, songs, idx)}
+                            className="group-hover:flex hidden items-center justify-center text-primary hover:scale-105 transition cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-lg filled">play_arrow</span>
+                          </button>
+                        </td>
+
+                        {/* Title, Artist and Cover Thumbnail */}
+                        <td className="py-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 shrink-0 border border-white/5">
+                              <img 
+                                src={song.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=80'} 
+                                className="w-full h-full object-cover" 
+                                alt="" 
+                              />
+                            </div>
+                            <div>
+                              <p 
+                                onClick={() => playSong(song, songs, idx)}
+                                className="text-xs font-bold text-white group-hover:text-primary transition cursor-pointer"
+                              >
+                                {song.title}
+                              </p>
+                              <p className="text-[10px] text-on-surface-variant mt-0.5">{song.artist}</p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Album */}
+                        <td className="py-4 hidden lg:table-cell text-xs text-on-surface-variant font-medium">
+                          {song.album || 'Single'}
+                        </td>
+
+                        {/* Added Date */}
+                        <td className="py-4 hidden md:table-cell text-xs text-on-surface-variant font-medium">
+                          {song.createdAt ? new Date(song.createdAt).toLocaleDateString('vi-VN') : 'Mới đây'}
+                        </td>
+
+                        {/* Duration & Delete Item */}
+                        <td className="py-4 text-right pr-4 text-xs text-on-surface-variant font-mono">
+                          <div className="flex items-center justify-end gap-3">
+                            <span>
+                              {Math.floor(song.duration / 60)}:{(song.duration % 60) < 10 ? '0' : ''}{song.duration % 60}
+                            </span>
+                            
+                            {isOwner && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveTrack(song._id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 text-on-surface-variant hover:text-error transition p-1 hover:bg-white/10 rounded-full cursor-pointer flex items-center justify-center"
+                                title={t('remove_track')}
+                              >
+                                <span className="material-symbols-outlined text-base">delete</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
             ) : (
               <div className="bg-[#121212]/40 p-8 text-center rounded-2xl border border-white/5">
                 <p className="text-xs text-on-surface-variant font-medium">{t('no_songs_in_playlist')}</p>
