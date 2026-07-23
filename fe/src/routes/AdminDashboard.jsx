@@ -692,11 +692,11 @@ export default function AdminDashboard() {
                       <div className="grid grid-cols-2 gap-3 mt-1">
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] font-bold text-on-surface-variant">Merchant ID</label>
-                          <input type="text" value={momoMerchant} onChange={e => setMomoMerchant(e.target.value)} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition" />
+                          <input type="text" value={momoMerchant} onChange={e => setMomoMerchant(e.target.value)} onCopy={e => e.preventDefault()} onCut={e => e.preventDefault()} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition select-none" />
                         </div>
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] font-bold text-on-surface-variant">Secret Key</label>
-                          <input type="password" value={momoSecret} onChange={e => setMomoSecret(e.target.value)} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition" />
+                          <input type="password" value={momoSecret} onChange={e => setMomoSecret(e.target.value)} onCopy={e => e.preventDefault()} onCut={e => e.preventDefault()} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition select-none" />
                         </div>
                       </div>
                       <button 
@@ -717,11 +717,11 @@ export default function AdminDashboard() {
                       <div className="grid grid-cols-2 gap-3 mt-1">
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] font-bold text-on-surface-variant">Merchant ID</label>
-                          <input type="text" value={vnpayMerchant} onChange={e => setVnpayMerchant(e.target.value)} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition" />
+                          <input type="text" value={vnpayMerchant} onChange={e => setVnpayMerchant(e.target.value)} onCopy={e => e.preventDefault()} onCut={e => e.preventDefault()} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition select-none" />
                         </div>
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] font-bold text-on-surface-variant">Secret Key</label>
-                          <input type="password" value={vnpaySecret} onChange={e => setVnpaySecret(e.target.value)} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition" />
+                          <input type="password" value={vnpaySecret} onChange={e => setVnpaySecret(e.target.value)} onCopy={e => e.preventDefault()} onCut={e => e.preventDefault()} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition select-none" />
                         </div>
                       </div>
                       <button 
@@ -742,11 +742,11 @@ export default function AdminDashboard() {
                       <div className="grid grid-cols-2 gap-3 mt-1">
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] font-bold text-on-surface-variant">Publishable Key</label>
-                          <input type="text" value={stripePublishable} onChange={e => setStripePublishable(e.target.value)} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition" />
+                          <input type="password" value={stripePublishable} onChange={e => setStripePublishable(e.target.value)} onCopy={e => e.preventDefault()} onCut={e => e.preventDefault()} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition select-none" />
                         </div>
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] font-bold text-on-surface-variant">Secret Key</label>
-                          <input type="password" value={stripeSecret} onChange={e => setStripeSecret(e.target.value)} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition" />
+                          <input type="password" value={stripeSecret} onChange={e => setStripeSecret(e.target.value)} onCopy={e => e.preventDefault()} onCut={e => e.preventDefault()} className="h-9 px-3 bg-[#121212] border border-white/5 rounded-lg text-[10px] text-white focus:border-primary transition select-none" />
                         </div>
                       </div>
                       <button 
