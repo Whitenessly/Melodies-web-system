@@ -182,8 +182,8 @@ export default function Home() {
                           <button
                             onClick={() => handleFollowToggle(art)}
                             className={`text-[10px] font-bold px-4 py-1.5 rounded-full transition cursor-pointer flex-shrink-0 ${isFollowing
-                                ? 'border border-white/20 text-white hover:bg-white/10'
-                                : 'bg-primary text-black hover:scale-105'
+                              ? 'border border-white/20 text-white hover:bg-white/10'
+                              : 'bg-primary text-black hover:scale-105'
                               }`}
                           >
                             {isFollowing ? 'Following' : 'Follow'}

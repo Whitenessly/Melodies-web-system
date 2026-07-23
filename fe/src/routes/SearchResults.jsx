@@ -258,7 +258,7 @@ export default function SearchResults() {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-6">
+                          <div className="flex items-center gap-2 md:gap-6 shrink-0">
                             {user && (
                               <button
                                 type="button"
@@ -266,18 +266,18 @@ export default function SearchResults() {
                                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition cursor-pointer text-on-surface-variant hover:text-white"
                               >
                                 {user.likedSongs?.includes(song._id) ? (
-                                  <span className="material-symbols-outlined text-heart-active filled text-lg">favorite</span>
+                                  <span className="material-symbols-outlined text-heart-active filled text-base md:text-lg">favorite</span>
                                 ) : (
-                                  <span className="material-symbols-outlined text-lg opacity-0 group-hover:opacity-100 hover:scale-110 transition">favorite</span>
+                                  <span className="material-symbols-outlined text-base md:text-lg opacity-70 md:opacity-0 group-hover:opacity-100 hover:scale-110 transition">favorite</span>
                                 )}
                               </button>
                             )}
 
-                            <span className="text-xs text-on-surface-variant font-mono">{Math.floor(song.duration / 60)}:{(song.duration % 60) < 10 ? '0' : ''}{song.duration % 60}</span>
-                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-white/5 border border-white/10 rounded text-on-surface-variant">
+                            <span className="text-xs text-on-surface-variant font-mono hidden xs:inline">{Math.floor(song.duration / 60)}:{(song.duration % 60) < 10 ? '0' : ''}{song.duration % 60}</span>
+                            <span className="text-[9px] md:text-[10px] uppercase font-bold tracking-wider px-1.5 md:px-2 py-0.5 bg-white/5 border border-white/10 rounded text-on-surface-variant hidden sm:inline">
                               {song.genre}
                             </span>
-                            <span className="material-symbols-outlined text-primary opacity-0 group-hover:opacity-100 transition filled">
+                            <span className="material-symbols-outlined text-primary text-xl md:text-2xl transition filled">
                               play_arrow
                             </span>
                           </div>

@@ -409,25 +409,25 @@ export default function FullscreenPlayer() {
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center justify-between gap-6 pb-4">
+        <div className="flex items-center justify-between gap-1 md:gap-6 pb-4">
           
           {/* Left Column: Like & Add Playlist buttons */}
-          <div className="flex items-center gap-1.5 w-[24%] justify-start">
+          <div className="flex items-center gap-1 md:gap-1.5 shrink-0">
             {!isAdPlaying && (
               <>
                 <button 
                   onClick={handleLikeToggle}
-                  className={`transition cursor-pointer p-2.5 rounded-full hover:bg-white/5 ${isLiked ? 'text-heart-active' : 'text-on-surface-variant hover:text-white'}`}
+                  className={`transition cursor-pointer p-2 md:p-2.5 rounded-full hover:bg-white/5 ${isLiked ? 'text-heart-active' : 'text-on-surface-variant hover:text-white'}`}
                   title="Thích"
                 >
-                  <span className={`material-symbols-outlined text-2xl flex items-center justify-center ${isLiked ? 'filled' : ''}`}>favorite</span>
+                  <span className={`material-symbols-outlined text-xl md:text-2xl flex items-center justify-center ${isLiked ? 'filled' : ''}`}>favorite</span>
                 </button>
                 <button 
                   onClick={() => setShowAddPlaylistModal(true)}
-                  className="transition cursor-pointer p-2.5 rounded-full hover:bg-white/5 text-on-surface-variant hover:text-white"
+                  className="transition cursor-pointer p-2 md:p-2.5 rounded-full hover:bg-white/5 text-on-surface-variant hover:text-white"
                   title="Thêm vào danh sách phát"
                 >
-                  <span className="material-symbols-outlined text-2xl flex items-center justify-center">playlist_add</span>
+                  <span className="material-symbols-outlined text-xl md:text-2xl flex items-center justify-center">playlist_add</span>
                 </button>
               </>
             )}

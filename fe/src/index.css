@@ -156,7 +156,15 @@ main.md\:ml-sidebar-width {
 
 @media (max-width: 767px) {
   main.md\:ml-sidebar-width {
-    margin-left: 24px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 130px !important;
+    border-radius: 0 !important;
+    border: none !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    padding-top: 16px !important;
   }
 }
 

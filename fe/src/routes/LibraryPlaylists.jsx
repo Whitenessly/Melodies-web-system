@@ -125,19 +125,19 @@ export default function LibraryPlaylists() {
               <span className="material-symbols-outlined text-4xl animate-spin">sync</span>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
               {/* Liked Songs Special Bento card */}
               <div 
                 onClick={() => navigate('/playlist-detail?id=liked')}
-                className="p-6 rounded-2xl bg-gradient-to-br from-tertiary to-primary/60 flex flex-col justify-between cursor-pointer hover:scale-105 hover:-translate-y-1 transition duration-300 shadow-xl min-h-[200px] relative overflow-hidden group border border-white/5"
+                className="col-span-2 sm:col-span-1 p-5 md:p-6 rounded-2xl bg-gradient-to-br from-tertiary to-primary/60 flex flex-col justify-between cursor-pointer hover:scale-105 hover:-translate-y-1 transition duration-300 shadow-xl min-h-[160px] md:min-h-[200px] relative overflow-hidden group border border-white/5"
               >
-                <span className="material-symbols-outlined absolute -bottom-4 -right-4 text-9xl opacity-20 group-hover:scale-110 transition duration-300">favorite</span>
+                <span className="material-symbols-outlined absolute -bottom-4 -right-4 text-7xl md:text-9xl opacity-20 group-hover:scale-110 transition duration-300">favorite</span>
                 <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-white bg-white/20 px-2.5 py-1 rounded-full backdrop-blur-sm self-start">Special Collection</span>
-                  <h3 className="font-display-lg text-xl font-bold text-white uppercase tracking-wider mt-4">{t('liked_songs')}</h3>
-                  <p className="text-xs text-white/85 mt-2 font-medium">{t('liked_songs_desc')}</p>
+                  <span className="text-[9px] md:text-[10px] font-extrabold uppercase tracking-wider text-white bg-white/20 px-2 py-0.5 md:px-2.5 md:py-1 rounded-full backdrop-blur-sm self-start">Special Collection</span>
+                  <h3 className="font-display-lg text-lg md:text-xl font-bold text-white uppercase tracking-wider mt-3 md:mt-4">{t('liked_songs')}</h3>
+                  <p className="text-xs text-white/85 mt-1 md:mt-2 font-medium">{t('liked_songs_desc')}</p>
                 </div>
-                <p className="text-xs font-extrabold text-white">{likedSongsCount} {t('songs_count')}</p>
+                <p className="text-xs font-extrabold text-white mt-2">{likedSongsCount} {t('songs_count')}</p>
               </div>
 
               {/* User Playlists list */}

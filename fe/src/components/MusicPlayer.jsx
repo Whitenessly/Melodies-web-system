@@ -119,27 +119,27 @@ export default function MusicPlayer() {
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className={`fixed bottom-0 left-0 w-full h-[112px] bg-[#0c0c0c]/85 backdrop-blur-xl border-t border-white/5 flex flex-col justify-between px-8 py-3 shadow-2xl transition-all duration-300 ${showAddPlaylistModal ? 'z-[100]' : 'z-40'}`}>
+    <div className={`fixed bottom-16 left-0 w-full md:bottom-0 md:left-0 h-16 md:h-[112px] bg-[#0c0c0c]/90 md:bg-[#0c0c0c]/85 backdrop-blur-xl border-t border-white/5 flex flex-col justify-center md:justify-between px-3 py-1.5 md:px-8 md:py-3 shadow-2xl transition-all duration-300 ${showAddPlaylistModal ? 'z-[100]' : 'z-40'}`}>
       {/* Free User Advertisement Warning Top Bar */}
       {user?.premium_status === 'FREE' && !isAdPlaying && (
-        <div className="absolute -top-6 left-0 w-full h-6 bg-gradient-to-r from-primary to-[#0c0c0c] flex items-center justify-between px-8">
-          <p className="text-[10px] text-black font-extrabold flex items-center gap-1.5 uppercase tracking-wide">
+        <div className="absolute -top-6 left-0 w-full h-6 bg-gradient-to-r from-primary to-[#0c0c0c] flex items-center justify-between px-4 md:px-8">
+          <p className="text-[9px] md:text-[10px] text-black font-extrabold flex items-center gap-1 uppercase tracking-wide truncate">
             <span className="material-symbols-outlined text-xs animate-pulse">campaign</span>
             {t('free_banner')}
           </p>
-          <button 
+          <button
             onClick={() => navigate('/subscription-plans')}
-            className="text-[9px] text-black font-bold hover:underline cursor-pointer bg-white/80 px-2.5 py-0.5 rounded-full transition"
+            className="text-[9px] text-black font-bold hover:underline cursor-pointer bg-white/80 px-2 py-0.5 rounded-full transition shrink-0"
           >
-            Upgrade Now
+            Upgrade
           </button>
         </div>
       )}
 
       {/* Ad active top bar indicator */}
       {isAdPlaying && (
-        <div className="absolute -top-6 left-0 w-full h-6 bg-error flex items-center justify-center px-8 animate-pulse">
-          <p className="text-[10px] text-white font-bold flex items-center gap-1.5 uppercase tracking-wider">
+        <div className="absolute -top-6 left-0 w-full h-6 bg-error flex items-center justify-center px-4 md:px-8 animate-pulse">
+          <p className="text-[9px] md:text-[10px] text-white font-bold flex items-center gap-1 uppercase tracking-wider truncate">
             <span className="material-symbols-outlined text-xs">warning</span>
             {t('playing_ad')}: {activeAd?.title || 'Quảng Cáo Tài Trợ'} ({formatTime(duration - currentTime)} còn lại)
           </p>
@@ -147,62 +147,81 @@ export default function MusicPlayer() {
       )}
 
       {/* Main Player Row */}
-      <div className="flex-1 flex items-center justify-between gap-6">
-        
+      <div className="flex-1 flex items-center justify-between gap-2 md:gap-6">
+
         {/* Left Side: Thumbnail & Track Info */}
-        <div className="flex items-center gap-4 w-[28%] min-w-[200px]">
-          <div 
+        <div className="flex items-center gap-3 flex-1 min-w-0 md:w-[28%] md:min-w-[200px] md:flex-initial">
+          <div
             onClick={isAdPlaying ? handleAdClick : () => navigate('/player')}
-            className={`w-16 h-16 rounded-xl overflow-hidden bg-[#121212] cursor-pointer relative group flex-shrink-0 border border-white/5 transition-all duration-200 ${isAdPlaying ? 'ring-2 ring-primary' : 'hover:border-white/20'}`}
+            className={`w-11 h-11 md:w-16 md:h-16 rounded-xl overflow-hidden bg-[#121212] cursor-pointer relative group flex-shrink-0 border border-white/5 transition-all duration-200 ${isAdPlaying ? 'ring-2 ring-primary' : 'hover:border-white/20'}`}
           >
-            <img 
-              src={isAdPlaying ? (activeAd?.imageUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100') : (currentSong?.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100')} 
-              alt={isAdPlaying ? activeAd?.title : currentSong?.title} 
+            <img
+              src={isAdPlaying ? (activeAd?.imageUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100') : (currentSong?.thumbnailUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100')}
+              alt={isAdPlaying ? activeAd?.title : currentSong?.title}
               className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
             />
             {!isAdPlaying && (
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                <span className="material-symbols-outlined text-white text-xl">open_in_full</span>
+                <span className="material-symbols-outlined text-white text-lg md:text-xl">open_in_full</span>
               </div>
             )}
           </div>
-          
-          <div className="flex-1 min-w-0">
-            <p 
-              onClick={isAdPlaying ? handleAdClick : () => navigate('/player')}
-              className="text-sm font-bold text-white truncate hover:text-primary cursor-pointer transition duration-150"
-            >
+
+          <div className="flex-1 min-w-0" onClick={isAdPlaying ? handleAdClick : () => navigate('/player')}>
+            <p className="text-xs md:text-sm font-bold text-white truncate hover:text-primary cursor-pointer transition duration-150">
               {isAdPlaying ? activeAd?.title : currentSong?.title}
             </p>
-            <p className="text-xs text-on-surface-variant truncate mt-0.5">
+            <p className="text-[10px] md:text-xs text-on-surface-variant truncate mt-0.5">
               {isAdPlaying ? activeAd?.clientName : currentSong?.artist}
             </p>
           </div>
 
           {!isAdPlaying && (
-            <div className="flex items-center gap-1 shrink-0">
-              <button 
+            <div className="flex items-center gap-0.5 md:gap-1 shrink-0">
+              <button
                 onClick={handleLikeToggle}
-                className={`transition cursor-pointer p-1.5 rounded-lg hover:bg-white/5 ${isLiked ? 'text-heart-active' : 'text-on-surface-variant hover:text-white'}`}
+                className={`transition cursor-pointer p-1 md:p-1.5 rounded-lg hover:bg-white/5 ${isLiked ? 'text-heart-active' : 'text-on-surface-variant hover:text-white'}`}
               >
-                <span className={`material-symbols-outlined ${isLiked ? 'filled' : ''}`}>favorite</span>
-              </button>
-              <button 
-                onClick={() => setShowAddPlaylistModal(true)}
-                className="transition cursor-pointer p-1.5 rounded-lg hover:bg-white/5 text-on-surface-variant hover:text-white"
-                title="Thêm vào danh sách phát"
-              >
-                <span className="material-symbols-outlined text-lg">playlist_add</span>
+                <span className={`material-symbols-outlined text-lg md:text-xl ${isLiked ? 'filled' : ''}`}>favorite</span>
               </button>
             </div>
           )}
         </div>
 
-        {/* Center: Playback Controls & Waveform */}
-        <div className="flex-1 max-w-[48%] flex flex-col items-center gap-1">
+        {/* Mobile Quick Controls: Previous -> Play -> Next */}
+        <div className="flex items-center gap-1 md:hidden shrink-0">
+          <button
+            disabled={isAdPlaying}
+            onClick={playPrev}
+            className={`p-1 rounded-lg text-on-surface-variant hover:text-white transition ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+            title="Previous"
+          >
+            <span className="material-symbols-outlined text-2xl">skip_previous</span>
+          </button>
+          <button
+            onClick={togglePlay}
+            className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center active:scale-95 transition cursor-pointer shadow-lg"
+            title={isPlaying ? "Pause" : "Play"}
+          >
+            <span className="material-symbols-outlined text-xl filled">
+              {isPlaying ? 'pause' : 'play_arrow'}
+            </span>
+          </button>
+          <button
+            disabled={isAdPlaying}
+            onClick={playNext}
+            className={`p-1 rounded-lg text-on-surface-variant hover:text-white transition ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
+            title="Next"
+          >
+            <span className="material-symbols-outlined text-2xl">skip_next</span>
+          </button>
+        </div>
+
+        {/* Center: Playback Controls & Waveform (Desktop) */}
+        <div className="hidden md:flex flex-1 max-w-[48%] flex-col items-center gap-1">
           {/* Audio Controls Buttons */}
           <div className="flex items-center gap-6">
-            <button 
+            <button
               disabled={isAdPlaying}
               onClick={() => setIsShuffle(!isShuffle)}
               className={`p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer ${isShuffle ? 'text-primary' : 'text-on-surface-variant hover:text-white'} ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
@@ -211,7 +230,7 @@ export default function MusicPlayer() {
               <span className="material-symbols-outlined text-lg">shuffle</span>
             </button>
 
-            <button 
+            <button
               disabled={isAdPlaying}
               onClick={playPrev}
               className={`p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
@@ -221,7 +240,7 @@ export default function MusicPlayer() {
             </button>
 
             {/* Skip -10s */}
-            <button 
+            <button
               disabled={isAdPlaying}
               onClick={() => seek(Math.max(0, currentTime - 10))}
               className={`p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
@@ -230,7 +249,7 @@ export default function MusicPlayer() {
               <span className="material-symbols-outlined text-xl">replay_10</span>
             </button>
 
-            <button 
+            <button
               onClick={togglePlay}
               className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition cursor-pointer shadow-lg hover:bg-zinc-200"
               title={isPlaying ? "Pause" : "Play"}
@@ -241,7 +260,7 @@ export default function MusicPlayer() {
             </button>
 
             {/* Skip +10s */}
-            <button 
+            <button
               disabled={isAdPlaying}
               onClick={() => seek(Math.min(duration, currentTime + 10))}
               className={`p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
@@ -250,7 +269,7 @@ export default function MusicPlayer() {
               <span className="material-symbols-outlined text-xl">forward_10</span>
             </button>
 
-            <button 
+            <button
               disabled={isAdPlaying}
               onClick={playNext}
               className={`p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer text-on-surface-variant hover:text-white ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
@@ -259,7 +278,7 @@ export default function MusicPlayer() {
               <span className="material-symbols-outlined text-xl">skip_next</span>
             </button>
 
-            <button 
+            <button
               disabled={isAdPlaying}
               onClick={handleLoopToggle}
               className={`p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer relative ${loopMode !== 'none' ? 'text-primary' : 'text-on-surface-variant hover:text-white'} ${isAdPlaying ? 'opacity-30 cursor-not-allowed' : ''}`}
@@ -274,11 +293,11 @@ export default function MusicPlayer() {
           {/* Waveform Progress Bar Container */}
           <div className="w-full flex items-center gap-3">
             <span className="text-[10px] text-on-surface-variant font-mono min-w-[30px] text-right">{formatTime(currentTime)}</span>
-            
+
             {/* Waveform scroll container */}
             <div className={`flex-1 h-8 flex items-center justify-between gap-[2px] select-none relative waveform-container ${isAdPlaying ? 'pointer-events-none opacity-40' : ''}`}>
               {/* Invisible range input for perfect slider behavior */}
-              <input 
+              <input
                 type="range"
                 min="0"
                 max={duration || 100}
@@ -289,7 +308,7 @@ export default function MusicPlayer() {
                 }}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               />
-              
+
               {/* Waveform renderer */}
               <div className="absolute inset-0 flex items-center justify-between gap-[2px] w-full h-full pointer-events-none">
                 {waveformData.map((val, idx) => {
@@ -310,11 +329,11 @@ export default function MusicPlayer() {
           </div>
         </div>
 
-        {/* Right Side: Volume & Extra Utilities */}
-        <div className="flex items-center gap-4 w-[24%] justify-end min-w-[150px]">
+        {/* Right Side: Volume & Extra Utilities (Desktop) */}
+        <div className="hidden md:flex items-center gap-4 w-[24%] justify-end min-w-[150px]">
           {/* Lyrics button */}
           {!isAdPlaying && (
-            <button 
+            <button
               onClick={() => navigate('/player')}
               className="p-1.5 rounded-lg hover:bg-white/5 text-on-surface-variant hover:text-white transition cursor-pointer"
               title={t('lyrics')}
@@ -325,7 +344,7 @@ export default function MusicPlayer() {
 
           {/* Volume control */}
           <div className="flex items-center gap-2 group">
-            <button 
+            <button
               onClick={() => setIsMuted(!isMuted)}
               className="p-1.5 rounded-lg hover:bg-white/5 text-on-surface-variant hover:text-white transition cursor-pointer"
             >
@@ -333,7 +352,7 @@ export default function MusicPlayer() {
                 {isMuted || volume === 0 ? 'volume_off' : volume < 0.4 ? 'volume_down' : 'volume_up'}
               </span>
             </button>
-            <input 
+            <input
               type="range"
               min="0"
               max="1"
@@ -355,7 +374,7 @@ export default function MusicPlayer() {
           <div className="glass-panel w-full max-w-sm p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4">
             <div className="flex justify-between items-center border-b border-white/5 pb-3">
               <h3 className="text-sm font-bold text-white">Thêm vào Playlist</h3>
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowAddPlaylistModal(false)}
                 className="text-on-surface-variant hover:text-white cursor-pointer transition duration-150"
@@ -382,7 +401,7 @@ export default function MusicPlayer() {
               ) : (
                 <div className="text-center py-6">
                   <p className="text-xs text-on-surface-variant">Bạn chưa tạo danh sách phát nào.</p>
-                  <button 
+                  <button
                     onClick={() => {
                       setShowAddPlaylistModal(false);
                       navigate('/library-playlists');

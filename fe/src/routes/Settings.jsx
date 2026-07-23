@@ -458,17 +458,17 @@ export default function Settings() {
         <Header />
 
         {/* Multi-Pane Layout next to main Sidebar */}
-        <div className="md:ml-sidebar-width flex-1 flex flex-col md:flex-row min-w-0 h-[calc(100vh-64px)] overflow-hidden">
+        <div className="md:ml-sidebar-width flex-1 flex flex-col md:flex-row min-w-0 md:h-[calc(100vh-64px)] md:overflow-hidden overflow-y-auto">
           
           {/* Settings Sub-sidebar (Left Pane) - Hidden when editing card */}
           {!isEditingCard && (
-            <div className="w-full md:w-64 bg-surface-container-lowest flex flex-col py-6 px-4 border-b md:border-b-0 md:border-r border-white/5 shrink-0 animate-fade-in">
+            <div className="w-full md:w-64 bg-surface-container-lowest flex flex-col py-4 md:py-6 px-4 border-b md:border-b-0 md:border-r border-white/5 shrink-0 animate-fade-in">
               <div className="px-4 mb-6 hidden md:block">
                 <h2 className="text-lg font-bold text-white">{t('account_settings')}</h2>
                 <p className="text-[10px] text-on-surface-variant mt-1">{t('manage_experience')}</p>
               </div>
               
-              <nav className="flex flex-row md:flex-col gap-1.5 overflow-x-auto md:overflow-x-visible pb-3 md:pb-0">
+              <nav className="flex flex-row md:flex-col gap-1.5 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 scrollbar-none">
                 <button 
                   onClick={() => setActiveTab('account')}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ${
@@ -523,7 +523,7 @@ export default function Settings() {
           )}
 
           {/* Settings Tab Panel Content (Right Pane) */}
-          <main className="flex-1 p-8 pb-32 overflow-y-auto min-w-0">
+          <main className="flex-1 p-4 md:p-8 pb-36 overflow-y-auto min-w-0">
             {!isEditingCard ? (
               <div className="max-w-3xl">
 
@@ -531,11 +531,11 @@ export default function Settings() {
               {activeTab === 'account' && (
                 <div className="animate-fade-in flex flex-col gap-6">
                   <div>
-                    <h1 className="font-display-lg text-2xl font-extrabold text-white">{t('account_info')}</h1>
+                    <h1 className="font-display-lg text-xl md:text-2xl font-extrabold text-white">{t('account_info')}</h1>
                     <p className="text-xs text-on-surface-variant mt-1 font-medium">{t('update_profile_desc')}</p>
                   </div>
 
-                  <form onSubmit={handleUpdateProfile} className="bg-[#121212]/40 border border-white/5 p-6 rounded-3xl flex flex-col gap-6 shadow-xl">
+                  <form onSubmit={handleUpdateProfile} className="bg-[#121212]/40 border border-white/5 p-4 md:p-6 rounded-3xl flex flex-col gap-6 shadow-xl">
                     {profileSuccess && (
                       <div className="bg-primary/10 border border-primary/20 text-primary px-4 py-3 rounded-xl text-xs flex items-center gap-2 animate-fade-in">
                         <span className="material-symbols-outlined text-base">check_circle</span>
@@ -544,7 +544,7 @@ export default function Settings() {
                     )}
 
                     {/* Avatar Display Section */}
-                    <div className="flex items-center gap-6 border-b border-white/5 pb-6">
+                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 border-b border-white/5 pb-6 text-center sm:text-left">
                       <div className="relative group">
                         <div className="w-24 h-24 rounded-full overflow-hidden border-[4px] border-zinc-800 bg-zinc-800 flex items-center justify-center font-bold text-3xl shadow-md">
                           {avatarUrl ? (
