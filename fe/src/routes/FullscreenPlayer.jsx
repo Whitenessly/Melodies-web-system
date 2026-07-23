@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router';
 import { usePlayer } from '../context/PlayerContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
-import { api } from '../utils/api.js';
+import { api, BASE_URL } from '../utils/api.js';
 
 export default function FullscreenPlayer() {
   const { user, updateProfileState } = useAuth();
@@ -190,7 +190,7 @@ export default function FullscreenPlayer() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/api/songs/${currentSong._id}/download-drm`, {
+      const response = await fetch(`${BASE_URL}/songs/${currentSong._id}/download-drm`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
