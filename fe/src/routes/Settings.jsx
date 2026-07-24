@@ -276,7 +276,8 @@ export default function Settings() {
     setEmailStepError('');
 
     try {
-      const res = await api.post('/auth/change-email-request', { newEmail });
+      const cleanEmail = newEmail.trim().toLowerCase();
+      const res = await api.post('/auth/change-email-request', { newEmail: cleanEmail });
       if (res.otp) {
         setReceivedOtp(res.otp);
       }
@@ -302,8 +303,9 @@ export default function Settings() {
     }
 
     try {
+      const cleanEmail = newEmail.trim().toLowerCase();
       const res = await api.post('/auth/change-email-verify', {
-        newEmail,
+        newEmail: cleanEmail,
         otp: code
       });
       updateProfileState(res.user);
@@ -319,7 +321,8 @@ export default function Settings() {
   const handleResendOtp = async () => {
     setEmailStepError('');
     try {
-      const res = await api.post('/auth/change-email-request', { newEmail });
+      const cleanEmail = newEmail.trim().toLowerCase();
+      const res = await api.post('/auth/change-email-request', { newEmail: cleanEmail });
       if (res.otp) {
         setReceivedOtp(res.otp);
       }

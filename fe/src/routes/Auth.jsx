@@ -37,10 +37,11 @@ export default function Auth() {
     setLoading(true);
 
     try {
+      const cleanEmail = email.trim().toLowerCase();
       if (authMode === 'login') {
-        await login(email, password);
+        await login(cleanEmail, password);
       } else {
-        await register(name, email, password, role);
+        await register(name, cleanEmail, password, role);
       }
       navigate('/home');
     } catch (err) {
@@ -58,7 +59,8 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      const res = await api.post('/auth/forgot-password', { email: forgotEmail });
+      const cleanEmail = forgotEmail.trim().toLowerCase();
+      const res = await api.post('/auth/forgot-password', { email: cleanEmail });
       setOtpReceived(res.otp || '');
       setSuccessMsg("OTP code sent successfully!" + (res.otp ? ` (OTP: ${res.otp})` : ''));
       setTimeout(() => {
@@ -81,7 +83,8 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      await api.post('/auth/verify-otp', { email: forgotEmail, otp: otpCode });
+      const cleanEmail = forgotEmail.trim().toLowerCase();
+      await api.post('/auth/verify-otp', { email: cleanEmail, otp: otpCode });
       setSuccessMsg('OTP verified successfully!');
       setTimeout(() => {
         setAuthMode('reset');
@@ -108,15 +111,16 @@ export default function Auth() {
 
     setLoading(true);
     try {
+      const cleanEmail = forgotEmail.trim().toLowerCase();
       await api.post('/auth/reset-password', { 
-        email: forgotEmail, 
+        email: cleanEmail, 
         otp: otpCode, 
         newPassword 
       });
       setSuccessMsg('Password reset successfully! Redirecting...');
       setTimeout(() => {
         setAuthMode('login');
-        setEmail(forgotEmail);
+        setEmail(cleanEmail);
         setPassword('');
         setForgotEmail('');
         setOtpCode('');

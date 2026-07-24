@@ -210,7 +210,7 @@ export async function forgotPassword(req, res) {
       return res.status(400).json({ message: 'Email is required' });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       return res.status(404).json({ message: 'User not found with this email' });
     }
@@ -271,7 +271,7 @@ export async function resetPassword(req, res) {
       return res.status(400).json({ message: 'Invalid or expired OTP session' });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
