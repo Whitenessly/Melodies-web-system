@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  token: { type: String, default: null },
   role: { type: String, enum: ['listener', 'artist', 'admin'], default: 'listener' },
   premium_status: { type: String, enum: ['FREE', 'PREMIUM'], default: 'FREE' },
   premium_expired_at: { type: Date, default: null },

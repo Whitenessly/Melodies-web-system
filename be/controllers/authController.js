@@ -22,9 +22,9 @@ export async function register(req, res) {
       premium_status: 'FREE'
     });
 
-    await user.save();
-    
     const token = generateToken({ id: user._id, role: user.role });
+    user.token = token;
+    await user.save();
     return res.status(201).json({
       token,
       user: {
@@ -61,6 +61,8 @@ export async function login(req, res) {
     }
 
     const token = generateToken({ id: user._id, role: user.role });
+    user.token = token;
+    await user.save();
     return res.status(200).json({
       token,
       user: {
@@ -123,7 +125,7 @@ export async function getMe(req, res) {
 
 export async function updateMe(req, res) {
   try {
-    const { name, avatarUrl, password, newPassword } = req.body;
+    const { name, avatarUrl, password, currentPassword, newPassword } = req.body;
     const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -133,14 +135,16 @@ export async function updateMe(req, res) {
     if (avatarUrl !== undefined) user.avatarUrl = avatarUrl;
     
     if (newPassword) {
-      if (!password) {
+      const curPass = password || currentPassword;
+      if (!curPass) {
         return res.status(400).json({ message: 'Current password is required' });
       }
-      const isMatch = verifyPassword(password, user.password);
+      const isMatch = verifyPassword(curPass, user.password);
       if (!isMatch) {
         return res.status(400).json({ message: 'Incorrect current password' });
       }
       user.password = hashPassword(newPassword);
+      user.token = null;
     }
 
     await user.save();
@@ -276,8 +280,9 @@ export async function resetPassword(req, res) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Hash password and save
+    // Hash password, reset token to null, and save
     user.password = hashPassword(newPassword);
+    user.token = null;
     await user.save();
 
     // Clear OTP

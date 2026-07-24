@@ -19,8 +19,8 @@ export async function authenticate(req, res, next) {
     }
     
     const user = await User.findById(decoded.id);
-    if (!user) {
-      return res.status(401).json({ message: 'User not found in system' });
+    if (!user || !user.token || user.token !== token) {
+      return res.status(401).json({ message: 'Session expired or logged out. Please log in again.' });
     }
     
     req.user = user;
@@ -50,7 +50,7 @@ export async function optionalAuthenticate(req, res, next) {
       const decoded = verifyToken(token);
       if (decoded) {
         const user = await User.findById(decoded.id);
-        if (user) {
+        if (user && user.token && user.token === token) {
           req.user = user;
         }
       }

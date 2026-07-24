@@ -21,11 +21,19 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && token !== 'null') {
       fetchProfile();
     } else {
+      setUser(null);
       setLoading(false);
     }
+
+    const handleUnauthorized = () => {
+      logout();
+    };
+
+    window.addEventListener('auth_unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('auth_unauthorized', handleUnauthorized);
   }, []);
 
   const login = async (email, password) => {
@@ -43,6 +51,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    localStorage.setItem('token', 'null');
     localStorage.removeItem('token');
     localStorage.removeItem('melodies_resume_song_id');
     localStorage.removeItem('melodies_resume_time');

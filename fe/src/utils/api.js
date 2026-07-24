@@ -9,7 +9,7 @@ async function request(endpoint, options = {}) {
     ...options.headers
   };
   
-  if (token) {
+  if (token && token !== 'null') {
     headers['Authorization'] = `Bearer ${token}`;
   }
   
@@ -23,10 +23,25 @@ async function request(endpoint, options = {}) {
   }
   
   const response = await fetch(`${BASE_URL}${endpoint}`, config);
-  const data = await response.json();
+  
+  let data;
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    try {
+      data = await response.json();
+    } catch (e) {
+      data = { message: 'Failed to process server response.' };
+    }
+  } else {
+    data = { message: 'Unable to connect to service or endpoint not found.' };
+  }
   
   if (!response.ok) {
-    throw new Error(data.message || 'Request failed');
+    if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
+      localStorage.setItem('token', 'null');
+      window.dispatchEvent(new Event('auth_unauthorized'));
+    }
+    throw new Error(data.message || 'Failed to update password.');
   }
   
   return data;
